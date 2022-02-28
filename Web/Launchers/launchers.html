@@ -3,37 +3,43 @@
 <title>W3.CSS</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+
 <body bgcolor="#f6f7f7">
 
-<div class="w3-sidebar w3-bar-block w3-card w3-animate-left" style="display:none" id="leftMenu">
-  <button onclick="closeLeftMenu()" class="w3-bar-item w3-button w3-large">Close &times;</button>
-  <a href="../index.html" class="w3-bar-item w3-button">Home</a>
-  <a href="../Listeners/listeners.html" class="w3-bar-item w3-button">Listeners</a>
-  <a href="../Launchers/launchers.html" class="w3-bar-item w3-button">Launchers</a>
-  <a href="../Agents\agents.html" class="w3-bar-item w3-button">Agents</a>
-</div>
-
-<div class="w3-teal">
-  <button class="w3-button w3-teal w3-xlarge w3-left" onclick="openLeftMenu()">&#9776;</button>
-  <div class="w3-container">
-    <center><h1>PATRON C2</h1></center>
+  <div class="w3-sidebar w3-bar-block w3-card w3-animate-left" style="display:none" id="leftMenu">
+    <button onclick="closeLeftMenu()" class="w3-bar-item w3-button w3-large">Close &times;</button>
+    <a href="/" class="w3-bar-item w3-button">Home</a>
+    <a href="/Listeners/listeners.html" class="w3-bar-item w3-button">Listeners</a>
+    <a href="/Launchers/launchers.html" class="w3-bar-item w3-button">Launchers</a>
+    <a href="/Agents/agents.html" class="w3-bar-item w3-button">Agents</a>
   </div>
-</div>
 
-<div class="w3-container">
-<center><h1>Launchers</h1></center>
-</div>
-     
-<script>
-function openLeftMenu() {
-  document.getElementById("leftMenu").style.display = "block";
-}
+  <div class="w3-teal">
+    <button class="w3-button w3-teal w3-xlarge w3-left" onclick="openLeftMenu()">&#9776;</button>
+    <div class="w3-container">
+      <center>
+        <h1>PATRON C2</h1>
+      </center>
+    </div>
+  </div>
 
-function closeLeftMenu() {
-  document.getElementById("leftMenu").style.display = "none";
-}
+  <div class="w3-container">
+    <center>
+      <h1>Launchers</h1>
+    </center>
+  </div>
+
+  <script>
+    function openLeftMenu() {
+      document.getElementById("leftMenu").style.display = "block";
+    }
+
+    function closeLeftMenu() {
+      document.getElementById("leftMenu").style.display = "none";
+    }
 
 
-</script>
+  </script>
 </body>
+
 </html>
