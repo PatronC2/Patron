@@ -9,19 +9,20 @@ func errorHandler(writer http.ResponseWriter, request *http.Request, status int)
 
 	switch status {
 	case http.StatusNotFound:
-		http.ServeFile(writer, request, "StatusPages/404.html")
+		http.ServeFile(writer, request, "Pages/404.html")
 	default:
-		writer.Write([]byte("Unknown error"))
+		http.ServeFile(writer, request, "Pages/500.html") // internal server error
 	}
 }
 
 func HandleRootPage(writer http.ResponseWriter, request *http.Request) {
+	// This is also the default route for unknown paths, so check that it's "/" and not something like "/asdf"
 	if request.URL.Path != "/" {
 		errorHandler(writer, request, http.StatusNotFound)
 		return
 	}
 
-	http.ServeFile(writer, request, "index.html")
+	http.ServeFile(writer, request, "Pages/index.html")
 
 	/* --- TODO: fix later
 	// The templated HTML of type template.HTML for proper rendering on the DOM
@@ -36,21 +37,25 @@ func HandleRootPage(writer http.ResponseWriter, request *http.Request) {
 }
 
 func HandleDashboardPage(writer http.ResponseWriter, request *http.Request) {
-	writer.Write([]byte("Hello, dashboard page!"))
+	writer.Write([]byte("Hello, dashboard page! You're authenticated!"))
 }
 
 func HandleLoginPage(writer http.ResponseWriter, request *http.Request) {
-	writer.Write([]byte("Hello, login page!"))
+	http.ServeFile(writer, request, "Pages/login.html")
+}
+
+func HandleRegisterPage(writer http.ResponseWriter, request *http.Request) {
+	http.ServeFile(writer, request, "Pages/register.html")
 }
 
 func HandleAgentsPage(writer http.ResponseWriter, request *http.Request) {
-	writer.Write([]byte("Hello, agents page!"))
+	http.ServeFile(writer, request, "Pages/Agents/agents.html")
 }
 
 func HandleLaunchersPage(writer http.ResponseWriter, request *http.Request) {
-	writer.Write([]byte("Hello, launchers page!"))
+	http.ServeFile(writer, request, "Pages/Launchers/launchers.html")
 }
 
 func HandleListenersPage(writer http.ResponseWriter, request *http.Request) {
-	writer.Write([]byte("Hello, listeners page!"))
+	http.ServeFile(writer, request, "Pages/Listeners/listeners.html")
 }

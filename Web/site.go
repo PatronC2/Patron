@@ -96,6 +96,7 @@ func handleRequests() {
 	http.HandleFunc("/", HandleRootPage)
 	http.Handle("/dashboard", IsAuthorized(HandleDashboardPage))
 	http.HandleFunc("/login", HandleLoginPage)
+	http.HandleFunc("/register", HandleRegisterPage)
 	http.HandleFunc("/Agents/agents.html", HandleAgentsPage)
 	http.HandleFunc("/Launchers/launchers.html", HandleLaunchersPage)
 	http.HandleFunc("/Listeners/listeners.html", HandleListenersPage)
