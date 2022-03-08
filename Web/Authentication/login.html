@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<title>W3.CSS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="stylesheet.css">
+<body bgcolor="#f6f7f7">
+
+<div class="w3-sidebar w3-bar-block w3-card w3-animate-left" style="display:none" id="leftMenu">
+  <button onclick="closeLeftMenu()" class="w3-bar-item w3-button w3-large">Close &times;</button>
+  <a href="index.html" class="w3-bar-item w3-button">Home</a><hr>
+  <a href="listeners.html" class="w3-bar-item w3-button">Listeners</a><hr>
+  <a href="launchers.html" class="w3-bar-item w3-button">Launchers</a><hr>
+  <a href="agents.html" class="w3-bar-item w3-button">Agents</a><hr>
+  <a href="login.html" class="w3-bar-item w3-button">Login</a><hr>
+  <a href="#" class="w3-bar-item w3-button">Register</a><hr>
+</div>
+
+<div class="w3-teal">
+  <button class="w3-button w3-teal w3-xlarge w3-left" onclick="openLeftMenu()">&#9776;</button>
+  <div class="w3-container">
+  </div>
+</div>
+
+<div class="w3-container">
+</div>
+     
+<script>
+function openLeftMenu() {
+  document.getElementById("leftMenu").style.display = "block";
+}
+
+function closeLeftMenu() {
+  document.getElementById("leftMenu").style.display = "none";
+}
+
+
+</script>
+
+<center><h1>Login</h1></center>
+<center>
+<form action="action_page.php">
+
+    <label for="Username">Username</label>
+    <input type="text" id="username" name="username" placeholder="Username..">
+    </br>
+    <label for="Password">Password</label>
+    <input type="text" id="password" name="password" placeholder="Password..">
+    
+</form>
+</center>
+     
+</body>
+</html>
