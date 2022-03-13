@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -14,11 +15,10 @@ func handleconn(connection net.Conn) {
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Print(">> ")
 		text, _ := reader.ReadString('\n')
-		// texted := strings.Split(text, "\n")
-		// send := texted[0] + "end"
-		// fmt.Print()
 		fmt.Fprintf(connection, text)
 		message, _ := bufio.NewReader(connection).ReadString('\n')
+		re := regexp.MustCompile(`~w`)
+		message = re.ReplaceAllString(message, "\n")
 		fmt.Print("->: " + message)
 
 		if strings.TrimSpace(string(message)) == "STOP" {
