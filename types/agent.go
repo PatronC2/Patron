@@ -1,10 +1,10 @@
 package types
 
-type configAgent struct {
-	uuid              string
-	callbackTo        string
-	callbackFrequency int
-	callbackJitter    float32
+type ConfigAgent struct {
+	Uuid              string
+	CallbackTo        string
+	CallbackFrequency int
+	CallbackJitter    float32
 	// ...
 }
 
@@ -13,12 +13,12 @@ type configAgent struct {
 // 	// ...
 //   }
 
-type giveAgentCommand struct {
-	updateAgentConfig configAgent
+type GiveAgentCommand struct {
+	UpdateAgentConfig ConfigAgent
 	// updateListenerConfig configListenerHttp
-	commandType string // "execute, "upload", "download", etc., meterpreter style, or shell command like "whoami"
-	command     string //
-	binary      []byte // can be used with "upload" or "execute", etc.
+	CommandType string // "execute, "upload", "download", etc., meterpreter style, or shell command like "whoami"
+	Command     string //
+	Binary      []byte // can be used with "upload" or "execute", etc.
 	// ..
 }
 
