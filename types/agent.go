@@ -22,4 +22,10 @@ type GiveAgentCommand struct {
 	// ..
 }
 
+type GiveServerResult struct {
+	Uuid   string
+	Result string
+	Output string
+}
+
 //sample := &giveAgentCommand{&configAgent{"1234", "192.20.20.12", 5, 4.5}, "shell", "whoami", nil }

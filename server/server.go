@@ -2,11 +2,14 @@ package main
 
 import (
 	"bufio"
+	"encoding/gob"
 	"fmt"
 	"log"
 	"net"
-	"os"
 	"strings"
+
+	"github.com/PatronC2/Patron/types"
+	"github.com/s-christian/gollehs/lib/logger"
 )
 
 // TODO add logging
@@ -14,47 +17,47 @@ import (
 
 func handleconn(connection net.Conn) {
 	for {
-		// encoder := gob.NewEncoder(connection)
-		// instruct := types.GiveAgentCommand{
-		// 	UpdateAgentConfig: types.ConfigAgent{
-		// 		Uuid:              "1234",
-		// 		CallbackTo:        "192.20.20.12",
-		// 		CallbackFrequency: 5,
-		// 		CallbackJitter:    4.5,
-		// 	},
-		// 	CommandType: "shell",
-		// 	Command:     "whoami",
-		// 	Binary:      nil,
-		// }
-		// encoder.Encode(instruct)
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Print(">> ")
-		text, _ := reader.ReadString('\n')
-		fmt.Fprint(connection, text)
-		message := make([]byte, 4096)
-		connection.Read(message)
-		out := string(message)
-		fmt.Println(out)
-		// message, _ := bufio.NewReader(connection)
+		text, _ := bufio.NewReader(connection).ReadString('\n')
+		message := strings.Split(text, "\n")
+		// fmt.Println(message[0])
+		if message[0] != "" {
+			// fmt.Println(message[0])
+			if message[0] == "12344" {
+				fmt.Fprintf(connection, "Yes\n")
+				logger.Logf(logger.Info, "Agent %s Connected\n", message[0])
+				encoder := gob.NewEncoder(connection)
+				instruct := types.GiveAgentCommand{
+					UpdateAgentConfig: types.ConfigAgent{
+						Uuid:              "12344",
+						CallbackTo:        "192.20.20.12",
+						CallbackFrequency: 5,
+						CallbackJitter:    4.5,
+					},
+					CommandType: "shell",
+					Command:     "id",
+					Binary:      nil,
+				}
 
-		// message, _ := bufio.NewReader(connection).ReadString('\n')
-		// re := regexp.MustCompile(`~w`)
-		// message = re.ReplaceAllString(message, "\n")
-		// fmt.Print("->: " + message)
+				encoder.Encode(instruct)
+				destruct := &types.GiveServerResult{}
+				dec := gob.NewDecoder(connection)
+				dec.Decode(destruct)
+				if destruct.Output != "" {
+					logger.Logf(logger.Debug, "Agent %s Connected\n", message[0])
+				}
+			} else {
+				logger.Logf(logger.Info, "Agent Unath\n")
+			}
 
-		if strings.TrimSpace(string(message)) == "STOP" {
-			fmt.Println("Exiting TCP server!")
-			break
 		}
 	}
-	connection.Close()
+
 }
 
 func main() {
 	listener, err := net.Listen("tcp", ":6969")
 	if err != nil {
-		log.
-			Fatalln(err)
+		log.Fatalln(err)
 	}
 
 	defer listener.Close()
