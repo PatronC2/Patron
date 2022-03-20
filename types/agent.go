@@ -3,8 +3,8 @@ package types
 type ConfigAgent struct {
 	Uuid              string
 	CallbackTo        string
-	CallbackFrequency int
-	CallbackJitter    float32
+	CallbackFrequency string
+	CallbackJitter    string
 	// ...
 }
 

