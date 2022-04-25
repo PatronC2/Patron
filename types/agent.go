@@ -19,13 +19,14 @@ type GiveAgentCommand struct {
 	CommandType string // "execute, "upload", "download", etc., meterpreter style, or shell command like "whoami"
 	Command     string //
 	Binary      []byte // can be used with "upload" or "execute", etc.
-	// ..
+	CommandUUID string
 }
 
 type GiveServerResult struct {
-	Uuid   string
-	Result string
-	Output string
+	Uuid        string
+	Result      string
+	Output      string
+	CommandUUID string
 }
 
 //sample := &giveAgentCommand{&configAgent{"1234", "192.20.20.12", 5, 4.5}, "shell", "whoami", nil }

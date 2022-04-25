@@ -51,6 +51,7 @@ func InitDatabase() {
 		"Result"	TEXT,
 		"CommandType"	TEXT,
 		"Command"	TEXT,
+		"CommandUUID"	TEXT,
 		"Output" TEXT DEFAULT 'Unknown',
 		PRIMARY KEY("CommandID" AUTOINCREMENT),
 		FOREIGN KEY("UUID") REFERENCES "Agents"("UUID")
@@ -101,6 +102,7 @@ func FetchOneAgent(uuid string) types.ConfigAgent {
 	switch err {
 	case sql.ErrNoRows:
 		logger.Logf(logger.Info, "No rows were returned! \n")
+		return agentStruct
 	case nil:
 		fmt.Println(agentStruct)
 	default:
@@ -119,7 +121,8 @@ func FetchNextCommand(uuid string) types.GiveAgentCommand {
 		Agents.CallBackFeq, 
 		Agents.CallBackJitter, 
 		Commands.CommandType, 
-		Commands.Command 
+		Commands.Command, 
+		Commands.CommandUUID
 	FROM Commands INNER JOIN 
 		Agents ON Commands.UUID = Agents.UUID 
 	WHERE Commands.UUID=$1 AND Result='0' LIMIT 1
@@ -135,6 +138,7 @@ func FetchNextCommand(uuid string) types.GiveAgentCommand {
 		&agentStruct.UpdateAgentConfig.CallbackJitter,
 		&agentStruct.CommandType,
 		&agentStruct.Command,
+		&agentStruct.CommandUUID,
 		// &agentStruct.Binary,
 	)
 	switch err {
@@ -149,9 +153,9 @@ func FetchNextCommand(uuid string) types.GiveAgentCommand {
 	logger.Logf(logger.Info, "Agent %s Fetched Next Command %s \n", agentStruct.UpdateAgentConfig.Uuid, agentStruct.Command)
 	return agentStruct
 }
-func SendAgentCommand(uuid string, result string, CommandType string, Command string) {
-	SendAgentCommandSQL := `INSERT INTO Commands (UUID, Result, CommandType, Command)
-	VALUES (?, ?, ?, ?)`
+func SendAgentCommand(uuid string, result string, CommandType string, Command string, CommandUUID string) {
+	SendAgentCommandSQL := `INSERT INTO Commands (UUID, Result, CommandType, Command, CommandUUID)
+	VALUES (?, ?, ?, ?, ?)`
 
 	statement, err := db.Prepare(SendAgentCommandSQL)
 	if err != nil {
@@ -160,10 +164,28 @@ func SendAgentCommand(uuid string, result string, CommandType string, Command st
 		logger.Logf(logger.Info, "Error in DB\n")
 	}
 
-	_, err = statement.Exec(uuid, result, CommandType, Command)
+	_, err = statement.Exec(uuid, result, CommandType, Command, CommandUUID)
 	if err != nil {
 
 		log.Fatalln(err)
 	}
 	logger.Logf(logger.Info, "Agent %s Reveived New Command \n", uuid)
+}
+
+func UpdateAgentCommand(CommandUUID string, Output string, uuid string) {
+	updateAgentCommandSQL := `UPDATE Commands SET Result='1', Output= ? WHERE CommandUUID= ?`
+
+	statement, err := db.Prepare(updateAgentCommandSQL)
+	if err != nil {
+
+		log.Fatalln(err)
+		logger.Logf(logger.Info, "Error in DB\n")
+	}
+
+	_, err = statement.Exec(Output, CommandUUID)
+	if err != nil {
+
+		log.Fatalln(err)
+	}
+	logger.Logf(logger.Info, "Agent %s Reveived Output with CommandID %s \n", uuid, CommandUUID)
 }
