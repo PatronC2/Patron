@@ -36,6 +36,10 @@ type GiveServerResult struct {
 
 // // WEB Types
 
-// type Agents struct {
-
-// }
+type Agent struct {
+	Uuid        string `json:"uuid"`
+	CommandType string `json:"commandtype"`
+	Command     string `json:"command"`
+	CommandUUID string `json:"commanduuid"`
+	Output      string `json:"output"`
+}

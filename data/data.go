@@ -228,6 +228,37 @@ func Agents() []types.ConfigAgent {
 		agentAppend = append(agentAppend, agents)
 	}
 	return agentAppend
+}
+
+func Agent(uuid string) []types.Agent {
+	var info types.Agent
+	FetchSQL := `
+	SELECT 
+		UUID, 
+		CommandType, 
+		Command, 
+		CommandUUID, 
+		Output
+	FROM Commands
+	WHERE UUID= ? AND CommandType = 'shell'
+	`
+	row, err := db.Query(FetchSQL, uuid)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer row.Close()
+	var infoAppend []types.Agent
+	for row.Next() {
+		row.Scan(
+			&info.Uuid,
+			&info.CommandType,
+			&info.Command,
+			&info.CommandUUID,
+			&info.Output,
+		)
+		infoAppend = append(infoAppend, info)
+	}
+	return infoAppend
 	// logger.Logf(logger.Info, "Agent %s Fetched Next Command %s \n", agentStruct.UpdateAgentConfig.Uuid, agentStruct.Command)
 	// return agentStruct
 }

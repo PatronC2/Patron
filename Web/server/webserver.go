@@ -25,5 +25,12 @@ func main() {
 		res.SendJSON(agents)
 	})
 
+	r.Get("/api/agent/{agt}", func(w http.ResponseWriter, r *http.Request) {
+		agentParam := chi.URLParam(r, "agt")
+		res, _ := yin.Event(w, r)
+		agent := data.Agent(agentParam)
+		res.SendJSON(agent)
+	})
+
 	http.ListenAndServe(":3000", r)
 }
