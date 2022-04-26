@@ -1,10 +1,13 @@
 package types
 
 type ConfigAgent struct {
-	Uuid              string
-	CallbackTo        string
-	CallbackFrequency string
-	CallbackJitter    string
+	Uuid              string `json:"uuid"`
+	CallbackTo        string `json:"callbackto"`
+	CallbackFrequency string `json:"callbackfrequency"`
+	CallbackJitter    string `json:"callbackjitter"`
+	AgentIP           string `json:"agentip"`
+	Username          string `json:"username"`
+	Hostname          string `json:"hostname"`
 	// ...
 }
 
@@ -30,3 +33,9 @@ type GiveServerResult struct {
 }
 
 //sample := &giveAgentCommand{&configAgent{"1234", "192.20.20.12", 5, 4.5}, "shell", "whoami", nil }
+
+// // WEB Types
+
+// type Agents struct {
+
+// }

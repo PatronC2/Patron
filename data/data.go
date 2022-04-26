@@ -31,6 +31,9 @@ func InitDatabase() {
 		"CallBackToIP"	TEXT NOT NULL DEFAULT 'Unknown',
 		"CallBackFeq"	TEXT NOT NULL DEFAULT 'Unknown',
 		"CallBackJitter"	TEXT NOT NULL DEFAULT 'Unknown',
+		"Ip"	TEXT NOT NULL DEFAULT 'Unknown',
+		"User"	TEXT NOT NULL DEFAULT 'Unknown',
+		"Hostname"	TEXT NOT NULL DEFAULT 'Unknown',
 		"isDeleted"	INTEGER NOT NULL DEFAULT 0,
 		"LastCallBack"	TEXT DEFAULT 'Unknown',
 		PRIMARY KEY("AgentID" AUTOINCREMENT)
@@ -65,9 +68,9 @@ func InitDatabase() {
 	logger.Logf(logger.Info, "Commands table created\n")
 }
 
-func CreateAgent(uuid string, CallBackToIP string, CallBackFeq string, CallBackJitter string) {
-	CreateAgentSQL := `INSERT INTO Agents (UUID, CallBackToIP, CallBackFeq, CallBackJitter)
-	VALUES (?, ?, ?, ?)`
+func CreateAgent(uuid string, CallBackToIP string, CallBackFeq string, CallBackJitter string, Ip string, User string, Hostname string) {
+	CreateAgentSQL := `INSERT INTO Agents (UUID, CallBackToIP, CallBackFeq, CallBackJitter, Ip, User, Hostname)
+	VALUES (?, ?, ?, ?, ?, ?, ?)`
 
 	statement, err := db.Prepare(CreateAgentSQL)
 	if err != nil {
@@ -76,7 +79,7 @@ func CreateAgent(uuid string, CallBackToIP string, CallBackFeq string, CallBackJ
 		logger.Logf(logger.Info, "Error in DB\n")
 	}
 
-	_, err = statement.Exec(uuid, CallBackToIP, CallBackFeq, CallBackJitter)
+	_, err = statement.Exec(uuid, CallBackToIP, CallBackFeq, CallBackJitter, Ip, User, Hostname)
 	if err != nil {
 
 		log.Fatalln(err)
@@ -188,4 +191,43 @@ func UpdateAgentCommand(CommandUUID string, Output string, uuid string) {
 		log.Fatalln(err)
 	}
 	logger.Logf(logger.Info, "Agent %s Reveived Output with CommandID %s \n", uuid, CommandUUID)
+}
+
+// WEB Functions
+
+func Agents() []types.ConfigAgent {
+	var agents types.ConfigAgent
+	FetchSQL := `
+	SELECT 
+		UUID, 
+		CallBackToIP, 
+		CallBackFeq, 
+		CallBackJitter, 
+		Ip, 
+		User, 
+		Hostname
+	FROM Agents
+	WHERE isDeleted='0'
+	`
+	row, err := db.Query(FetchSQL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer row.Close()
+	var agentAppend []types.ConfigAgent
+	for row.Next() {
+		row.Scan(
+			&agents.Uuid,
+			&agents.CallbackTo,
+			&agents.CallbackFrequency,
+			&agents.CallbackJitter,
+			&agents.AgentIP,
+			&agents.Username,
+			&agents.Hostname,
+		)
+		agentAppend = append(agentAppend, agents)
+	}
+	return agentAppend
+	// logger.Logf(logger.Info, "Agent %s Fetched Next Command %s \n", agentStruct.UpdateAgentConfig.Uuid, agentStruct.Command)
+	// return agentStruct
 }

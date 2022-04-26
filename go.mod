@@ -12,7 +12,10 @@ require (
 )
 
 require (
+	github.com/go-chi/chi v1.5.4 // indirect
 	github.com/mattn/go-colorable v0.1.9 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
-	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
+	github.com/newrelic/go-agent v3.15.2+incompatible // indirect
+	github.com/qkgo/yin v0.0.0-20190403073632-bff3b50ba6e6 // indirect
+	golang.org/x/sys v0.0.0-20220422013727-9388b58f7150 // indirect
 )

