@@ -1,141 +1,77 @@
-import { BrowserRouter, BrowserRouter as Router, Switch, Route, Link, NavLink } from 'react-router-dom';
-import Header from './components/header'
+import { Routes, Route } from 'react-router-dom';
+import Agent from './components/agent'
+import Nav from './components/nav'
+import Home from './components/home'
 import createDOMPurify from 'dompurify'
-import { JSDOM } from 'jsdom'
+import React from 'react';
 
-const window = (new JSDOM('')).window
 const DOMPurify = createDOMPurify(window)
 
-var rawHTML =
-  `
-<center>
-<!-- ## BEGIN ALL ## -->
-<table border="0" cellspacing="0" cellpadding="0">
-<!-- ## BEGIN UPPER AREA## -->
-<tr><td>
-<center>
-<table border="0" cellspacing="0" cellpadding="0">
-<tr><td colspan="1"><pre><font color="#00FF00" face="lucida console" size="1">                                                     </font></td><td><pre><font color="#00FF00" face="lucida console" size="1">                                                                                 </font></td><td><pre><font color="#00FF00" face="lucida console" size="1">                                                      </font></td></tr>
-<tr><td colspan="1"><!--Begin Left Leg, make sure <font>, <pre> and first line of ascii are on same line--><pre><font color="#00FF00" face="lucida console" size="1">,@hiiiSiiiiX#   ...   ,rir ,@@@ .AXSirsXs2&amp;2#@
-  @3iiiiiiSA:  .     r2ir. 2@iX..@A#S;;A#@@@H@
-  .@3SSSSSSA:  ....:S2ir:;;@r2;:2@S;iir@@@B@X@
-   :@XSSSSS3@   ,;rSisr;r2rA :i;,2HBAh3M@@9@#M
-    r@2SSSSSMS    ,sisriSX;: :5:r;B@@@#@95#@@;
-     2@2SSSSX@     ;SSSSXSs.,:;;rsr@@@@@&amp;A@9@,
-      &amp;M2SSiSH3     siiS3 i.,;;;s9B###@AMM@2@
-       #M5SSi2@     ;ssih.r..r:A@@#M#@MHMM@X@
-        #H2SSiAH    :rsiX2 r ;@@AAAHB#BHMM@A@
-         H35222@    .;rsSA ;, @@AHMB#@##@@@M@
-          hiri5H@    ,;siGs S,X@H&amp;M#@@@@HG2S@
-           3r:;;B.   .;rs2&amp; ...@@AAM#@2S293A@
-            2;::r2     ;i2H, X.2@&amp;&amp;H#@h3GAhA@
-            .s.  ,      :5As r;.@@GHB@AXAA&amp;H@
-             r&amp;sssX@     :Si,,s A@3AA@#SA&amp;AA@
-             .@Gh93@.    .ss:.r.G@GAH@#iAAAA@
-              @2SSS@,     ;r;.;.&amp;@HAH@#sAAAA@&amp;
-              @G5S5@;     :r;,;.H@@GH@#sAA&amp;AH@
-              @#X22#2     .rr,. A@@3A@#sGA&amp;AA@
-              2@hX2H#      rs, &amp;&amp;M@2A##sGA&amp;A&amp;@
-              :@Gh9A@      ss, MhA@3A##s3A&amp;A&amp;@r
-               @Ghh&amp;@      ii, BA3@HG##s2A&amp;G&amp;#@
-               @Ahhh@      iS, MHX@#X#Mi2AGG&amp;A@
-               @B339@      SS, A#3@@2#Mi2A&amp;G&amp;h@
-               X@2X3@      2i. XMA#@XM#S2&amp;&amp;GG9@S
-               .@222@      2i. iBMA@9H#S29GhG9@@
-                @iS5#,     5s  :M@X@AA#SX9&amp;&amp;GG#@
-                @isSHr     Sr   #@5@#h@5X3&amp;&amp;hhH@
-                M2sS&amp;S     rr.  #@S@@9@232&amp;&amp;h9M@;
-                S&amp;iSh9     .,.. #@5@@3@X32A&amp;G3M@@
-                ,#i59#      .,, H@2#@3@3X2&amp;&amp;&amp;3#M@
-                 @SXh@      .,, i@AH@G#hX2G&amp;G3#B@
-                 @23G@      .,, ,@@G@A#A25hA&amp;X@B@;
-                 @G9A@      .,, .#@2@MBH22hA&amp;X@BM@
-                 3@GH@       ,,  M@5@@AM259A&amp;X@HG@
-                 ,@AB@       ... @@5@@&amp;@253AG&amp;@h3@
-                  @A&amp;@;    .  .  @@2@@G#2S3A&amp;AM#X@;
-                  @Ah@&amp;    :,:,  B@h#@&amp;@5SXAGA#BG#@
-                  @B3#@    :,;r: &amp;@MG@M#5iX&amp;h#&amp;GA9@
-                  @@3H@    ,,s3r.,&amp;@A@@BSiX&amp;hM2AAS@
-                  ;@Xh@    ..2A2:.rM2@@BiiXG3#B@Ai@;
-                   @2X@     .229, s@.@@MrS2GG#X@&amp;i@@
-                   @X2@     ,2SG, :@:&amp;@B;52hAA2@HiM@
-                   @X2@     :55h. .@rr@h;529Gh3@HsG@
-                   B3X@     ;iS&amp;. ;@X:@X;223&amp;9h@#S3@.
-                   rG2@:    rsSG, 5@#,@S;22XG3h@#XS@@
-                    H5@r   .;ri9r &amp;@@.@sr222h&amp;h@@32@@
-                    Hr9;    :ri2XrS@@.@rr5222Ah@#5S@@
-                    @GM@    ,;riSi:@@,@rs225S@G@3ih@,
-                    r@@@    :ri2XX;@XsM2;32sB@G@3i#@
-                     @@@    :s2GHHX@&amp;s#H.h5S@@&amp;@25@@
-                     ,@@3   ;2GBMMH@@iX.,SS@@@A@i&amp;@
-                      @@@   iAAHHM#@Hi&amp;:;;A@@@B@;#@
-                      ,@@B  .A#M#@&amp;&amp;s;3rr;@@@#M@r@s
-                       @@@   ,#@@h,s:r3Si;AGMMB@i@
-                       ,@@9  , @.  Srr2S2;XM@##@9@
-                        @@#  ,  ::.rs;isiiH@iG@#@;
-                        :@sB  . ;:;r:,rs5B@@h#@X#
-                         @&amp;S: .  . ,X.h##@@@@H@r@r</font><!--End left leg--></td>
-<td height="1" colspan="1" width="1" valign="top"><!--Start Center Area-->
-<center><table width="1" height="1" border="0" cellspacing="0" cellpadding="0">
-<!--Start Title Row--><tr><td><!--Begin Main Title, Use menu.php to make these easily --><center><pre><font face="lucida console"><font size="2" color="#00FFFF"> _______________________________________________________ </font>
-<font size="2" color="#00FFFF">|</font><font size=2>    </font><font size="2" color=#FFC200> + </font><font size="2" color="#FFFFFF">w e l c o m e   t o   a   n e w   s i t e</font><font size=2 color="#FFC200"> +     </font><font size=2 color="#00FFFF">|</font>
-<font size="2" color=#00FFFF> ------------------------------------------------------- </font></font>
-</pre></center><!--End Main Title-->
-</td></tr><!-- End title Row -->
-<!--Start Blurb Row--><tr><td><!--Start Blurb -->
-<font color="#FFFFFF" face="lucida console" size="1">Hello There.<br>
-Welcome to an experiment in web design. A truly new and revolutionary method of navigation, presentation, and creative spelling. I call it, Llama Legs.</font><!-- End Blurb-->
-</td></tr><!--End Blurb Row-->
-<!--Start Example News 1 -->
-<tr><td>
-<br><!--Start News 1 Banner -->
-<pre><font face="lucida console"><font size="2" color="#ff3333"> _____________________________________________ </font>
-<font size="2" color="#ff3333">|</font><font size="2"> </font><font size="2" color="#888888"> + </font><font size="2" color="#FFFFFF"><!--Start News 1 Title -->flaming wombats!<!--End News 1 Title --></font><font size="2" color="#888888"> +     </font>    <font size="2" color="#888888"> + </font><font size="2" color="#FFFFFF"><!--Start News 1 Date -->3.24.2001<!--End News 1 Date --></font><font size="2" color="#888888"> +<font size="2" color="#ff3333">|</font>
-<font size="2" color="#ff3333"> --------------------------------------------- </font></font></font></pre><!--End News 1 Banner -->
-</td></tr>
+const left = 
+`<font size="1" face="lucida console" color="#00FF00">,@hiiiSiiiiX#   ...   ,rir ,@@@ .AXSirsXs2&amp;2#@
+@3iiiiiiSA:  .     r2ir. 2@iX..@A#S;;A#@@@H@
+.@3SSSSSSA:  ....:S2ir:;;@r2;:2@S;iir@@@B@X@
+:@XSSSSS3@   ,;rSisr;r2rA :i;,2HBAh3M@@9@#M
+r@2SSSSSMS    ,sisriSX;: :5:r;B@@@#@95#@@;
+2@2SSSSX@     ;SSSSXSs.,:;;rsr@@@@@&amp;A@9@,
+&amp;M2SSiSH3     siiS3 i.,;;;s9B###@AMM@2@
+#M5SSi2@     ;ssih.r..r:A@@#M#@MHMM@X@
+#H2SSiAH    :rsiX2 r ;@@AAAHB#BHMM@A@
+H35222@    .;rsSA ;, @@AHMB#@##@@@M@
+hiri5H@    ,;siGs S,X@H&amp;M#@@@@HG2S@
+3r:;;B.   .;rs2&amp; ...@@AAM#@2S293A@
+2;::r2     ;i2H, X.2@&amp;&amp;H#@h3GAhA@
+.s.  ,      :5As r;.@@GHB@AXAA&amp;H@
+r&amp;sssX@     :Si,,s A@3AA@#SA&amp;AA@
+.@Gh93@.    .ss:.r.G@GAH@#iAAAA@
+@2SSS@,     ;r;.;.&amp;@HAH@#sAAAA@&amp;
+@G5S5@;     :r;,;.H@@GH@#sAA&amp;AH@
+@#X22#2     .rr,. A@@3A@#sGA&amp;AA@
+2@hX2H#      rs, &amp;&amp;M@2A##sGA&amp;A&amp;@
+:@Gh9A@      ss, MhA@3A##s3A&amp;A&amp;@r
+@Ghh&amp;@      ii, BA3@HG##s2A&amp;G&amp;#@
+@Ahhh@      iS, MHX@#X#Mi2AGG&amp;A@
+@B339@      SS, A#3@@2#Mi2A&amp;G&amp;h@
+X@2X3@      2i. XMA#@XM#S2&amp;&amp;GG9@S
+.@222@      2i. iBMA@9H#S29GhG9@@
+@iS5#,     5s  :M@X@AA#SX9&amp;&amp;GG#@
+@isSHr     Sr   #@5@#h@5X3&amp;&amp;hhH@
+M2sS&amp;S     rr.  #@S@@9@232&amp;&amp;h9M@;
+S&amp;iSh9     .,.. #@5@@3@X32A&amp;G3M@@
+,#i59#      .,, H@2#@3@3X2&amp;&amp;&amp;3#M@
+@SXh@      .,, i@AH@G#hX2G&amp;G3#B@
+@23G@      .,, ,@@G@A#A25hA&amp;X@B@;
+@G9A@      .,, .#@2@MBH22hA&amp;X@BM@
+3@GH@       ,,  M@5@@AM259A&amp;X@HG@
+,@AB@       ... @@5@@&amp;@253AG&amp;@h3@
+@A&amp;@;    .  .  @@2@@G#2S3A&amp;AM#X@;
+@Ah@&amp;    :,:,  B@h#@&amp;@5SXAGA#BG#@
+@B3#@    :,;r: &amp;@MG@M#5iX&amp;h#&amp;GA9@
+@@3H@    ,,s3r.,&amp;@A@@BSiX&amp;hM2AAS@
+;@Xh@    ..2A2:.rM2@@BiiXG3#B@Ai@;
+@2X@     .229, s@.@@MrS2GG#X@&amp;i@@
+@X2@     ,2SG, :@:&amp;@B;52hAA2@HiM@
+@X2@     :55h. .@rr@h;529Gh3@HsG@
+B3X@     ;iS&amp;. ;@X:@X;223&amp;9h@#S3@.
+rG2@:    rsSG, 5@#,@S;22XG3h@#XS@@
+H5@r   .;ri9r &amp;@@.@sr222h&amp;h@@32@@
+Hr9;    :ri2XrS@@.@rr5222Ah@#5S@@
+@GM@    ,;riSi:@@,@rs225S@G@3ih@,
+r@@@    :ri2XX;@XsM2;32sB@G@3i#@
+@@@    :s2GHHX@&amp;s#H.h5S@@&amp;@25@@
+,@@3   ;2GBMMH@@iX.,SS@@@A@i&amp;@
+@@@   iAAHHM#@Hi&amp;:;;A@@@B@;#@
+,@@B  .A#M#@&amp;&amp;s;3rr;@@@#M@r@s
+ @@@   ,#@@h,s:r3Si;AGMMB@i@
+ ,@@9  , @.  Srr2S2;XM@##@9@
+  @@#  ,  ::.rs;isiiH@iG@#@;
+  :@sB  . ;:;r:,rs5B@@h#@X#
+   @&amp;S: .  . ,X.h##@@@@H@r@r</font><!--End left leg-->
+`
 
-<tr><td><!-- Start News 1 Content -->
-<font color="#FFFFFF" face="lucida console" size="1">
-Good God! In recent news i was just attacked by a pair of flying wombats! They were out to kill i tell y a!  I'm pretty sure it was the meta refresh that drove 'em over the edge... Note to self: be more careful with dangerous web tags.<!-- End News 1 Content -->
-</font>
-</td></tr>
-<!--End Example News 1 -->
-<!--Start Example News 2 -->
-<tr><td>
-<br>
-<pre><font face="lucida console"><font size="2" color="#ff3333"> _________________________________________________ </font>
-<font size="2" color="#ff3333">|</font><font size="2"> </font><font size="2" color="#888888"> + </font><font size="2" color="#FFFFFF">Firey Locust Swarms!</font><font size="2" color="#888888"> +     </font>    <font size="2" color="#888888"> + </font><font size="2" color="#FFFFFF">3.22.2001</font><font size="2" color="#888888"> +<font size="2" color="#ff3333">|</font>
-<font size="2" color="#ff3333"> ------------------------------------------------- </font></font></font></pre>
-</td></tr>
-
-<tr><td>
-<font color="#FFFFFF" face="lucida console" size="1">
-Good God! In recent news i was just attacked by a swarm of firey locusts!! I'm really not sure why they were on fire, but they looked mighty mad! I think they may have tried to use windows...oh no! We could have a crazy epidemic on our hands, if the locusts start using windows.
-</font>
-</td></tr>
-<!--End Example News 2 -->
-<!--Start Example News 3 -->
-<tr><td>
-<br>
-<pre><font face="lucida console"><font size="2" color="#ff3333"> ___________________________________________ </font>
-<font size="2" color="#ff3333">|</font><font size="2"> </font><font size="2" color="#888888"> + </font><font size="2" color="#FFFFFF">FOR GREAT HIGH</font><font size="2" color="#888888"> +     </font>    <font size="2" color="#888888"> + </font><font size="2" color="#FFFFFF">3.20.2001</font><font size="2" color="#888888"> +<font size="2" color="#ff3333">|</font>
-<font size="2" color="#ff3333"> ------------------------------------------- </font></font></font></pre>
-</td></tr>
-
-<tr><td>
-<font color="#FFFFFF" face="lucida console" size="1">
-[Gliebster] ALL YOUR CRACK ARE BELONG TO KAT<br>
-[girlsike] yesssssssssssss<br>
-[Lyon] YOU HAVE NO CHANCE TO SNORT MAKE YOUR LINE<br>
-[Gliebster] SET UP US THE CRACKPIPE<br>
-[girlsike] SNORT OUT EVERY ZIG<br>
-[Lyon] FOR GREAT HIGH 
-</font>
-</td></tr>
-<!--End Example News 3 -->
-</table></center>
-</td><!-- End Center Area --> <!-- Start Right Leg-->
-<td><pre><font color="#00FF00" face="lucida console" size="1">G@5.&amp;Ssr@@,  @@@r;r 2 r#293B@H5GG2XA#XX9@@.          
+const right = 
+`
+<font size="1" face="lucida console" color="#00FF00">G@5.&amp;Ssr@@,  @@@r;r 2 r#293B@H5GG2XA#XX9@@.          
  ,@H,@#M@@@   @@2 r: &amp; X@25AM@2S&amp;29M@HHM@@            
   h@ @&amp;9@@    @@ :sr.G,HAi2#@hsGX3#@A&amp;A#@:            
   .@ @9M@5    @ .rsrHS,@2SH@9rX93#@BGAH@A             
@@ -193,8 +129,12 @@ Good God! In recent news i was just attacked by a swarm of firey locusts!! I'm r
        .@ @@  ;S&amp;H  h@@@@@2M@@                        
         M r@   2@   @@22@2;@@B
          # @;  A@ ;@@@:s2X;M@s
-          :H.     2@..i&amp;rA2MXM;  .</font></td><!--End Right Leg--></tr><!-- End Upper Leg/Content Area-->
-<!-- Start Foot Area--><tr><td colspan="3"><pre><font color="#00FF00" face="lucida console" size="1">                        r@;@   . ;AX@@@@@@@@&amp;@;@@@@@r                                                                                             r        @  :@3S29X2@@X ,                
+          :H.     2@..i&amp;rA2MXM;  .</font>
+`
+
+const foot =
+`
+<font size="1" face="lucida console" color="#00FF00">                        r@;@   . ;AX@@@@@@@@&amp;@;@@@@@r                                                                                             r        @  :@3S29X2@@X ,                
                           @#XG   5#X:M@##@@@@hB2@&amp;AM@@@@@.                                                                                          ,;   ., XX  @#M@;A35@H@;                
                           :@@@    #S:GH@@@@@@iAGHAAAHAH#@@@@3                                                                                   .i@@# &amp;  ,  ;;: @sh@9X9X#@#@@               
                            2X@,   @2   ;#@#X#M9HHHHHHHAAAAH@@@@@r                                                                            .2Bhr    ;; .  @:G ;.:##9@;i@@@@@3             
@@ -214,32 +154,98 @@ Good God! In recent news i was just attacked by a swarm of firey locusts!! I'm r
                       ,39             s@@r .rrs:..rXG2.   :B@@G55222229hX2SM@                                                     @@@H#@@@@MrH#@@@#G;i@9rGS .;rr&amp;@@##MBMMMMMM@@;r2X3X2Sir;:s
                      Si2                H@@r .52Ss;:,,;r&amp;2    s@@93Ah253H3SX@                                                    @@#M@@@@;       ,@ir@2i&amp; ,;ri&amp;Ah&amp;H##MMBBMMMM@@r;iS525SSssi
   -               .SSr;.                  sHH5G2AMB##HB2rrS23S.  .:.r25SSGH2@H                                             @2  @@@HhSs             2@i;s. ;SSh&amp;255S5XGHMBMMMMM#@@3i55SSiisss
-</font></pre>
-</td></tr><!-- End Foot Area-->
-</table><!-- End Leg/Content Area -->
-</center>
-</td></tr>
-<!-- ## END UPPER AREA ## -->
-<!-- ## BEGIN BOTTOM MENU ## -->
-<tr><td width="100%"><!-- Begin Menu Core: Use menu.php to make these quickly -->
-<center><pre><font face="lucida console">
-<font size="2" color="#00FFFF"> ___________________________________________________________________________________________________________________________________________________________________________ </font>
-<font size="2" color="#00FFFF">|</font><font size="2">    </font><font size="2" color="#FFC200"> :: </font><font size="2" color="#FFFFFF"><a href="about.html">a b o u t</a></font><font size="2" color="#FFC200"> ::     </font><font size="2" color="#00FFFF">|</font><font size="2">    </font><font size="2" color="#FFC200"> :: </font><font size="2" color="#FFFFFF"><a href="index2.html">n e w s</a></font><font size="2" color="#FFC200"> ::     </font><font size="2" color="#00FFFF">|</font><font size="2">    </font><font size="2" color="#FFC200"> :: </font><font size="2" color="#FFFFFF"><a href="photo.html">p h o t o s</a></font><font size="2" color="#FFC200"> ::     </font><font size="2" color="#00FFFF">|</font><font size="2">    </font><font size="2" color="#FFC200"> :: </font><font size="2" color="#FFFFFF"><a href="comp.html">c o m p u t e r s</a></font><font size="2" color="#FFC200"> ::     </font><font size="2" color="#00FFFF">|</font><font size="2">    </font><font size="2" color="#FFC200"> :: </font><font size="2" color="#FFFFFF"><a href="index2.html">p r o g r a m m i n g</a></font><font size="2" color="#FFC200"> ::     </font><font size="2" color="#00FFFF">|</font><font size="2">    </font><font size="2" color="#FFC200"> :: </font><font size="2" color="#FFFFFF"><a  href="index2.html">a r t</a></font><font size="2" color="#FFC200"> ::     </font><font size="2" color="#00FFFF">|</font>
-<font size="2" color="#00FFFF"> --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- </font>
-<font face="lucida console"></pre></center><!-- End Menu Core -->
-</td></tr>
-<!-- ## END BOTTOM MENU ## -->
-</table>
-<!-- ## END ALL ## -->
-</center>
+</font>
 `
+
+const cleanLeftHTML = DOMPurify.sanitize(left, {
+  USE_PROFILES: { html: true },
+});
+const cleanRightHTML = DOMPurify.sanitize(right, {
+  USE_PROFILES: { html: true },
+});
+
+const cleanFootHTML = DOMPurify.sanitize(foot, {
+  USE_PROFILES: { html: true },
+});
 
 function App() {
   return (
-    <BrowserRouter>
-      <Header />
-      { <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rawHTML) }} /> }
-    </BrowserRouter>
+      <center>
+    {/* ## BEGIN ALL ## */}
+    <table cellSpacing={0} cellPadding={0} border={0}>
+      {/* ## BEGIN UPPER AREA## */}
+      <tbody>
+        <Nav/>
+        <tr>
+          <td>
+            <center>
+              <table cellSpacing={0} cellPadding={0} border={0}>
+                <tbody>
+                  <tr>
+                    <td colSpan={1}>
+                      <pre>
+                        <font size={1} face="lucida console" color="#00FF00">
+                          {
+                            "                                                     "
+                          }
+                        </font>
+                      </pre>
+                    </td>
+                    <td>
+                      <pre>
+                        <font size={1} face="lucida console" color="#00FF00">
+                          {
+                            "                                                                                 "
+                          }
+                        </font>
+                      </pre>
+                    </td>
+                    <td>
+                      <pre>
+                        <font size={1} face="lucida console" color="#00FF00">
+                          {
+                            "                                                      "
+                          }
+                        </font>
+                      </pre>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colSpan={1}>
+                      {/*Begin Left Leg, make sure <font>, <pre> and first line of ascii are on same line*/}
+                      <pre dangerouslySetInnerHTML={{ __html: cleanLeftHTML }} />
+                    </td>
+
+                    <Routes>
+                      <Route exact path="/" element={<Home />} />
+                      <Route path="/agent/:id" element={<Agent />} />
+                    </Routes>
+
+                    {/* End Center Area */}
+                    {/* Start Right Leg*/}
+                    <td>
+                      <pre dangerouslySetInnerHTML={{__html: cleanRightHTML }}/>
+                    </td>
+                    {/*End Right Leg*/}
+                  </tr>
+                  {/* End Upper Leg/Content Area*/}
+                  {/* Start Foot Area*/}
+                  <tr>
+                    <td colSpan={3}>
+                      <pre dangerouslySetInnerHTML={{__html: cleanFootHTML }} />
+                    </td>
+                  </tr>
+                  {/* End Foot Area*/}
+                </tbody>
+              </table>
+              {/* End Leg/Content Area */}
+            </center>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    {/* ## END ALL ## */}
+  </center>
   );
 }
 

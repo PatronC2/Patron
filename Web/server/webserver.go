@@ -6,6 +6,7 @@ import (
 
 	"github.com/PatronC2/Patron/data"
 	"github.com/go-chi/chi"
+	"github.com/go-chi/cors"
 	"github.com/google/uuid"
 	"github.com/qkgo/yin"
 	"github.com/s-christian/gollehs/lib/logger"
@@ -19,6 +20,10 @@ func main() {
 	}
 	r := chi.NewRouter()
 	r.Use(yin.SimpleLogger)
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"https://*", "http://*"},
+		AllowCredentials: true,
+	}))
 
 	r.Get("/api/agents", func(w http.ResponseWriter, r *http.Request) {
 		res, _ := yin.Event(w, r)
@@ -44,5 +49,5 @@ func main() {
 		res.SendStatus(200)
 	})
 
-	http.ListenAndServe(":3000", r)
+	http.ListenAndServe(":3001", r)
 }
