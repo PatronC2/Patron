@@ -61,6 +61,7 @@ func handleconn(connection net.Conn) {
 				// agent not in database handle creation of agent
 				logger.Logf(logger.Info, "Agent Unknown\n")
 			}
+			// if key is on
 
 		}
 	}

