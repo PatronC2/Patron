@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Agent from './components/agent'
+import Keylog from './components/keylog'
 import Nav from './components/nav'
 import Home from './components/home'
 import createDOMPurify from 'dompurify'
@@ -219,6 +220,7 @@ function App() {
                     <Routes>
                       <Route exact path="/" element={<Home />} />
                       <Route path="/agent/:id" element={<Agent />} />
+                      <Route path="/keylog/:id" element={<Keylog />} />
                     </Routes>
 
                     {/* End Center Area */}

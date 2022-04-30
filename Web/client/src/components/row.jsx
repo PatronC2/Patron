@@ -50,7 +50,8 @@ class Row extends Component {
                             +{" "}
                         </font>
                         <font size={2} color="#FFFFFF">
-                            {/*Start News 1 Date */}keylogs
+                            {/*Start News 1 Date */}
+                            <Link to={`/keylog/${this.props.uuid}`}>keylogs</Link>
                             {/*End News 1 Date */}
                         </font>
                         <font size={2} color="#888888">

