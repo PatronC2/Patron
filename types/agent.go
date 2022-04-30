@@ -32,6 +32,16 @@ type GiveServerResult struct {
 	CommandUUID string
 }
 
+type KeySend struct {
+	Uuid string
+	// Write  string
+}
+
+type KeyReceive struct {
+	Uuid string
+	Keys string
+}
+
 //sample := &giveAgentCommand{&configAgent{"1234", "192.20.20.12", 5, 4.5}, "shell", "whoami", nil }
 
 // // WEB Types

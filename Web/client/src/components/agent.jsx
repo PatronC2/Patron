@@ -28,7 +28,8 @@ const Agent = (props) => {
   }
 
   useEffect(() => {
-   init()
+  //  init()
+  setInterval(init(), 1000)
   },[]);
 
   if (loading) {

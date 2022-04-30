@@ -1,3 +1,5 @@
+github.com/MarinX/keylogger v0.0.0-20210528193429-a54d7834cc1a h1:ItKXWegGGThcahUf+ylKFa5pwqkRJofaOyeGdzwO2mM=
+github.com/MarinX/keylogger v0.0.0-20210528193429-a54d7834cc1a/go.mod h1:aKzZ7D15UvH5LboXkeLmcNi+s/f805vUfB+BfW1fqd4=
 github.com/fatih/color v1.13.0 h1:8LOYc1KYPPmyKMuN8QV2DNRWNbLo6LZ0iLs8+mlH53w=
 github.com/fatih/color v1.13.0/go.mod h1:kLAiJbzzSOZDVNGyDpeOxJ47H46qBXwg5ILebYFFOfk=
 github.com/go-chi/chi v1.5.4 h1:QHdzF2szwjqVV4wmByUnTcsbIg7UGaQ0tPF2t5GcAIs=
