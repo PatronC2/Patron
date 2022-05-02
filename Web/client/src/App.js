@@ -9,128 +9,131 @@ import React from 'react';
 const DOMPurify = createDOMPurify(window)
 
 const left = 
-`<font size="1" face="lucida console" color="#00FF00">,@hiiiSiiiiX#   ...   ,rir ,@@@ .AXSirsXs2&amp;2#@
-@3iiiiiiSA:  .     r2ir. 2@iX..@A#S;;A#@@@H@
-.@3SSSSSSA:  ....:S2ir:;;@r2;:2@S;iir@@@B@X@
-:@XSSSSS3@   ,;rSisr;r2rA :i;,2HBAh3M@@9@#M
-r@2SSSSSMS    ,sisriSX;: :5:r;B@@@#@95#@@;
-2@2SSSSX@     ;SSSSXSs.,:;;rsr@@@@@&amp;A@9@,
-&amp;M2SSiSH3     siiS3 i.,;;;s9B###@AMM@2@
-#M5SSi2@     ;ssih.r..r:A@@#M#@MHMM@X@
-#H2SSiAH    :rsiX2 r ;@@AAAHB#BHMM@A@
-H35222@    .;rsSA ;, @@AHMB#@##@@@M@
-hiri5H@    ,;siGs S,X@H&amp;M#@@@@HG2S@
-3r:;;B.   .;rs2&amp; ...@@AAM#@2S293A@
-2;::r2     ;i2H, X.2@&amp;&amp;H#@h3GAhA@
-.s.  ,      :5As r;.@@GHB@AXAA&amp;H@
-r&amp;sssX@     :Si,,s A@3AA@#SA&amp;AA@
-.@Gh93@.    .ss:.r.G@GAH@#iAAAA@
-@2SSS@,     ;r;.;.&amp;@HAH@#sAAAA@&amp;
-@G5S5@;     :r;,;.H@@GH@#sAA&amp;AH@
-@#X22#2     .rr,. A@@3A@#sGA&amp;AA@
-2@hX2H#      rs, &amp;&amp;M@2A##sGA&amp;A&amp;@
-:@Gh9A@      ss, MhA@3A##s3A&amp;A&amp;@r
-@Ghh&amp;@      ii, BA3@HG##s2A&amp;G&amp;#@
-@Ahhh@      iS, MHX@#X#Mi2AGG&amp;A@
-@B339@      SS, A#3@@2#Mi2A&amp;G&amp;h@
-X@2X3@      2i. XMA#@XM#S2&amp;&amp;GG9@S
-.@222@      2i. iBMA@9H#S29GhG9@@
-@iS5#,     5s  :M@X@AA#SX9&amp;&amp;GG#@
-@isSHr     Sr   #@5@#h@5X3&amp;&amp;hhH@
-M2sS&amp;S     rr.  #@S@@9@232&amp;&amp;h9M@;
-S&amp;iSh9     .,.. #@5@@3@X32A&amp;G3M@@
-,#i59#      .,, H@2#@3@3X2&amp;&amp;&amp;3#M@
-@SXh@      .,, i@AH@G#hX2G&amp;G3#B@
-@23G@      .,, ,@@G@A#A25hA&amp;X@B@;
-@G9A@      .,, .#@2@MBH22hA&amp;X@BM@
-3@GH@       ,,  M@5@@AM259A&amp;X@HG@
-,@AB@       ... @@5@@&amp;@253AG&amp;@h3@
-@A&amp;@;    .  .  @@2@@G#2S3A&amp;AM#X@;
-@Ah@&amp;    :,:,  B@h#@&amp;@5SXAGA#BG#@
-@B3#@    :,;r: &amp;@MG@M#5iX&amp;h#&amp;GA9@
-@@3H@    ,,s3r.,&amp;@A@@BSiX&amp;hM2AAS@
-;@Xh@    ..2A2:.rM2@@BiiXG3#B@Ai@;
-@2X@     .229, s@.@@MrS2GG#X@&amp;i@@
-@X2@     ,2SG, :@:&amp;@B;52hAA2@HiM@
-@X2@     :55h. .@rr@h;529Gh3@HsG@
-B3X@     ;iS&amp;. ;@X:@X;223&amp;9h@#S3@.
-rG2@:    rsSG, 5@#,@S;22XG3h@#XS@@
-H5@r   .;ri9r &amp;@@.@sr222h&amp;h@@32@@
-Hr9;    :ri2XrS@@.@rr5222Ah@#5S@@
-@GM@    ,;riSi:@@,@rs225S@G@3ih@,
-r@@@    :ri2XX;@XsM2;32sB@G@3i#@
-@@@    :s2GHHX@&amp;s#H.h5S@@&amp;@25@@
-,@@3   ;2GBMMH@@iX.,SS@@@A@i&amp;@
-@@@   iAAHHM#@Hi&amp;:;;A@@@B@;#@
-,@@B  .A#M#@&amp;&amp;s;3rr;@@@#M@r@s
- @@@   ,#@@h,s:r3Si;AGMMB@i@
- ,@@9  , @.  Srr2S2;XM@##@9@
-  @@#  ,  ::.rs;isiiH@iG@#@;
-  :@sB  . ;:;r:,rs5B@@h#@X#
-   @&amp;S: .  . ,X.h##@@@@H@r@r</font><!--End left leg-->
+`<font size="1" face="lucida console" color="#00FF00">
+,@hiiiSiiiiX#   ...   ,rir ,@@@ .AXSirsXs2&2#@
+  @3iiiiiiSA:  .     r2ir. 2@iX..@A#S;;A#@@@H@
+  .@3SSSSSSA:  ....:S2ir:;;@r2;:2@S;iir@@@B@X@
+   :@XSSSSS3@   ,;rSisr;r2rA :i;,2HBAh3M@@9@#M
+    r@2SSSSSMS    ,sisriSX;: :5:r;B@@@#@95#@@;
+     2@2SSSSX@     ;SSSSXSs.,:;;rsr@@@@@&A@9@,
+      &M2SSiSH3     siiS3 i.,;;;s9B###@AMM@2@
+       #M5SSi2@     ;ssih.r..r:A@@#M#@MHMM@X@
+        #H2SSiAH    :rsiX2 r ;@@AAAHB#BHMM@A@
+         H35222@    .;rsSA ;, @@AHMB#@##@@@M@
+          hiri5H@    ,;siGs S,X@H&M#@@@@HG2S@
+           3r:;;B.   .;rs2& ...@@AAM#@2S293A@
+            2;::r2     ;i2H, X.2@&&H#@h3GAhA@
+            .s.  ,      :5As r;.@@GHB@AXAA&H@
+             r&sssX@     :Si,,s A@3AA@#SA&AA@
+             .@Gh93@.    .ss:.r.G@GAH@#iAAAA@
+              @2SSS@,     ;r;.;.&@HAH@#sAAAA@&
+              @G5S5@;     :r;,;.H@@GH@#sAA&AH@
+              @#X22#2     .rr,. A@@3A@#sGA&AA@
+              2@hX2H#      rs, &&M@2A##sGA&A&@
+              :@Gh9A@      ss, MhA@3A##s3A&A&@r
+               @Ghh&@      ii, BA3@HG##s2A&G&#@
+               @Ahhh@      iS, MHX@#X#Mi2AGG&A@
+               @B339@      SS, A#3@@2#Mi2A&G&h@
+               X@2X3@      2i. XMA#@XM#S2&&GG9@S
+               .@222@      2i. iBMA@9H#S29GhG9@@
+                @iS5#,     5s  :M@X@AA#SX9&&GG#@
+                @isSHr     Sr   #@5@#h@5X3&&hhH@
+                M2sS&S     rr.  #@S@@9@232&&h9M@;
+                S&iSh9     .,.. #@5@@3@X32A&G3M@@
+                ,#i59#      .,, H@2#@3@3X2&&&3#M@
+                 @SXh@      .,, i@AH@G#hX2G&G3#B@
+                 @23G@      .,, ,@@G@A#A25hA&X@B@;
+                 @G9A@      .,, .#@2@MBH22hA&X@BM@
+                 3@GH@       ,,  M@5@@AM259A&X@HG@
+                 ,@AB@       ... @@5@@&@253AG&@h3@
+                  @A&@;    .  .  @@2@@G#2S3A&AM#X@;
+                  @Ah@&    :,:,  B@h#@&@5SXAGA#BG#@
+                  @B3#@    :,;r: &@MG@M#5iX&h#&GA9@
+                  @@3H@    ,,s3r.,&@A@@BSiX&hM2AAS@
+                  ;@Xh@    ..2A2:.rM2@@BiiXG3#B@Ai@;
+                   @2X@     .229, s@.@@MrS2GG#X@&i@@
+                   @X2@     ,2SG, :@:&@B;52hAA2@HiM@
+                   @X2@     :55h. .@rr@h;529Gh3@HsG@
+                   B3X@     ;iS&. ;@X:@X;223&9h@#S3@.
+                   rG2@:    rsSG, 5@#,@S;22XG3h@#XS@@
+                    H5@r   .;ri9r &@@.@sr222h&h@@32@@
+                    Hr9;    :ri2XrS@@.@rr5222Ah@#5S@@
+                    @GM@    ,;riSi:@@,@rs225S@G@3ih@,
+                    r@@@    :ri2XX;@XsM2;32sB@G@3i#@
+                     @@@    :s2GHHX@&s#H.h5S@@&@25@@
+                     ,@@3   ;2GBMMH@@iX.,SS@@@A@i&@
+                      @@@   iAAHHM#@Hi&:;;A@@@B@;#@
+                      ,@@B  .A#M#@&&s;3rr;@@@#M@r@s
+                       @@@   ,#@@h,s:r3Si;AGMMB@i@
+                       ,@@9  , @.  Srr2S2;XM@##@9@
+                        @@#  ,  ::.rs;isiiH@iG@#@;
+                        :@sB  . ;:;r:,rs5B@@h#@X#
+                         @&S: .  . ,X.h##@@@@H@r@r
+</font><!--End left leg-->
 `
 
 const right = 
 `
-<font size="1" face="lucida console" color="#00FF00">G@5.&amp;Ssr@@,  @@@r;r 2 r#293B@H5GG2XA#XX9@@.          
- ,@H,@#M@@@   @@2 r: &amp; X@25AM@2S&amp;29M@HHM@@            
-  h@ @&amp;9@@    @@ :sr.G,HAi2#@hsGX3#@A&amp;A#@:            
+<font size="1" face="lucida console" color="#00FF00">
+G@5.&Ssr@@,  @@@r;r 2 r#293B@H5GG2XA#XX9@@.          
+ ,@H,@#M@@@   @@2 r: & X@25AM@2S&29M@HHM@@            
+  h@ @&9@@    @@ :sr.G,HAi2#@hsGX3#@A&A#@:            
   .@ @9M@5    @ .rsrHS,@2SH@9rX93#@BGAH@A             
    @ @h@@    ;A rsSrA:.@ih@X;Shh@@MhAH@@              
-   5hH@@s   .,,;ss;,S GB3@2;i3H@@#G&amp;H@@               
-    @:@@    ,:;:,. ::S@9@X:s2#@##&amp;AH#@;               
-    #s@G    ,:;;,.;2r@A#X:r2@@##AAH&amp;@G                
+   5hH@@s   .,,;ss;,S GB3@2;i3H@@#G&H@@               
+    @:@@    ,:;:,. ::S@9@X:s2#@##&AH#@;               
+    #s@G    ,:;;,.;2r@A#X:r2@@##AAH&@G                
     .h@  .  ,:;sii9;@@#2:;5@@##MAG2#@                 
     ;h@  ..:;rrsrsi#@Mr;;2@@#@@h22H@                  
-    AH     .;sSSr@#@M:;:X@@#@@SiX&amp;@r                  
+    AH     .;sSSr@#@M:;:X@@#@@SiX&@r                  
     @,      .:;:AH@@,rrM@@##@ii3h#M                   
     @r      .:,;#X@s;s;@@@#@SSGAA@X                   
-    @s      .,.:Ai@5sr;@@@#@S2GG&amp;@S                   
+    @s      .,.:Ai@5sr;@@@#@S2GG&@S                   
     @s      ., :2r@Xr;;@#@#@s2hhG@r                   
-    @2      ., :S;@hr;r@#@#@rXGG&amp;@;                   
-    @H      .. rS:@&amp;;i@#@#@rXhGG@;                   
+    @2      ., :S;@hr;r@#@#@rXGG&@;                   
+    @H      .. rS:@&;i@#@#@rXhGG@;                   
     @G      ,. rS:@A:;5@#@@@rXhhG@:                   
     @i     .,  sS:@A:;2@#@@@sX9h9@,                   
    ;Xi,    ..  si;@G:;3@#@@@iX993@,                   
    G;sr    ..  rir@9::G@#@@#52339@.                   
    # ;5    .   riS@5::A@#@@M5233H@                    
-   @ ,&amp;    .   ;52@i::H@#@@H223XM@                    
+   @ ,&    .   ;52@i::H@#@@H223XM@                    
    @  #   .    ;G3@i::H##@@H22Xh#@                    
    @  @   .    :H3@r;:H@#@@A322HM@                    
-   @  @        :MXhr;;B@#@@&amp;XS2#M@                    
+   @  @        :MXhr;;B@#@@&XS2#M@                    
    @  @        :M5Si;;B@#@@hXS3#B@                    
-   @  @      . ;#rSS;:#@M@@X3s&amp;#B@                    
+   @  @      . ;#rSS;:#@M@@X3s&#B@                    
    @  @      . ;A:2S;:@@#@@29rBMM@                    
-  ,@  @      . ;h,2i;;@#M@@2&amp;r#M#@                    
-  i@  @      . r&amp;:2S:;@##@AXAr#H#@                    
+  ,@  @      . ;h,2i;;@#M@@2&r#M#@                    
+  i@  @      . r&:2S:;@##@AXAr#H#@                    
   2@  @      . rA;XS:s@##@39Ar#A#@                    
   M@  @     .. rA:X2:3@#@@XGAr#G#@                    
-  B&amp;  @     ...r9:32 H@#@@X&amp;ArM&amp;#@                    
-  #G  @2s   ...rA:Xr i@@@A9&amp;AsMA@@                    
-  M9  @,@   ...rH,Si,;#@@2AGASB&amp;@#                
-  @3  @.@   ...rH 3A::#@@iA&amp;A5AG@H                    
-  B3  @:@   ...rA @#.:#@@iAGH5h3#&amp;                
+  B&  @     ...r9:32 H@#@@X&ArM&#@                    
+  #G  @2s   ...rA:Xr i@@@A9&AsMA@@                    
+  M9  @,@   ...rH,Si,;#@@2AGASB&@#                
+  @3  @.@   ...rH 3A::#@@iA&A5AG@H                    
+  B3  @:@   ...rA @#.:#@@iAGH5h3#&                
   32  @ #:  .. 2G @B rH@HiHhH233#3                    
  .22  @ Bs  .  @rS@H h3@3SH9M339@2                    
  ;S5. @ G3     @:r@h M2@X2B3#hX3@i                    
- sii. @ &amp;A    ;@;5@i #2@32B9@hiX@r                    
+ sii. @ &A    ;@;5@i #2@32B9@hiX@r                    
  2ir, @ hM    9@2s@r.B9@h2H9@2r2@;                    
- 2i;, @ h#   ,AH&amp;@r;GG@GXBh@2;5@:                    
- rA;, @,hM  .;BA&amp; @3rXGMG3;H@2A@@                     
-  BiB  @h@ ;::,5@ M@r3&amp;BX3rXBSA@@                     
-  .Hs: B&amp;@ rr, X@,S@SA#Mi3H&amp;h9#@h                     
-   92&amp;  #@ ,i. s@SS@GM@Hs2hA&amp;##@.                     
-    Msi @@  r:.r3@&amp;#MM@Ss2X9@H@@                      
-    rGG X@s ;rrsh@&amp;G@@&amp;:si3@@A@@                      
-     BA  @H ,:;2MB&amp;G@@;:rS@@HA@:                      
+ 2i;, @ h#   ,AH&@r;GG@GXBh@2;5@:                    
+ rA;, @,hM  .;BA& @3rXGMG3;H@2A@@                     
+  BiB  @h@ ;::,5@ M@r3&BX3rXBSA@@                     
+  .Hs: B&@ rr, X@,S@SA#Mi3H&h9#@h                     
+   92&  #@ ,i. s@SS@GM@Hs2hA&##@.                     
+    Msi @@  r:.r3@&#MM@Ss2X9@H@@                      
+    rGG X@s ;rrsh@&G@@&:si3@@A@@                      
+     BA  @H ,:;2MB&G@@;:rS@@HA@:                      
       @r @M .,;9H9@M@s.,;@@@99@                       
-      #&amp; @#  .r&amp;AhS@5 :s@@@#s@@                       
+      #& @#  .r&AhS@5 :s@@@#s@@                       
       ,@ ,@   sh99;X ,#@@@@sG@X                       
        @: @,  s23A,  r@@@@H5#@                        
-       .@ @@  ;S&amp;H  h@@@@@2M@@                        
+       .@ @@  ;S&H  h@@@@@2M@@                        
         M r@   2@   @@22@2;@@B
          # @;  A@ ;@@@:s2X;M@s
-          :H.     2@..i&amp;rA2MXM;  .</font>
+          :H.     2@..i&rA2MXM;  .</font>
 `
 
 const foot =

