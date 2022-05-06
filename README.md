@@ -6,3 +6,10 @@
 # Patron
 
 A Command and Control Framework made in Go.
+
+## Create Cert
+
+* openssl ecparam -genkey -name prime256v1 -out server.key
+* openssl req -new -x509 -key server.key -out server.pem -days 3650
+
+* sudo CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.ServerIP=10.10.10.113 -X main.ServerPort=6969 -X main.CallbackFrequency=10" -o test client/client.go

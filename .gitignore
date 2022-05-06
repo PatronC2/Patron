@@ -3,3 +3,5 @@
 /lib
 # dependencies
 /node_modules
+/certs/server.key
+/certs/server.pem

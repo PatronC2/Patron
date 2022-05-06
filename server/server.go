@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"crypto/tls"
 	"encoding/gob"
 	"log"
 	"net"
@@ -32,7 +33,7 @@ func handleconn(connection net.Conn) {
 			fetch := data.FetchOneAgent(uid) // first pass agent check
 			if fetch.Uuid == "" {            //prob check its a uuid                 // future fix (accepts all uuid) reason: to allow server create agent record in db
 				//parse IP, hostname and user from agent
-				data.CreateAgent(uid, "127.0.0.1", "5", "5", ip, user, hostname) // default values (callback set by user)
+				data.CreateAgent(uid, ip+":6969", "5", "5", ip, user, hostname) // default values (callback set by user)
 				data.CreateKeys(uid)
 			}
 			fetch = data.FetchOneAgent(uid) // second pass agent check
@@ -95,13 +96,17 @@ func main() {
 	// if os.IsNotExist(error) {
 	// 	data.InitDatabase()
 	// }
-	listener, err := net.Listen("tcp", ":6969")
+	cer, err := tls.LoadX509KeyPair("certs/server.pem", "certs/server.key")
+	if err != nil {
+		log.Fatal(err)
+	}
+	config := &tls.Config{Certificates: []tls.Certificate{cer}}
+	listener, err := tls.Listen("tcp", ":6969", config)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	defer listener.Close()
-
 	for {
 		connection, err := listener.Accept()
 		if err != nil {
