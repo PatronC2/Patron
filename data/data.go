@@ -27,7 +27,7 @@ func InitDatabase() {
 	CREATE TABLE IF NOT EXISTS "Agents" (
 		"AgentID"	INTEGER NOT NULL UNIQUE,
 		"UUID"	TEXT NOT NULL UNIQUE,
-		"CallBackUser"	TEXT NOT NULL DEFAULT 'Unknown',
+		"CallBackUser"	TEXT NOT NULL DEFAULT 'Not Used',
 		"CallBackToIP"	TEXT NOT NULL DEFAULT 'Unknown',
 		"CallBackFeq"	TEXT NOT NULL DEFAULT 'Unknown',
 		"CallBackJitter"	TEXT NOT NULL DEFAULT 'Unknown',
@@ -45,7 +45,7 @@ func InitDatabase() {
 	}
 
 	AgentSQLstatement.Exec()
-	logger.Logf(logger.Info, "Agents table created\n")
+	logger.Logf(logger.Info, "Agents table initialized\n")
 
 	CommandSQL := `
 	CREATE TABLE IF NOT EXISTS "Commands" (
@@ -65,7 +65,7 @@ func InitDatabase() {
 		log.Fatal(err.Error())
 	}
 	CommandSQLstatement.Exec()
-	logger.Logf(logger.Info, "Commands table created\n")
+	logger.Logf(logger.Info, "Commands table initialized\n")
 
 	KeylogSQL := `
 	CREATE TABLE IF NOT EXISTS "Keylog" (
@@ -81,7 +81,29 @@ func InitDatabase() {
 		log.Fatal(err.Error())
 	}
 	KeylogSQLstatement.Exec()
-	logger.Logf(logger.Info, "Keylog table created\n")
+	logger.Logf(logger.Info, "Keylog table initialized\n")
+
+	PayloadSQL := `
+	CREATE TABLE IF NOT EXISTS "Payloads" (
+		"PayloadID"	INTEGER NOT NULL UNIQUE,
+		"UUID"	TEXT,
+		"Name"	TEXT,
+		"Description"	TEXT,
+		"ServerIP"	TEXT,
+		"ServerPort"        TEXT,
+		"CallbackFrequency" TEXT,
+		"CallbackJitter"    TEXT,
+		"Concat"    TEXT,
+		"isDeleted"	INTEGER NOT NULL DEFAULT 0,
+		PRIMARY KEY("PayloadID" AUTOINCREMENT)
+	);
+	`
+	PayloadSQLstatement, err := db.Prepare(PayloadSQL)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	PayloadSQLstatement.Exec()
+	logger.Logf(logger.Info, "Payloads table initialized\n")
 }
 
 func CreateAgent(uuid string, CallBackToIP string, CallBackFeq string, CallBackJitter string, Ip string, User string, Hostname string) {
@@ -120,6 +142,25 @@ func CreateKeys(uuid string) {
 		log.Fatalln(err)
 	}
 	logger.Logf(logger.Info, "New Keylog Agent created in DB\n")
+}
+
+func CreatePayload(uuid string, name string, description string, ServerIP string, ServerPort string, CallBackFeq string, CallBackJitter string, Concat string) {
+	CreateAgentSQL := `INSERT INTO Payloads (UUID, Name, Description, ServerIP, ServerPort, CallbackFrequency, CallbackJitter, Concat)
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+
+	statement, err := db.Prepare(CreateAgentSQL)
+	if err != nil {
+
+		log.Fatalln(err)
+		logger.Logf(logger.Info, "Error in DB\n")
+	}
+
+	_, err = statement.Exec(uuid, name, description, ServerIP, ServerPort, CallBackFeq, CallBackJitter, Concat)
+	if err != nil {
+
+		log.Fatalln(err)
+	}
+	logger.Logf(logger.Info, "New Payload created in DB\n")
 }
 
 func FetchOneAgent(uuid string) types.ConfigAgent {
@@ -281,6 +322,43 @@ func Agents() []types.ConfigAgent {
 		agentAppend = append(agentAppend, agents)
 	}
 	return agentAppend
+}
+
+func Payloads() []types.Payload {
+	var payloads types.Payload
+	FetchSQL := `
+	SELECT 
+		UUID, 
+		Name,
+		Description,
+		ServerIP, 
+		ServerPort, 
+		CallbackFrequency, 
+		CallbackJitter,
+		Concat 
+	FROM Payloads
+	WHERE isDeleted='0'
+	`
+	row, err := db.Query(FetchSQL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer row.Close()
+	var payloadAppend []types.Payload
+	for row.Next() {
+		row.Scan(
+			&payloads.Uuid,
+			&payloads.Name,
+			&payloads.Description,
+			&payloads.ServerIP,
+			&payloads.ServerPort,
+			&payloads.CallbackFrequency,
+			&payloads.CallbackJitter,
+			&payloads.Concat,
+		)
+		payloadAppend = append(payloadAppend, payloads)
+	}
+	return payloadAppend
 }
 
 func Agent(uuid string) []types.Agent {

@@ -42,7 +42,7 @@ class Nav extends Component {
                     ::{" "}
                   </font>
                   <font size={2} color="#FFFFFF">
-                    <a href="file:///home/kali/Downloads/helpdesk/Insanity/index2.html">
+                    <a href="/payloads">
                       p a y l o a d s
                     </a>
                   </font>

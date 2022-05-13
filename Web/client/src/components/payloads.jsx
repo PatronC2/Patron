@@ -1,10 +1,11 @@
 import React, { Component } from 'react'
+import { Link } from 'react-router-dom';
 import Banner from './banner'
-import Callback from './callback'
-import {getCallbacks} from '../actions/c2actions'
+import PayloadStruct from './payloadstruct'
+import {getPayloads} from '../actions/c2actions'
 
 
-class Home extends Component {
+class Payloads extends Component {
 
   constructor(props) {
     super(props);
@@ -20,7 +21,7 @@ class Home extends Component {
   }
 
   init = async () => {
-    var res = await getCallbacks()
+    var res = await getPayloads()
     console.log(res.payload)
     if(res.payload){
       this.setState({
@@ -36,7 +37,7 @@ class Home extends Component {
       if (this.state.loading) {
         return (
           <font size={2} color="#FFFFFF">
-            No Agent...
+            No Payload...
           </font>
         );
       }
@@ -65,14 +66,14 @@ class Home extends Component {
                                   face="lucida console"
                                   color="#FFFFFF"
                                 >
-                                  CALLBACKS
+                                  PAYLOADS <Link to={`/createpayload`}> Create Payload </Link>
                                   <br />
                                 </font>
                                 {/* End Blurb*/}
                               </td>
                             </tr>
                             {/*End Blurb Row*/}
-                            <Callback
+                            <PayloadStruct
                               list={this.state.result}
                               />
                           </tbody>
@@ -83,4 +84,4 @@ class Home extends Component {
     }
 }
 
-export default Home
+export default Payloads

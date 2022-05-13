@@ -44,6 +44,7 @@ var (
 	ServerIP          string
 	ServerPort        string
 	CallbackFrequency string
+	CallbackJitter    string
 )
 
 func main() {
@@ -127,13 +128,16 @@ func main() {
 
 		logger.Logf(logger.Debug, "%s\n", instruct.UpdateAgentConfig.CallbackTo)
 		// Update agent config when possible
-		if instruct.UpdateAgentConfig.CallbackTo != "" {
-			glob := strings.Split(instruct.UpdateAgentConfig.CallbackTo, ":")
-			ServerIP = glob[0]
-			ServerPort = glob[1]
-		}
+		// if instruct.UpdateAgentConfig.CallbackTo != "" {
+		// 	glob := strings.Split(instruct.UpdateAgentConfig.CallbackTo, ":")
+		// 	ServerIP = glob[0]
+		// 	ServerPort = glob[1]
+		// }
 		if instruct.UpdateAgentConfig.CallbackFrequency != "" {
 			CallbackFrequency = instruct.UpdateAgentConfig.CallbackFrequency
+		}
+		if instruct.UpdateAgentConfig.CallbackJitter != "" {
+			CallbackJitter = instruct.UpdateAgentConfig.CallbackJitter
 		}
 		logger.Logf(logger.Debug, "Received : %s\n", instruct)
 		CommandType := instruct.CommandType

@@ -3,6 +3,8 @@ import Agent from './components/agent'
 import Keylog from './components/keylog'
 import Nav from './components/nav'
 import Home from './components/home'
+import Payloads from './components/payloads'
+import CreatePayload from './components/createpayload'
 import createDOMPurify from 'dompurify'
 import React from 'react';
 
@@ -224,6 +226,8 @@ function App() {
                       <Route exact path="/" element={<Home />} />
                       <Route path="/agent/:id" element={<Agent />} />
                       <Route path="/keylog/:id" element={<Keylog />} />
+                      <Route path="/payloads" element={<Payloads />} />
+                      <Route path="/createpayload" element={<CreatePayload />} />
                     </Routes>
 
                     {/* End Center Area */}

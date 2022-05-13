@@ -53,3 +53,14 @@ type Agent struct {
 	CommandUUID string `json:"commanduuid"`
 	Output      string `json:"output"`
 }
+
+type Payload struct {
+	Uuid              string `json:"uuid"`
+	Name              string `json:"name"`
+	Description       string `json:"description"`
+	ServerIP          string `json:"serverip"`
+	ServerPort        string `json:"serverport"`
+	CallbackFrequency string `json:"callbackfrequency"`
+	CallbackJitter    string `json:"callbackjitter"`
+	Concat            string `json:"concat"`
+}

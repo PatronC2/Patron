@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/MarinX/keylogger v0.0.0-20210528193429-a54d7834cc1a
 	github.com/fatih/color v1.13.0
-	github.com/go-chi/chi v1.5.4
+	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-chi/cors v1.2.1
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/uuid v1.3.0
