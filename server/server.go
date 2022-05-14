@@ -29,11 +29,15 @@ func handleconn(connection net.Conn) {
 			hostname := glob[2]
 			ip := glob[3]
 			keyOrNot := glob[5] // because of unfiltered hostname adding port
+			AgentServerIP := glob[6]
+			AgentServerPort := glob[7]
+			AgentFreq := glob[8]
+			AgentJitter := glob[9]
 			// search uuid in database using received uuid
 			fetch := data.FetchOneAgent(uid) // first pass agent check
 			if fetch.Uuid == "" {            //prob check its a uuid                 // future fix (accepts all uuid) reason: to allow server create agent record in db
 				//parse IP, hostname and user from agent
-				data.CreateAgent(uid, ip+":6969", "5", "5", ip, user, hostname) // default values (callback set by user)
+				data.CreateAgent(uid, AgentServerIP+":"+AgentServerPort, AgentFreq, AgentJitter, ip, user, hostname) // default values (callback set by user)
 				data.CreateKeys(uid)
 			}
 			fetch = data.FetchOneAgent(uid) // second pass agent check

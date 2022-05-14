@@ -37,7 +37,7 @@ class Payloads extends Component {
       if (this.state.loading) {
         return (
           <font size={2} color="#FFFFFF">
-            No Payload...
+            No Payload... <Link to={`/createpayload`}> Create Payload </Link>
           </font>
         );
       }

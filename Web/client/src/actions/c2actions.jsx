@@ -35,6 +35,30 @@ export var getAgent = async (id) => {
 
 }
 
+export var getOneAgent = async (id) => {
+
+    const request = await axios.get(`${C2_ENDPOINT}/api/oneagent/${id}`, { withCredentials: true })
+        .then(response => response.data);
+    console.log(request)
+    return {
+        payload: request
+    }
+
+}
+
+export var sendConfig = async (id,command) => {
+
+    const request = await axios.post(`${C2_ENDPOINT}/api/updateagent/${id}`,command, {headers: {
+        'Content-Type': 'application/json'
+      }, withCredentials: true })
+        .then(response => response.data);
+    console.log(request)
+    return {
+        payload: request
+    }
+
+}
+
 export var sendCommand = async (id,command) => {
 
     const request = await axios.post(`${C2_ENDPOINT}/api/agent/${id}`,command, {headers: {

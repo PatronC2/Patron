@@ -251,6 +251,24 @@ func SendAgentCommand(uuid string, result string, CommandType string, Command st
 	logger.Logf(logger.Info, "Agent %s Reveived New Command \n", uuid)
 }
 
+func UpdateAgentConfig(UUID string, CallbackServer string, CallbackFrequency string, CallbackJitter string) {
+	updateAgentConfigSQL := `UPDATE Agents SET CallBackToIP= ?, CallBackFeq= ?, CallBackJitter= ? WHERE UUID= ?`
+
+	statement, err := db.Prepare(updateAgentConfigSQL)
+	if err != nil {
+
+		log.Fatalln(err)
+		logger.Logf(logger.Info, "Error in DB\n")
+	}
+
+	_, err = statement.Exec(CallbackServer, CallbackFrequency, CallbackJitter, UUID)
+	if err != nil {
+
+		log.Fatalln(err)
+	}
+	logger.Logf(logger.Info, "Agent %s Reveived Config Update  \n", UUID)
+}
+
 func UpdateAgentCommand(CommandUUID string, Output string, uuid string) {
 	updateAgentCommandSQL := `UPDATE Commands SET Result='1', Output= ? WHERE CommandUUID= ?`
 
@@ -419,4 +437,30 @@ func Keylog(uuid string) []types.KeyReceive {
 	return infoAppend
 	// logger.Logf(logger.Info, "Agent %s Fetched Next Command %s \n", agentStruct.UpdateAgentConfig.Uuid, agentStruct.Command)
 	// return agentStruct
+}
+
+func FetchOne(uuid string) []types.ConfigAgent {
+	var info types.ConfigAgent
+	FetchSQL := `
+	SELECT 
+		UUID,CallBackToIP,CallbackFeq,CallBackJitter
+	FROM Agents WHERE UUID=?
+	`
+	row, err := db.Query(FetchSQL, uuid)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer row.Close()
+	var infoAppend []types.ConfigAgent
+	for row.Next() {
+		row.Scan(
+			&info.Uuid,
+			&info.CallbackTo,
+			&info.CallbackFrequency,
+			&info.CallbackJitter,
+		)
+	}
+	infoAppend = append(infoAppend, info)
+	fmt.Println(info)
+	return infoAppend
 }

@@ -5,6 +5,7 @@ import Nav from './components/nav'
 import Home from './components/home'
 import Payloads from './components/payloads'
 import CreatePayload from './components/createpayload'
+import ConfigAgent from './components/configagent'
 import createDOMPurify from 'dompurify'
 import React from 'react';
 
@@ -228,6 +229,7 @@ function App() {
                       <Route path="/keylog/:id" element={<Keylog />} />
                       <Route path="/payloads" element={<Payloads />} />
                       <Route path="/createpayload" element={<CreatePayload />} />
+                      <Route path="/configagent/:id" element={<ConfigAgent />} />
                     </Routes>
 
                     {/* End Center Area */}

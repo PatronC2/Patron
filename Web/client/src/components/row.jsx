@@ -35,7 +35,15 @@ class Row extends Component {
                             {" "}
                             +{"     "}
                         </font>
-                        {"    "}
+                        <font size={2} color="#888888">
+                            {" "}
+                            +{" "}
+                        </font>
+                        <font size={2} color="#FFFFFF">
+                            {/*Start News 1 Date */}
+                            <Link to={`/configagent/${this.props.uuid}`}> configure </Link>
+                            {/*End News 1 Date */}
+                        </font>
                         <font size={2} color="#888888">
                             {" "}
                             +{" "}

@@ -36,6 +36,13 @@ func main() {
 		res.SendJSON(agents)
 	})
 
+	r.Get("/api/oneagent/{agt}", func(w http.ResponseWriter, r *http.Request) {
+		agentParam := chi.URLParam(r, "agt")
+		res, _ := yin.Event(w, r)
+		agent := data.FetchOne(agentParam)
+		res.SendJSON(agent)
+	})
+
 	r.Get("/api/agent/{agt}", func(w http.ResponseWriter, r *http.Request) {
 		agentParam := chi.URLParam(r, "agt")
 		res, _ := yin.Event(w, r)
@@ -50,6 +57,18 @@ func main() {
 		body := map[string]string{}
 		req.BindBody(&body)
 		data.SendAgentCommand(agentParam, "0", "shell", body["command"], newCmdID) // from web
+		// res.SendString(agentParam + "0" + "shell" + body["command"] + newCmdID)
+		res.SendStatus(200)
+	})
+
+	r.Post("/api/updateagent/{agt}", func(w http.ResponseWriter, r *http.Request) {
+		res, req := yin.Event(w, r)
+		agentParam := chi.URLParam(r, "agt")
+		newCmdID := uuid.New().String()
+		body := map[string]string{}
+		req.BindBody(&body)
+		data.UpdateAgentConfig(agentParam, body["callbackserver"], body["callbackfreq"], body["callbackjitter"])
+		data.SendAgentCommand(agentParam, "0", "update", body["callbackfreq"]+":"+body["callbackjitter"], newCmdID) // from web
 		// res.SendString(agentParam + "0" + "shell" + body["command"] + newCmdID)
 		res.SendStatus(200)
 	})

