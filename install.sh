@@ -30,25 +30,23 @@ fi
 
 #install certs
 echo "Install certs"
+[ ! -d $TMP ] && mkdir certs
 rm -rf certs/server.key
 rm -rf certs/server.pem
 openssl ecparam -genkey -name prime256v1 -out certs/server.key
-openssl req -new -x509 -key server.key -out certs/server.pem -days 3650
+openssl req -new -x509 -key certs/server.key -out certs/server.pem -days 3650 -subj "/C=US/ST=Maryland/L=Towson/O=Case Studies/OU=Offensive Op/CN=example.com"
 
 # Set Env file
 echo "Setting environment variables"
-echo "Note: Webserver and C2 server can't be on the same port and must be an unused port\n"
+echo "Note: Webserver and C2 server can't be on the same port and must be an unused port"
 rm -rf .env
 rm -rf Web/client/.env
 touch .env
-read -sp "Enter WEBSERVER IP: " webserverip
-echo ""
-read -sp "Enter WEBSERVER PORT: " webserverport
-echo ""
-read -sp "Enter C2SERVER IP: " c2serverip
-echo ""
-read -sp "Enter C2SERVER PORT: " c2serverport
-echo ""
+read -p "Enter WEBSERVER IP: " webserverip
+read -p "Enter WEBSERVER PORT: " webserverport
+echo "Note: To listen on all inteface, leave C2SERVER IP blank"
+read -p "Enter C2SERVER IP: " c2serverip
+read -p "Enter C2SERVER PORT: " c2serverport
 encpubkey=`base64 -w 0 certs/server.pem`
 
 # server env
@@ -62,9 +60,9 @@ echo "PUBLIC_KEY==$encpubkey" >> .env
 echo "REACT_APP_WEBSERVER_IP=$webserverip" >> Web/client/.env
 echo "REACT_APP_WEBSERVER_PORT=$webserverport" >> Web/client/.env
 
-read -sp "Do you want to reset the database (this will clear any keylogs) (y/n): " resetchoice
+read -p "Do you want to reset the database (this will clear any keylogs) (y/n): " resetchoice
 
-if $resetchoice == 'y'; then
+if [ "$resetchoice" = 'y' ]; then
 rm -rf data/sqlite-database.db
 echo "Database Wiped!"
 else
@@ -74,9 +72,11 @@ fi
 
 # npm install
 
-cd client && npm install && cd ../
+echo "Installing node modules..."
 
-
+cd Web/client && npm install && cd ../../ 
+echo ""
+echo ""
 echo "Run './build/server' to start the C2 Server"
 echo "Run './build/webserver' to start the Web Server"
 echo "Run 'cd client && npm start' to start the Web Client"
