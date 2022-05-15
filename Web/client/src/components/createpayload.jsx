@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-// import { useHistory } from "react-router-dom";
+import { useNavigate  } from "react-router-dom";
 import Banner from './banner'
 import { genPayload } from '../actions/c2actions'
 
 const CreatePayload = () => {
-  // let history = useHistory();
+  const navigate = useNavigate();
   const [errormsg, setError] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -28,7 +28,7 @@ const CreatePayload = () => {
     var res = await genPayload(command)
     console.log(res.payload)
     if (res.payload === "Success"){
-      // history.push('/payloads')
+      navigate('/payloads')
       setError('')
       console.log('redirect')
     }else {

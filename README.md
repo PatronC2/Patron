@@ -22,4 +22,7 @@ A Command and Control Framework made in Go.
 * `CGO_ENABLED=1 go build -o build/server server/server.go`  || `go build -a -ldflags "-linkmode external -extldflags '-static' -s -w" -o build/server server/server.go `
 * CGO_ENABLED=0 go build -o build/webserver Web/server/webserver.go || `go build -a -ldflags "-linkmode external -extldflags '-static' -s -w" -o build/webserver Web/server/webserver.go`
 
+# Build agent manually 
+* deprecated (needs publickey variable)
 * sudo CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.ServerIP=10.10.10.113 -X main.ServerPort=6969 -X main.CallbackFrequency=10 -X main.CallbackJitter=10" -o test client/client.go
+* sudo CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.ServerIP=10.10.10.113 -X main.ServerPort=6969 -X main.CallbackFrequency=10 -X main.CallbackJitter=10" -o test client/kclient/kclient.go
