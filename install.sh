@@ -29,12 +29,16 @@ exit
 fi
 
 #install certs
-echo "Install certs"
-[ ! -d $TMP ] && mkdir certs
+echo "Generating certs"
+[ ! -d "$PWD/certs" ] && mkdir certs
 rm -rf certs/server.key
 rm -rf certs/server.pem
 openssl ecparam -genkey -name prime256v1 -out certs/server.key
 openssl req -new -x509 -key certs/server.key -out certs/server.pem -days 3650 -subj "/C=US/ST=Maryland/L=Towson/O=Case Studies/OU=Offensive Op/CN=example.com"
+
+#Setting up agents dir
+echo "Setting up agents dir"
+[ ! -d "$PWD/agents" ] && mkdir agents
 
 # Set Env file
 echo "Setting environment variables"
@@ -79,4 +83,4 @@ echo ""
 echo ""
 echo "Run './build/server' to start the C2 Server"
 echo "Run './build/webserver' to start the Web Server"
-echo "Run 'cd client && npm start' to start the Web Client"
+echo "Run 'cd Web/client && npm start' to start the Web Client"
