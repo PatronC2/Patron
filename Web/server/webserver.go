@@ -32,8 +32,9 @@ func goDotEnvVariable(key string) string {
 }
 
 func main() {
-
 	publickey := goDotEnvVariable("PUBLIC_KEY")
+	webserverip := goDotEnvVariable("WEBSERVER_IP")
+	webserverport := goDotEnvVariable("WEBSERVER_PORT")
 	err := data.OpenDatabase()
 	if err != nil {
 		logger.Logf(logger.Info, "Error in DB\n")
@@ -190,7 +191,7 @@ func main() {
 	filesDir := http.Dir(filepath.Join(workDir, "agents"))
 	FileServer(r, "/files", filesDir)
 
-	http.ListenAndServe(":3001", r)
+	http.ListenAndServe(webserverip+":"+webserverport, r)
 }
 
 func FileServer(r chi.Router, path string, root http.FileSystem) {
