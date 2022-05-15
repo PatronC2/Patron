@@ -9,6 +9,7 @@ require (
 	github.com/go-chi/cors v1.2.1
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/uuid v1.3.0
+	github.com/joho/godotenv v1.4.0
 	github.com/mattn/go-sqlite3 v1.14.12
 	github.com/qkgo/yin v0.0.0-20190403073632-bff3b50ba6e6
 	github.com/s-christian/gollehs v0.0.0-20220316081058-f0fcf0024a48

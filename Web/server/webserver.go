@@ -7,17 +7,33 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/PatronC2/Patron/data"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/google/uuid"
+	"github.com/joho/godotenv"
 	"github.com/qkgo/yin"
 	"github.com/s-christian/gollehs/lib/logger"
 )
 
+func goDotEnvVariable(key string) string {
+
+	// load .env file
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	return os.Getenv(key)
+}
+
 func main() {
+
+	publickey := goDotEnvVariable("PUBLIC_KEY")
 	err := data.OpenDatabase()
 	if err != nil {
 		logger.Logf(logger.Info, "Error in DB\n")
@@ -67,10 +83,27 @@ func main() {
 		newCmdID := uuid.New().String()
 		body := map[string]string{}
 		req.BindBody(&body)
-		data.UpdateAgentConfig(agentParam, body["callbackserver"], body["callbackfreq"], body["callbackjitter"])
-		data.SendAgentCommand(agentParam, "0", "update", body["callbackfreq"]+":"+body["callbackjitter"], newCmdID) // from web
-		// res.SendString(agentParam + "0" + "shell" + body["command"] + newCmdID)
-		res.SendStatus(200)
+
+		vsvr := regexp.MustCompile(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}[:](6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`)
+		vserver := vsvr.Match([]byte(body["callbackserver"]))
+		vfrequency := regexp.MustCompile(`^\d{1,5}$`)
+		vcallbackfrequency := vfrequency.Match([]byte(body["callbackfreq"]))
+		vjitter := regexp.MustCompile(`^\d{1,5}$`)
+		vcallbackjitter := vjitter.Match([]byte(body["callbackjitter"]))
+
+		if !vserver {
+			res.SendString("Invalid Server IP:Port")
+		} else if !vcallbackfrequency {
+			res.SendString("Invalid Callback Frequency, Max 99999")
+		} else if !vcallbackjitter {
+			res.SendString("Invalid Callback Jitter, Max 100")
+		} else {
+
+			data.UpdateAgentConfig(agentParam, body["callbackserver"], body["callbackfreq"], body["callbackjitter"])
+			data.SendAgentCommand(agentParam, "0", "update", body["callbackfreq"]+":"+body["callbackjitter"], newCmdID) // from web
+			// res.SendString(agentParam + "0" + "shell" + body["command"] + newCmdID)
+			res.SendString("Success")
+		}
 	})
 
 	r.Get("/api/keylog/{agt}", func(w http.ResponseWriter, r *http.Request) {
@@ -91,40 +124,66 @@ func main() {
 		newPayID := uuid.New().String()
 		body := map[string]string{}
 		req.BindBody(&body)
-		tag := strings.Split(newPayID, "-")
-		concat := body["name"] + "_" + tag[0]
-		var commandString string
-		fmt.Println(body)
-		// Possible RCE concern
-		if body["type"] == "original" {
-			commandString = fmt.Sprintf( // Borrowed from https://github.com/s-christian/pwnts/blob/master/site/site.go#L175
 
-				"CGO_ENABLED=0 go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s\" -o agents/%s client/client.go",
-				body["serverip"],
-				body["serverport"],
-				body["callbackfrequency"],
-				body["callbackjitter"],
-				concat,
-			)
-		} else if body["type"] == "wkeys" {
-			commandString = fmt.Sprintf( // Borrowed from https://github.com/s-christian/pwnts/blob/master/site/site.go#L175
+		vnm := regexp.MustCompile(`^[a-zA-Z]{1,9}$`)
+		vname := vnm.Match([]byte(body["name"]))
+		vserverip, _ := regexp.MatchString(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`, body["serverip"])
+		vserverport, _ := regexp.MatchString(`^(6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`, body["serverport"])
+		vfrequency := regexp.MustCompile(`^\d{1,5}$`)
+		vcallbackfrequency := vfrequency.Match([]byte(body["callbackfrequency"]))
+		vjitter := regexp.MustCompile(`^\d{1,5}$`)
+		vcallbackjitter := vjitter.Match([]byte(body["callbackjitter"]))
 
-				"CGO_ENABLED=0 go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s\" -o agents/%s client/kclient/kclient.go",
-				body["serverip"],
-				body["serverport"],
-				body["callbackfrequency"],
-				body["callbackjitter"],
-				concat,
-			)
+		if !vserverip {
+			res.SendString("Invalid Server IP")
+		} else if !vserverport {
+			res.SendString("Invalid Server Port")
+		} else if !vcallbackfrequency {
+			res.SendString("Invalid Callback Frequency, Max 99999")
+		} else if !vcallbackjitter {
+			res.SendString("Invalid Callback Jitter, Max 100")
+		} else if !vname {
+			res.SendString("Invalid Name, [a-zA-Z]{1,9}")
+		} else { // else if body["type"] != "original" || body["type"] != "wkeys" {
+			// 	res.SendString("Invalid type")
+			// }
+
+			tag := strings.Split(newPayID, "-")
+			concat := body["name"] + "_" + tag[0]
+			var commandString string
+			// Possible RCE concern
+			if body["type"] == "original" {
+				commandString = fmt.Sprintf( // Borrowed from https://github.com/s-christian/pwnts/blob/master/site/site.go#L175
+
+					"CGO_ENABLED=0 go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o agents/%s client/client.go",
+					body["serverip"],
+					body["serverport"],
+					body["callbackfrequency"],
+					body["callbackjitter"],
+					publickey,
+					concat,
+				)
+			} else if body["type"] == "wkeys" {
+				commandString = fmt.Sprintf( // Borrowed from https://github.com/s-christian/pwnts/blob/master/site/site.go#L175
+
+					"CGO_ENABLED=0 go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o agents/%s client/kclient/kclient.go",
+					body["serverip"],
+					body["serverport"],
+					body["callbackfrequency"],
+					body["callbackjitter"],
+					publickey,
+					concat,
+				)
+			}
+			fmt.Println(commandString)
+			err = exec.Command("sh", "-c", commandString).Run()
+			if err != nil {
+				res.SendStatus(500)
+			}
+
+			data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat) // from web
+			res.SendString("Success")
 		}
-
-		err = exec.Command("sh", "-c", commandString).Run()
-		if err != nil {
-			res.SendStatus(500)
-		}
-
-		data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat) // from web
-		res.SendStatus(200)
 	})
 
 	workDir, _ := os.Getwd()

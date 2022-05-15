@@ -6,3 +6,4 @@
 /certs/server.key
 /certs/server.pem
 /agents
+.env

@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/gob"
 	"fmt"
 	"log"
@@ -18,23 +19,6 @@ import (
 	"github.com/s-christian/gollehs/lib/logger"
 )
 
-const rootCert = `-----BEGIN CERTIFICATE-----
-MIICXzCCAgWgAwIBAgIUMd+ZlvsLMPMqJxWJ9T6BJGthj9gwCgYIKoZIzj0EAwIw
-gYQxCzAJBgNVBAYTAlVTMREwDwYDVQQIDAhNYXJ5bGFuZDEPMA0GA1UEBwwGVG93
-c29uMREwDwYDVQQKDAhQYXRyb25DMjELMAkGA1UECwwCQzIxDzANBgNVBAMMBnBh
-dHJvbjEgMB4GCSqGSIb3DQEJARYRcGF0cm9uQHBhdHJvbi5jb20wHhcNMjIwNTA0
-MjEzNDIzWhcNMzIwNTAxMjEzNDIzWjCBhDELMAkGA1UEBhMCVVMxETAPBgNVBAgM
-CE1hcnlsYW5kMQ8wDQYDVQQHDAZUb3dzb24xETAPBgNVBAoMCFBhdHJvbkMyMQsw
-CQYDVQQLDAJDMjEPMA0GA1UEAwwGcGF0cm9uMSAwHgYJKoZIhvcNAQkBFhFwYXRy
-b25AcGF0cm9uLmNvbTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABEA0e3xutzlG
-NonmwcaQcwYyaqKHG2ZFqDeB30vXhAwQjK/n9rRSA+THI5FsdNdk3wiJlJkKV1QR
-0yYb4J1aFg2jUzBRMB0GA1UdDgQWBBTLaFpt8fmieqkXwXdS2oi9R29hhzAfBgNV
-HSMEGDAWgBTLaFpt8fmieqkXwXdS2oi9R29hhzAPBgNVHRMBAf8EBTADAQH/MAoG
-CCqGSM49BAMCA0gAMEUCIF/HZD1/d01Q3Dk/gpvGQObYnx6JNrupJehaYKjQ+N4B
-AiEAli42Gt6ELWRZ1/0aXz8t63CI8o9mfp4rloqjcF/Dq10=
------END CERTIFICATE-----
-`
-
 // func exec_command(text string) {
 
 // }
@@ -44,6 +28,7 @@ var (
 	ServerPort        string
 	CallbackFrequency string
 	CallbackJitter    string
+	RootCert          string
 )
 
 func main() {
@@ -51,8 +36,14 @@ func main() {
 
 	// }
 	// Load public cert for encrypted comms
+
+	publickey, err := base64.StdEncoding.DecodeString(RootCert)
+	if err != nil {
+		panic(err)
+	}
+
 	roots := x509.NewCertPool()
-	ok := roots.AppendCertsFromPEM([]byte(rootCert))
+	ok := roots.AppendCertsFromPEM(publickey)
 	if !ok {
 		log.Fatal("failed to parse root certificate")
 	}

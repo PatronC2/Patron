@@ -4,7 +4,7 @@ import Banner from './banner'
 import { sendConfig, getOneAgent } from '../actions/c2actions'
 
 const ConfigAgent = () => {
-
+    const [errormsg, setError] = useState('');
   const [callbackserver, setCallbackServer] = useState('');
   const [callbackfrequency, setCallbackfrequency] = useState('');
   const [callbackjitter, setCallbackjitter] = useState('');
@@ -19,6 +19,13 @@ const ConfigAgent = () => {
     }
     var res = await sendConfig(id,command)
     console.log(res.payload)
+    if (res.payload === "Success"){
+        // history.push('/')
+        setError('')
+        console.log('redirect')
+      }else {
+        setError(res.payload)
+      }
   }
 
   const init = async () => {
@@ -42,6 +49,42 @@ const ConfigAgent = () => {
       </font>
     );
   }
+
+  var error = () => (
+    <center>
+                <pre>
+                  <font face="lucida console">
+                    <font size={2} color="#ff3333">
+                      ________________________________________
+                    </font>
+                    {"\n"}
+                    <font size={2} color="#ff3333">
+                      |
+                    </font>
+                    <font size={2}>{"    "}</font>
+                    <font size={2} color="#ff3333">
+                      {" "}
+                      +{" "}
+                    </font>
+                    <font size={2} color="#ff3333">
+                      {" Error: "}{errormsg}{"    "}
+                    </font>
+                    <font size={2} color="#ff3333">
+                      {" "}
+                      +{"     "}
+                    </font>
+                    <font size={2} color="#ff3333">
+                      |
+                    </font>
+                    {"\n"}
+                    <font size={2} color="#ff3333">
+                      -----------------------------------------
+                    </font>
+                  </font>
+                  {"\n"}
+                </pre>
+              </center>
+  )
   return (
     <td colSpan={1} width={1} valign="top" height={1}>
       {/*Start Center Area*/}
@@ -61,6 +104,7 @@ const ConfigAgent = () => {
             <tr>
               <td>
                 {/*Start Blurb */}
+                { errormsg ? error() : null }
                 <font
                   size={1}
                   face="lucida console"
