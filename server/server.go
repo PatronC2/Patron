@@ -33,9 +33,10 @@ func handleconn(connection net.Conn) {
 			AgentServerPort := glob[7]
 			AgentFreq := glob[8]
 			AgentJitter := glob[9]
+			masterkey := glob[10]
 			// search uuid in database using received uuid
-			fetch := data.FetchOneAgent(uid) // first pass agent check
-			if fetch.Uuid == "" {            //prob check its a uuid                 // future fix (accepts all uuid) reason: to allow server create agent record in db
+			fetch := data.FetchOneAgent(uid)                  // first pass agent check
+			if fetch.Uuid == "" && masterkey == "MASTERKEY" { //prob check its a uuid                 // future fix (accepts all uuid) reason: to allow server create agent record in db
 				//parse IP, hostname and user from agent
 				data.CreateAgent(uid, AgentServerIP+":"+AgentServerPort, AgentFreq, AgentJitter, ip, user, hostname) // default values (callback set by user)
 				data.CreateKeys(uid)

