@@ -7,6 +7,10 @@
 
 A Command and Control Framework made in Go.
 
+# Install
+
+* run `./install.sh`
+
 ## Create Cert
 
 * openssl ecparam -genkey -name prime256v1 -out certs/server.key
