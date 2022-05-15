@@ -13,4 +13,9 @@ A Command and Control Framework made in Go.
 * openssl req -new -x509 -key server.key -out certs/server.pem -days 3650
 * base64 -w 0 certs/server.key 
 
+# Build server manually
+
+* CGO_ENABLED=0 go build -o build/server server/server.go  
+* CGO_ENABLED=0 go build -o build/webserver Web/server/webserver.go
+
 * sudo CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.ServerIP=10.10.10.113 -X main.ServerPort=6969 -X main.CallbackFrequency=10 -X main.CallbackJitter=10" -o test client/client.go
