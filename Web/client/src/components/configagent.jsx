@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams,useNavigate } from 'react-router-dom';
 import Banner from './banner'
 import { sendConfig, getOneAgent } from '../actions/c2actions'
 
 const ConfigAgent = () => {
-    const [errormsg, setError] = useState('');
+const navigate = useNavigate();
+const [errormsg, setError] = useState('');
   const [callbackserver, setCallbackServer] = useState('');
   const [callbackfrequency, setCallbackfrequency] = useState('');
   const [callbackjitter, setCallbackjitter] = useState('');
@@ -20,7 +21,7 @@ const ConfigAgent = () => {
     var res = await sendConfig(id,command)
     console.log(res.payload)
     if (res.payload === "Success"){
-        // history.push('/')
+        navigate('/')
         setError('')
         console.log('redirect')
       }else {

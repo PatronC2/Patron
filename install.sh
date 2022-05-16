@@ -3,6 +3,7 @@
 base64=`which base64`
 openssl=`which openssl`
 npm=`which npm`
+npm=`which go`
 
 #base64 check
 if [ -f $base64 ]; then
@@ -25,6 +26,14 @@ if [ -f $npm ]; then
 echo "npm Check Ok"
 else
 echo "Install npm: sudo apt install npm nodejs"
+exit
+fi
+
+#go check
+if [ -f $go ]; then
+echo "go Check Ok"
+else
+echo "Install go: sudo apt install golang"
 exit
 fi
 
@@ -58,7 +67,7 @@ echo "WEBSERVER_IP=$webserverip" >> .env
 echo "WEBSERVER_PORT=$webserverport" >> .env
 echo "C2SERVER_IP=$c2serverip" >> .env
 echo "C2SERVER_PORT=$c2serverport" >> .env
-echo "PUBLIC_KEY==$encpubkey" >> .env
+echo "PUBLIC_KEY=$encpubkey" >> .env
 
 #webclient env
 echo "REACT_APP_WEBSERVER_IP=$webserverip" >> Web/client/.env
@@ -71,7 +80,6 @@ rm -rf data/sqlite-database.db
 echo "Database Wiped!"
 else
 echo "Good Choice"
-exit
 fi
 
 # npm install

@@ -176,7 +176,7 @@ func main() {
 					concat,
 				)
 			}
-			fmt.Println(commandString)
+			// fmt.Println(commandString)
 			err = exec.Command("sh", "-c", commandString).Run()
 			if err != nil {
 				res.SendStatus(500)
