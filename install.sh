@@ -82,6 +82,10 @@ else
 echo "Good Choice"
 fi
 
+#go mod tidy
+echo "Go mod tidy"
+go mod tidy
+
 # npm install
 
 echo "Installing node modules..."
@@ -89,6 +93,6 @@ echo "Installing node modules..."
 cd Web/client && npm install && cd ../../ 
 echo ""
 echo ""
-echo "Run './build/server' to start the C2 Server"
-echo "Run './build/webserver' to start the Web Server"
+echo "Run 'go run server/server.go' || './build/server' to start the C2 Server"
+echo "Run 'go run Web/server/webserver.go' || './build/webserver' to start the Web Server"
 echo "Run 'cd Web/client && npm start' to start the Web Client"
