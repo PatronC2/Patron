@@ -13,7 +13,7 @@ const PayloadStruct = (props) => {
     )
 
     return (
-        <header className="App-header">
+        <header className="stuck">
             {renderRows()}
         </header>
     );

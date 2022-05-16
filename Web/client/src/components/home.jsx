@@ -41,7 +41,7 @@ class Home extends Component {
         );
       }
         return (
-            <td colSpan={1} width={1} valign="top" height={1}>
+            <td className="stuck" colSpan={1} width={1} valign="top" height={1}>
                       {/*Start Center Area*/}
                       <center>
                         {console.log(this.state)}
