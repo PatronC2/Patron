@@ -12,7 +12,7 @@ const CreatePayload = () => {
   const [serverport, setServerPort] = useState('');
   const [callbackfrequency, setCallbackfrequency] = useState('');
   const [callbackjitter, setCallbackjitter] = useState('');
-  const [type, setType] = useState('');
+  const [type, setType] = useState();
 
   const send = async () => {
     var command = {
@@ -347,7 +347,8 @@ const CreatePayload = () => {
                         <font size={2} color="#FFFFFF">
                             {/*Start News 1 Title */}
                             {/* {this.props.command} */}
-                            <select onChange={e => setType(e.target.value)}>
+                            <select value={type} onChange={e => setType(e.target.value)}>
+                            <option value="">Select Payload</option>
                               <option value="original">Shell</option>
                               <option value="wkeys">Shell + keylogger</option>
                             </select>
