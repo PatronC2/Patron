@@ -370,6 +370,14 @@ const CreatePayload = () => {
                         </font>
                         <br/>
                         {/*   end */}
+                        <font
+                            size={1}
+                            face="lucida console"
+                            color="#FFFFFF"
+                            >
+                            Note: Agents with keyloggers requires root.
+                            <br />
+                            </font>
                         <br/>
                         <button onClick={send}>
                               Generate Payload

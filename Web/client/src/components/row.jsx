@@ -33,10 +33,6 @@ class Row extends Component {
                         </font>
                         <font size={2} color="#888888">
                             {" "}
-                            +{"     "}
-                        </font>
-                        <font size={2} color="#888888">
-                            {" "}
                             +{" "}
                         </font>
                         <font size={2} color="#FFFFFF">

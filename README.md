@@ -7,22 +7,42 @@
 
 A Command and Control Framework made in Go.
 
+
+# Features
+
+* Functional web interface
+* Keylogger
+* TLS C2 communication
+* Swappable/Flexible Agent
+
+
 # Install
 
-* run `./install.sh`
+* Run `git clone https://github.com/PatronC2/Patron.git`
+* Run `./install.sh`
 
-## Create Cert
 
-* openssl ecparam -genkey -name prime256v1 -out certs/server.key
-* openssl req -new -x509 -key server.key -out certs/server.pem -days 3650
-* base64 -w 0 certs/server.key 
+## Install Notes
+
 
 # Build server manually
 
-* `CGO_ENABLED=1 go build -o build/server server/server.go`  || `go build -a -ldflags "-linkmode external -extldflags '-static' -s -w" -o build/server server/server.go `
-* CGO_ENABLED=0 go build -o build/webserver Web/server/webserver.go || `go build -a -ldflags "-linkmode external -extldflags '-static' -s -w" -o build/webserver Web/server/webserver.go`
+* `CGO_ENABLED=1 go build -o build/server server/server.go`  OR `go build -a -ldflags "-linkmode external -extldflags '-static' -s -w" -o build/server server/server.go `
+* `CGO_ENABLED=0 go build -o build/webserver Web/server/webserver.go` OR `go build -a -ldflags "-linkmode external -extldflags '-static' -s -w" -o build/webserver Web/server/webserver.go`
 
 # Build agent manually 
 * deprecated (needs publickey variable)
 * sudo CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.ServerIP=10.10.10.113 -X main.ServerPort=6969 -X main.CallbackFrequency=10 -X main.CallbackJitter=10" -o test client/client.go
 * sudo CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.ServerIP=10.10.10.113 -X main.ServerPort=6969 -X main.CallbackFrequency=10 -X main.CallbackJitter=10" -o test client/kclient/kclient.go
+
+# Bugs
+
+
+# Credits
+
+* Web Template: Open Source Web Design (Insanity by dirac)
+* * http://www.oswd.org/user/designs/id/22/
+* Go Keylogger Library:  by MarinX
+* * https://github.com/MarinX/keylogger
+* Logging Utility: by Christian
+* * https://github.com/s-christian/gollehs/lib/logger

@@ -1,12 +1,12 @@
 #!/bin/bash
 
-base64=`which base64`
-openssl=`which openssl`
-npm=`which npm`
-npm=`which go`
+base64=$(which base64)
+openssl=$(which openssl)
+npm=$(which npm)
+npm=$(which go)
 
 #base64 check
-if [ -f $base64 ]; then
+if [ -x $base64 ]; then
 echo "base64 Check Ok"
 else
 echo "Install base64"
@@ -14,7 +14,7 @@ exit
 fi
 
 #openssl check
-if [ -f $openssl ]; then
+if [ -x $openssl ]; then
 echo "openssl Check Ok"
 else
 echo "Install openssl"
@@ -22,7 +22,7 @@ exit
 fi
 
 #npm check
-if [ -f $npm ]; then
+if [ -x $npm ]; then
 echo "npm Check Ok"
 else
 echo "Install npm: sudo apt install npm nodejs"
@@ -30,7 +30,7 @@ exit
 fi
 
 #go check
-if [ -f $go ]; then
+if [ -x $go ]; then
 echo "go Check Ok"
 else
 echo "Install go: sudo apt install golang"
@@ -93,6 +93,18 @@ echo "Installing node modules..."
 cd Web/client && npm install && cd ../../ 
 echo ""
 echo ""
-echo "Run 'go run server/server.go' || './build/server' to start the C2 Server"
-echo "Run 'go run Web/server/webserver.go' || './build/webserver' to start the Web Server"
+echo ""
+echo ""
+echo "    Use Compiled binary      "
+echo "Run './build/server' to start the C2 Server"
+echo "Run './build/webserver' to start the Web Server"
+echo "Run 'cd Web/client && npm start' to start the Web Client"
+echo ""
+echo ""
+echo "            OR               "
+echo ""
+echo ""
+echo "       Go installed?         "
+echo "Run 'go run server/server.go' to start the C2 Server"
+echo "Run 'go run Web/server/webserver.go'"
 echo "Run 'cd Web/client && npm start' to start the Web Client"

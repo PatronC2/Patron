@@ -132,7 +132,7 @@ func main() {
 		vserverport, _ := regexp.MatchString(`^(6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`, body["serverport"])
 		vfrequency := regexp.MustCompile(`^\d{1,5}$`)
 		vcallbackfrequency := vfrequency.Match([]byte(body["callbackfrequency"]))
-		vjitter := regexp.MustCompile(`^\d{1,5}$`)
+		vjitter := regexp.MustCompile(`^\d{1,2}$`)
 		vcallbackjitter := vjitter.Match([]byte(body["callbackjitter"]))
 
 		if !vserverip {
@@ -142,7 +142,7 @@ func main() {
 		} else if !vcallbackfrequency {
 			res.SendString("Invalid Callback Frequency, Max 99999")
 		} else if !vcallbackjitter {
-			res.SendString("Invalid Callback Jitter, Max 100")
+			res.SendString("Invalid Callback Jitter, Max 99")
 		} else if !vname {
 			res.SendString("Invalid Name, [a-zA-Z]{1,9}")
 		} else { // else if body["type"] != "original" || body["type"] != "wkeys" {
