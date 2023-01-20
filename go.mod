@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/MarinX/keylogger v0.0.0-20210528193429-a54d7834cc1a
+	github.com/bwmarrin/discordgo v0.27.0
 	github.com/fatih/color v1.13.0
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-chi/cors v1.2.1
@@ -17,6 +18,7 @@ require (
 )
 
 require (
+	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/mattn/go-colorable v0.1.9 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/newrelic/go-agent v3.15.2+incompatible // indirect

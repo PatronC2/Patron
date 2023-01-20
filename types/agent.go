@@ -11,6 +11,17 @@ type ConfigAgent struct {
 	// ...
 }
 
+type BotConfigAgent []struct {
+	Uuid              string `json:"uuid"`
+	CallbackTo        string `json:"callbackto"`
+	CallbackFrequency string `json:"callbackfrequency"`
+	CallbackJitter    string `json:"callbackjitter"`
+	AgentIP           string `json:"agentip"`
+	Username          string `json:"username"`
+	Hostname          string `json:"hostname"`
+	// ...
+}
+
 //   type configListenerHttp struct {
 // 	uri string
 // 	// ...
