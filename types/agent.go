@@ -65,6 +65,14 @@ type Agent struct {
 	Output      string `json:"output"`
 }
 
+type BotAgent []struct {
+	Uuid        string `json:"uuid"`
+	CommandType string `json:"commandtype"`
+	Command     string `json:"command"`
+	CommandUUID string `json:"commanduuid"`
+	Output      string `json:"output"`
+}
+
 type Payload struct {
 	Uuid              string `json:"uuid"`
 	Name              string `json:"name"`

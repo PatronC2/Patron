@@ -28,6 +28,7 @@ func goDotEnvVariable(key string) string {
 	return os.Getenv(key)
 }
 
+//make it central
 func IsValidUUID(u string) bool {
 	_, err := uuid.Parse(u)
 	return err == nil

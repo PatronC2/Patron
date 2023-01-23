@@ -12,8 +12,15 @@ import (
 
 	"github.com/PatronC2/Patron/types"
 	"github.com/bwmarrin/discordgo"
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 )
+
+//make it central
+func IsValidUUID(u string) bool {
+	_, err := uuid.Parse(u)
+	return err == nil
+}
 
 func goDotEnvVariable(key string) string {
 
@@ -27,16 +34,16 @@ func goDotEnvVariable(key string) string {
 	return os.Getenv(key)
 }
 
-func sendAgentMessage(agents string) *discordgo.MessageSend {
+func sendAgentMessage(agents string, title string) *discordgo.MessageSend {
 	sendMsg := &discordgo.MessageSend{
 		Embeds: []*discordgo.MessageEmbed{{
 			Type:        discordgo.EmbedTypeRich,
-			Title:       "Agent Info",
+			Title:       title,
 			Description: agents,
 			Fields: []*discordgo.MessageEmbedField{
 				{
-					Name:   "Agents",
-					Value:  "Agents",
+					Name:   "Patron C2",
+					Value:  "https://github.com/PatronC2/Patron",
 					Inline: true,
 				},
 			},
@@ -58,7 +65,7 @@ func GetBotAgents() *discordgo.MessageSend {
 	response, err := client.Get(apiURL)
 	if err != nil {
 		return &discordgo.MessageSend{
-			Content: "Error! trying to get agents",
+			Content: "Http api Error! trying to get agents",
 		}
 	}
 
@@ -74,72 +81,65 @@ func GetBotAgents() *discordgo.MessageSend {
 	for i := range data {
 		fmt.Fprintf(&results, "%s %s@%s %s\n", data[i].Uuid, data[i].Username, data[i].AgentIP, data[i].Hostname)
 	}
-	fmt.Println(results.String())
+	// fmt.Println(results.String())
 
-	return sendAgentMessage(results.String()[:len([]rune(results.String()))])
+	return sendAgentMessage(results.String()[:len([]rune(results.String()))], "Agent Info")
 }
 
-// func GetBotAgents() *discordgo.MessageSend {
-// 	apiserver := goDotEnvVariable("WEBSERVER_IP")
-// 	apiport := goDotEnvVariable("WEBSERVER_PORT")
-// 	apiURL := fmt.Sprintf("http://%s:%s/api/agents", apiserver, apiport)
-// 	fmt.Println(apiURL)
-// 	// Create new HTTP client & set timeout
-// 	client := http.Client{Timeout: 5 * time.Second}
+func GetBotAgent(message string) *discordgo.MessageSend {
+	apiserver := goDotEnvVariable("WEBSERVER_IP")
+	apiport := goDotEnvVariable("WEBSERVER_PORT")
+	botmsg := strings.Split(message, " ")
 
-// 	// Query C2 API
-// 	response, err := client.Get(apiURL)
-// 	if err != nil {
-// 		return &discordgo.MessageSend{
-// 			Content: "Error! trying to get agents",
-// 		}
-// 	}
+	if len(botmsg) <= 1 {
+		return &discordgo.MessageSend{
+			Content: "Error! Invalid syntax `!refresh <uuid>`",
+		}
+	}
+	// fmt.Println(botmsg)
+	if !IsValidUUID(botmsg[1]) {
+		return &discordgo.MessageSend{
+			Content: "Error! Invalid uuid",
+		}
+	}
 
-// 	// Open HTTP response body
-// 	body, _ := ioutil.ReadAll(response.Body)
-// 	defer response.Body.Close()
+	apiURL := fmt.Sprintf("http://%s:%s/api/agent/%s", apiserver, apiport, botmsg[1])
+	// fmt.Println(apiURL)
+	// Create new HTTP client & set timeout
+	client := http.Client{Timeout: 5 * time.Second}
 
-// 	// Convert JSON
-// 	var data types.BotConfigAgent
-// 	json.Unmarshal([]byte(body), &data)
-// 	fmt.Println(data[0].Uuid)
-// 	var results string
-// 	for i := range data {
-// 		results = fmt.Sprintf("%s@%s %s\n", data[i].Uuid, data[i].AgentIP, data[i].Hostname)
-// 	}
+	// Query C2 API
+	response, err := client.Get(apiURL)
+	if err != nil {
+		return &discordgo.MessageSend{
+			Content: "Http api Error! trying to get agent",
+		}
+	}
 
-// 	return &discordgo.MessageSend{
-// 		Content: "Error! trying to get agents",
-// 	}
-// }
+	// Open HTTP response body
+	body, _ := ioutil.ReadAll(response.Body)
+	defer response.Body.Close()
 
-// func GetBotAgents() string {
-// 	apiserver := goDotEnvVariable("WEBSERVER_IP")
-// 	apiport := goDotEnvVariable("WEBSERVER_PORT")
-// 	apiURL := fmt.Sprintf("http://%s:%s/api/agents", apiserver, apiport)
-// 	// fmt.Println(apiURL)
-// 	// Create new HTTP client & set timeout
-// 	client := http.Client{Timeout: 5 * time.Second}
+	// Convert JSON
+	var data types.BotAgent
+	json.Unmarshal([]byte(body), &data)
+	// fmt.Println(data[0].Uuid)
+	var results strings.Builder
+	for i := range data {
+		fmt.Fprintf(&results, "`Command:` %s \n`Output:` %s", data[i].Command, data[i].Output)
+	}
+	//fmt.Println(results.String())
 
-// 	// Query C2 API
-// 	response, err := client.Get(apiURL)
-// 	if err != nil {
-// 		return "Error! trying to get agents"
-// 	}
-
-// 	// Open HTTP response body
-// 	body, _ := ioutil.ReadAll(response.Body)
-// 	defer response.Body.Close()
-
-// 	// Convert JSON
-// 	var data types.BotConfigAgent
-// 	json.Unmarshal([]byte(body), &data)
-// 	// fmt.Println(data[0].Uuid)
-// 	var results strings.Builder
-// 	for i := range data {
-// 		fmt.Fprintf(&results, "%s %s@%s %s\n", data[i].Uuid, data[i].Username, data[i].AgentIP, data[i].Hostname)
-// 	}
-// 	fmt.Println(results.String())
-
-// 	return results.String()[:2001]
-// }
+	// trims charaters
+	if len([]rune(results.String())) <= 4096 {
+		if results.String() == "" {
+			return sendAgentMessage("Nothing yet!", "Agent: "+botmsg[1])
+		} else {
+			return sendAgentMessage(results.String()[:len([]rune(results.String()))], "Agent: "+botmsg[1])
+		}
+	} else {
+		return &discordgo.MessageSend{
+			Content: "Charater limit reached (> 4096)",
+		}
+	}
+}
