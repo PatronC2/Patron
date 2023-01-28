@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/PatronC2/Patron/helper"
 	"github.com/PatronC2/Patron/types"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/s-christian/gollehs/lib/logger"
@@ -432,6 +433,7 @@ func Keylog(uuid string) []types.KeyReceive {
 			&info.Uuid,
 			&info.Keys,
 		)
+		info.Keys = helper.FormatKeyLogs(info.Keys)
 		infoAppend = append(infoAppend, info)
 	}
 	return infoAppend

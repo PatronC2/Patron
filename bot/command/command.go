@@ -93,7 +93,7 @@ func GetBotAgents() *discordgo.MessageSend {
 			return sendAgentMessage(results.String()[:len([]rune(results.String()))], "Agent Info")
 		}
 	} else {
-		return sendAgentMessage(results.String()[:4093]+"...", "Agent Info")
+		return sendAgentMessage(results.String()[:4092]+"TRIM", "Agent Info")
 
 	}
 }
@@ -150,7 +150,7 @@ func GetBotAgent(message string) *discordgo.MessageSend {
 			return sendAgentMessage(results.String()[:len([]rune(results.String()))], "Agent: "+botmsg[1])
 		}
 	} else {
-		return sendAgentMessage(results.String()[:4093]+"...", "Agent: "+botmsg[1])
+		return sendAgentMessage(results.String()[:4092]+"TRIM", "Agent: "+botmsg[1])
 	}
 }
 
@@ -204,7 +204,7 @@ func GetBotKeys(message string) *discordgo.MessageSend {
 			return sendAgentMessage(results.String()[:len([]rune(results.String()))], "Agent: "+botmsg[1])
 		}
 	} else {
-		return sendAgentMessage(results.String()[:4093]+"...", "Agent: "+botmsg[1])
+		return sendAgentMessage(results.String()[:4092]+"TRIM", "Agent: "+botmsg[1])
 	}
 }
 
