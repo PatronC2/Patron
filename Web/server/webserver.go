@@ -107,6 +107,14 @@ func main() {
 		}
 	})
 
+	r.Get("/api/killagent/{agt}", func(w http.ResponseWriter, r *http.Request) {
+		agentParam := chi.URLParam(r, "agt")
+		newCmdID := uuid.New().String()
+		res, _ := yin.Event(w, r)
+		data.SendAgentCommand(agentParam, "0", "kill", "Kill Agent", newCmdID) // from web
+		res.SendString("Success")
+	})
+
 	r.Get("/api/keylog/{agt}", func(w http.ResponseWriter, r *http.Request) {
 		agentParam := chi.URLParam(r, "agt")
 		res, _ := yin.Event(w, r)

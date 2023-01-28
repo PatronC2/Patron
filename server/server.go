@@ -88,6 +88,10 @@ func handleconn(connection net.Conn) {
 							} else {
 								logger.Logf(logger.Debug, "Agent %s Sent Back: %s\n", uid, destruct.Output)
 								data.UpdateAgentCommand(destruct.CommandUUID, destruct.Output, fetch.Uuid)
+								if destruct.Output == "~Killed~" {
+									logger.Logf(logger.Warning, "Agent %s Killed\n", uid)
+									connection.Close()
+								}
 								connection.Close()
 							}
 						} else if keyOrNot == "KeysBeacon" { // Handle keylog response

