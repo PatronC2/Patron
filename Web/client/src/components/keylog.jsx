@@ -79,7 +79,7 @@ const Keylog = (props) => {
                         <font size={2} color="#FFFFFF">
                             {/*Start News 1 Title */}
                             {/* {this.props.command} */}
-                            <textarea value={result[0].Keys ? result[0].Keys  : "No Keys..." } rows={30}/>
+                            <textarea value={result[0].keys ? result[0].keys  : "No Keys..." } rows={30}/>
                             {/*End News 1 Title */}
                         </font>
                         <font size={2} color="#888888">

