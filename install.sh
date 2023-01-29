@@ -113,6 +113,7 @@ chmod 755 $dir/service_script.sh
 chmod 755 /etc/init.d/patron
 git -C $dir restore patron.service
 systemctl enable patron
+systemctl start patron
 
 echo ""
 echo ""
