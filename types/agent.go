@@ -8,6 +8,7 @@ type ConfigAgent struct {
 	AgentIP           string `json:"agentip"`
 	Username          string `json:"username"`
 	Hostname          string `json:"hostname"`
+	Status            string `json:"status"`
 	// ...
 }
 
@@ -19,6 +20,7 @@ type BotConfigAgent []struct {
 	AgentIP           string `json:"agentip"`
 	Username          string `json:"username"`
 	Hostname          string `json:"hostname"`
+	Status            string `json:"status"`
 	// ...
 }
 

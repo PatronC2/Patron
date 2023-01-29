@@ -51,12 +51,14 @@ echo "Setting up agents dir"
 
 # Set Env file
 echo "Setting environment variables"
-echo "Note: Webserver and C2 server can't be on the same port and must be an unused port"
+echo "Note: Webserver, ReactClient and C2 server can't be on the same port and must be an unused port"
 rm -rf .env
 rm -rf Web/client/.env
 touch .env
-read -p "Enter WEBSERVER IP: " webserverip
-read -p "Enter WEBSERVER PORT: " webserverport
+read -p "Enter APISERVER IP: " webserverip
+read -p "Enter APISERVER PORT: " webserverport
+read -p "Enter REACTCLIENT IP: " reactclientip
+read -p "Enter APISERVER PORT: " reactclientport
 echo "Note: To listen on all inteface, leave C2SERVER IP blank"
 read -p "Enter C2SERVER IP: " c2serverip
 read -p "Enter C2SERVER PORT: " c2serverport
@@ -75,8 +77,8 @@ echo "BOT_TOKEN=$bottoken" >> .env
 #webclient env
 echo "REACT_APP_WEBSERVER_IP=$webserverip" >> Web/client/.env
 echo "REACT_APP_WEBSERVER_PORT=$webserverport" >> Web/client/.env
-echo "HOST=$webserverip" >> Web/client/.env
-echo "PORT=$webserverport" >> Web/client/.env
+echo "HOST=$reactclientip" >> Web/client/.env
+echo "PORT=$reactclientport" >> Web/client/.env
 
 read -p "Do you want to reset the database (this will clear any keylogs) (y/n): " resetchoice
 

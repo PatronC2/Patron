@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams,useNavigate } from 'react-router-dom';
 import Banner from './banner'
-import { sendConfig, getOneAgent } from '../actions/c2actions'
+import { sendConfig, getOneAgent, deleteAgent, killAgent } from '../actions/c2actions'
 
 const ConfigAgent = () => {
 const navigate = useNavigate();
@@ -19,6 +19,30 @@ const [errormsg, setError] = useState('');
       callbackjitter: callbackjitter
     }
     var res = await sendConfig(id,command)
+    console.log(res.payload)
+    if (res.payload === "Success"){
+        navigate('/')
+        setError('')
+        console.log('redirect')
+      }else {
+        setError(res.payload)
+      }
+  }
+
+  const kill = async () => {
+    var res = await killAgent(id)
+    console.log(res.payload)
+    if (res.payload === "Success"){
+        navigate('/')
+        setError('')
+        console.log('redirect')
+      }else {
+        setError(res.payload)
+      }
+  }
+
+  const deleteAg = async () => {
+    var res = await deleteAgent(id)
     console.log(res.payload)
     if (res.payload === "Success"){
         navigate('/')
@@ -235,6 +259,12 @@ const [errormsg, setError] = useState('');
                         <br/>
                         <button onClick={send}>
                               Update
+                        </button>
+                        <button onClick={deleteAg}>
+                              Delete
+                        </button>
+                        <button onClick={kill}>
+                              Kill
                         </button>
                     </font>
                 </pre>
