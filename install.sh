@@ -4,6 +4,8 @@ base64=$(which base64)
 openssl=$(which openssl)
 npm=$(which npm)
 npm=$(which go)
+dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+dirsedsafe=$(printf '%s\n' "$dir" | sed -e 's/[]\/$*.^[]/\\&/g');
 
 #base64 check
 if [ -x $base64 ]; then
@@ -86,6 +88,14 @@ echo "Database Wiped!"
 else
 echo "Good Choice"
 fi
+
+# configure patron service
+mkdir /var/log/patron
+sed -i "s/SCRIPT_FILE/$dirsedsafe/g" $dir/patron.service
+cp $dir/patron.service /etc/init.d/patron
+chmod 755 /etc/init.d/patron
+git -C $dir restore patron.service
+systemctl enable patron
 
 #go mod tidy
 echo "Go mod tidy"
