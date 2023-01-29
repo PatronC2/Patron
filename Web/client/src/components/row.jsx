@@ -27,7 +27,7 @@ class Row extends Component {
                             {" "}
                             +{" "}
                         </font>
-                        <font size={2} color="#FFFFFF">
+                        <font size={2} style={{color: this.props.status == 'Online' ? '#00FF00' : '#FF3333'}}>
                             {/*Start News 1 Title */}{this.props.username}@{this.props.agentip}
                             {/*End News 1 Title */}
                         </font>

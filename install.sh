@@ -58,7 +58,7 @@ touch .env
 read -p "Enter APISERVER IP: " webserverip
 read -p "Enter APISERVER PORT: " webserverport
 read -p "Enter REACTCLIENT IP: " reactclientip
-read -p "Enter APISERVER PORT: " reactclientport
+read -p "Enter REACTCLIENT PORT: " reactclientport
 echo "Note: To listen on all inteface, leave C2SERVER IP blank"
 read -p "Enter C2SERVER IP: " c2serverip
 read -p "Enter C2SERVER PORT: " c2serverport
@@ -102,16 +102,9 @@ echo ""
 echo ""
 echo ""
 echo ""
-echo "    Use Compiled binary      "
-echo "Run './build/server' to start the C2 Server"
-echo "Run './build/webserver' to start the Web Server"
-echo "Run 'cd Web/client && npm start' to start the Web Client"
-echo ""
-echo ""
-echo "            OR               "
-echo ""
 echo ""
 echo "       Go installed?         "
-echo "Run 'go run server/server.go' to start the C2 Server"
-echo "Run 'go run Web/server/webserver.go'"
+echo "Run 'sudo go run server/server.go' to start the C2 Server"
+echo "Run 'sudo go run Web/server/webserver.go'"
 echo "Run 'cd Web/client && npm start' to start the Web Client"
+echo "Run 'sudo go run bot/bot.go' to start the Discord Bot if the DISCORD BOT_TOKEN Was provided"
