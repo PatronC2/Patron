@@ -93,6 +93,7 @@ fi
 mkdir /var/log/patron
 sed -i "s/SCRIPT_FILE/$dirsedsafe/g" $dir/patron.service
 cp $dir/patron.service /etc/systemd/system/patron
+chmod 755 $dir/service_script.sh
 chmod 755 /etc/systemd/system/patron
 git -C $dir restore patron.service
 systemctl enable patron
