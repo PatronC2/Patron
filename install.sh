@@ -114,21 +114,12 @@ chmod 755 /etc/init.d/patron
 git -C $dir restore patron.service
 systemctl enable patron
 systemctl start patron
+cd $dir/Web/client
 
 echo ""
 echo ""
 echo ""
-echo ""
-echo "    Use Compiled binary      "
-echo "Run './build/server' to start the C2 Server"
-echo "Run './build/webserver' to start the Web Server"
-echo "Run 'cd Web/client && npm start' to start the Web Client"
+echo "Run 'npm start' to start start the web client"
 echo ""
 echo ""
-echo "            OR               "
 echo ""
-echo ""
-echo "       Go installed?         "
-echo "Run 'go run server/server.go' to start the C2 Server"
-echo "Run 'go run Web/server/webserver.go'"
-echo "Run 'cd Web/client && npm start' to start the Web Client"
