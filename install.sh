@@ -114,12 +114,11 @@ chmod 755 /etc/init.d/patron
 git -C $dir restore patron.service
 systemctl enable patron
 systemctl start patron
-cd $dir/Web/client
 
 echo ""
 echo ""
 echo ""
-echo "Run 'npm start' to start start the web client"
+echo "Run 'cd Web/client && npm start' to start start the web client"
 echo ""
 echo ""
 echo ""
