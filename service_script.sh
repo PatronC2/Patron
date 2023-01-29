@@ -8,4 +8,4 @@ sleep 10
 /usr/bin/go run Web/server/webserver.go >> /var/log/patron/webserver.log 2>&1 & disown
 sleep 5
 cd $SERVER_DIR/Web/client
-/usr/bin/npm start >> /var/log/patron/webclient.log 2>&1 & disown
+/usr/bin/npm start >> /var/log/patron/webclient.log 2>&1
