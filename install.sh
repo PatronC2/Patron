@@ -64,7 +64,7 @@ touch .env
 read -p "Enter APISERVER IP: " webserverip
 read -p "Enter APISERVER PORT: " webserverport
 read -p "Enter REACTCLIENT IP: " reactclientip
-read -p "Enter APISERVER PORT: " reactclientport
+read -p "Enter REACTCLIENT PORT: " reactclientport
 echo "Note: To listen on all inteface, leave C2SERVER IP blank"
 read -p "Enter C2SERVER IP: " c2serverip
 read -p "Enter C2SERVER PORT: " c2serverport
@@ -119,6 +119,8 @@ echo ""
 echo ""
 echo ""
 echo "Run 'cd Web/client && npm start' to start start the web client"
+echo ""
+echo "Run 'sudo go run bot/bot.go' to start the Discord Bot if the DISCORD BOT_TOKEN Was provided"
 echo ""
 echo ""
 echo ""
