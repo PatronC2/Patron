@@ -31,7 +31,7 @@ stop () {
 		return 1
 	fi
 	echo 'Stopping Patron C2 :(' >&2
-	kill -15 $(cat "$PIDFILE") && rm -f "$PIDFILE"); then
+	kill -15 $(cat "$PIDFILE") && rm -f "$PIDFILE"
 	echo 'Stopped Patron C2' >&2
 }
 
