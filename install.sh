@@ -1,9 +1,15 @@
 #!/bin/bash
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root" 
+   exit 1
+fi
 
 base64=$(which base64)
 openssl=$(which openssl)
 npm=$(which npm)
 npm=$(which go)
+dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+dirsedsafe=$(printf '%s\n' "$dir" | sed -e 's/[]\/$*.^[]/\\&/g');
 
 #base64 check
 if [ -x $base64 ]; then
@@ -97,14 +103,24 @@ go mod tidy
 
 echo "Installing node modules..."
 
-cd Web/client && npm install && cd ../../ 
+cd Web/client && npm install && cd ../../
+
+# configure patron service
+mkdir /var/log/patron
+sed -i "s/SCRIPT_FILE/$dirsedsafe/g" $dir/patron.service
+cp $dir/patron.service /etc/init.d/patron
+chmod 755 $dir/service_script.sh
+chmod 755 /etc/init.d/patron
+git -C $dir restore patron.service
+systemctl enable patron
+systemctl start patron
+
 echo ""
 echo ""
 echo ""
+echo "Run 'cd Web/client && npm start' to start start the web client"
 echo ""
-echo ""
-echo "       Go installed?         "
-echo "Run 'sudo go run server/server.go' to start the C2 Server"
-echo "Run 'sudo go run Web/server/webserver.go'"
-echo "Run 'cd Web/client && npm start' to start the Web Client"
 echo "Run 'sudo go run bot/bot.go' to start the Discord Bot if the DISCORD BOT_TOKEN Was provided"
+echo ""
+echo ""
+echo ""
