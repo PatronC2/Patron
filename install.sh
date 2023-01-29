@@ -95,6 +95,16 @@ else
 echo "Good Choice"
 fi
 
+#go mod tidy
+echo "Go mod tidy"
+go mod tidy
+
+# npm install
+
+echo "Installing node modules..."
+
+cd Web/client && npm install && cd ../../
+
 # configure patron service
 mkdir /var/log/patron
 sed -i "s/SCRIPT_FILE/$dirsedsafe/g" $dir/patron.service
@@ -104,15 +114,6 @@ chmod 755 /etc/init.d/patron
 git -C $dir restore patron.service
 systemctl enable patron
 
-#go mod tidy
-echo "Go mod tidy"
-go mod tidy
-
-# npm install
-
-echo "Installing node modules..."
-
-cd Web/client && npm install && cd ../../ 
 echo ""
 echo ""
 echo ""
