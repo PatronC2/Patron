@@ -1,4 +1,8 @@
 #!/bin/bash
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root" 
+   exit 1
+fi
 
 base64=$(which base64)
 openssl=$(which openssl)
