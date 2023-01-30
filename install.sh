@@ -68,6 +68,16 @@ read -p "Enter REACTCLIENT PORT: " reactclientport
 echo "Note: To listen on all inteface, leave C2SERVER IP blank"
 read -p "Enter C2SERVER IP: " c2serverip
 read -p "Enter C2SERVER PORT: " c2serverport
+read -p "Are you Using Nginx? (y/n): " nginxchoice
+
+if [ "$nginxchoice" = 'y' ]; then
+read -p "Enter NGINX IP: " nginxip
+read -p "Enter NGINX PORT: " nginxport
+echo "REACT_APP_NGINX_IP=$nginxip" >> Web/client/.env
+echo "REACT_APP_NGINX_PORT=$nginxport" >> Web/client/.env
+else
+echo "Not Good Choice"
+fi
 echo "Note: Leave discord bot token blank if you don't want"
 read -p "Enter DISCORD BOT TOKEN: " bottoken
 encpubkey=`base64 -w 0 certs/server.pem`

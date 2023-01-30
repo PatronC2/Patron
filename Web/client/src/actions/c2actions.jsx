@@ -1,5 +1,6 @@
 import axios from 'axios';
-export var C2_ENDPOINT = `http://${process.env.REACT_APP_WEBSERVER_IP}:${process.env.REACT_APP_WEBSERVER_PORT}`;
+const C2_ENDPOINT = process.env.REACT_APP_NGINX_IP ? `http://${process.env.REACT_APP_NGINX_IP}:${process.env.REACT_APP_NGINX_PORT}` : `http://${process.env.REACT_APP_WEBSERVER_IP}:${process.env.REACT_APP_WEBSERVER_PORT}`;
+export { C2_ENDPOINT };
 
 export var getCallbacks = async () => {
 
