@@ -165,35 +165,41 @@ func CreatePayload(uuid string, name string, description string, ServerIP string
 }
 
 func FetchOneAgent(uuid string) types.ConfigAgent {
+	var info types.ConfigAgent
 	FetchSQL := `
 	SELECT 
 		UUID,CallBackToIP,CallbackFeq,CallBackJitter
-	FROM Agents WHERE UUID=$1
+	FROM Agents WHERE UUID=?
 	`
-	agentStruct := types.ConfigAgent{}
-	row := db.QueryRow(FetchSQL, uuid)
-
-	err := row.Scan(
-		&agentStruct.Uuid,
-		&agentStruct.CallbackTo,
-		&agentStruct.CallbackFrequency,
-		&agentStruct.CallbackJitter,
-	)
-	switch err {
-	case sql.ErrNoRows:
-		logger.Logf(logger.Info, "No rows were returned! \n")
-		return agentStruct
-	case nil:
-		fmt.Println(agentStruct)
-	default:
-		panic(err)
+	row, err := db.Query(FetchSQL, uuid)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer row.Close()
+	for row.Next() {
+		err := row.Scan(
+			&info.Uuid,
+			&info.CallbackTo,
+			&info.CallbackFrequency,
+			&info.CallbackJitter,
+		)
+		switch err {
+		case sql.ErrNoRows:
+			logger.Logf(logger.Info, "No rows were returned!! \n")
+			return info
+		case nil:
+			fmt.Println(info)
+		default:
+			panic(err)
+		}
 	}
 
-	logger.Logf(logger.Info, "Agent %s Fetched \n", agentStruct.Uuid)
-	return agentStruct
+	logger.Logf(logger.Info, "Agent %s Fetched \n", info.Uuid)
+	return info
 }
 
 func FetchNextCommand(uuid string) types.GiveAgentCommand {
+	var info types.GiveAgentCommand
 	FetchSQL := `
 	SELECT 
 		Commands.UUID, 
@@ -205,33 +211,37 @@ func FetchNextCommand(uuid string) types.GiveAgentCommand {
 		Commands.CommandUUID
 	FROM Commands INNER JOIN 
 		Agents ON Commands.UUID = Agents.UUID 
-	WHERE Commands.UUID=$1 AND Result='0' LIMIT 1
+	WHERE Commands.UUID=? AND Result='0' LIMIT 1
 	`
-	agentStruct := types.GiveAgentCommand{}
-	agentStruct.Binary = nil
-	row := db.QueryRow(FetchSQL, uuid)
-
-	err := row.Scan(
-		&agentStruct.UpdateAgentConfig.Uuid,
-		&agentStruct.UpdateAgentConfig.CallbackTo,
-		&agentStruct.UpdateAgentConfig.CallbackFrequency,
-		&agentStruct.UpdateAgentConfig.CallbackJitter,
-		&agentStruct.CommandType,
-		&agentStruct.Command,
-		&agentStruct.CommandUUID,
-		// &agentStruct.Binary,
-	)
-	switch err {
-	case sql.ErrNoRows:
-		logger.Logf(logger.Info, "No rows were returned! \n")
-	case nil:
-		fmt.Println(agentStruct)
-	default:
-		panic(err)
+	row, err := db.Query(FetchSQL, uuid)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer row.Close()
+	for row.Next() {
+		err := row.Scan(
+			&info.UpdateAgentConfig.Uuid,
+			&info.UpdateAgentConfig.CallbackTo,
+			&info.UpdateAgentConfig.CallbackFrequency,
+			&info.UpdateAgentConfig.CallbackJitter,
+			&info.CommandType,
+			&info.Command,
+			&info.CommandUUID,
+			// &info.Binary,
+		)
+		switch err {
+		case sql.ErrNoRows:
+			logger.Logf(logger.Info, "No rows were returned!! \n")
+			return info
+		case nil:
+			fmt.Println(info)
+		default:
+			panic(err)
+		}
 	}
 
-	logger.Logf(logger.Info, "Agent %s Fetched Next Command %s \n", agentStruct.UpdateAgentConfig.Uuid, agentStruct.Command)
-	return agentStruct
+	logger.Logf(logger.Info, "Agent %s Fetched Next Command %s \n", info.UpdateAgentConfig.Uuid, info.Command)
+	return info
 }
 func SendAgentCommand(uuid string, result string, CommandType string, Command string, CommandUUID string) {
 	SendAgentCommandSQL := `INSERT INTO Commands (UUID, Result, CommandType, Command, CommandUUID)
