@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/PatronC2/Patron/bot/command"
+	"github.com/PatronC2/Patron/data"
 	"github.com/bwmarrin/discordgo"
 	"github.com/joho/godotenv"
 	"github.com/s-christian/gollehs/lib/logger"
@@ -63,6 +64,13 @@ func newMsg(discord *discordgo.Session, message *discordgo.MessageCreate) {
 }
 
 func main() {
+	// open database
+	err := data.OpenDatabase()
+	if err != nil {
+		logger.Logf(logger.Info, "Error in DB\n")
+		log.Fatalln(err)
+	}
+
 	botToken := goDotEnvVariable("BOT_TOKEN")
 	// create session
 	logger.Logf(logger.Info, "Discord Bot Started\n")
