@@ -300,8 +300,8 @@ func UpdateAgentCheckIn(UUID string, LastCallBack int64) {
 
 func UpdateAgentStatus() {
 	updateAgentStatusSQL := `UPDATE Agents
-	SET Status = 'Offline'
-	WHERE AgentID IN (SELECT AgentID FROM Agents WHERE (strftime('%s','now') - LastCallBack) > (2*CallBackFeq));`
+	SET Status = CASE WHEN ((strftime('%s','now') - LastCallBack) > (2*CallBackFeq)) THEN 'Offline' ELSE 'Online' END
+	WHERE AgentID IN (SELECT AgentID FROM Agents);`
 
 	statement, err := db.Prepare(updateAgentStatusSQL)
 	if err != nil {
