@@ -12,7 +12,7 @@ dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 dirsedsafe=$(printf '%s\n' "$dir" | sed -e 's/[]\/$*.^[]/\\&/g');
 
 #base64 check
-if [ -x $base64 ]; then
+if [ -x "$base64" ]; then
 echo "base64 Check Ok"
 else
 echo "Install base64"
@@ -20,7 +20,7 @@ exit
 fi
 
 #openssl check
-if [ -x $openssl ]; then
+if [ -x "$openssl" ]; then
 echo "openssl Check Ok"
 else
 echo "Install openssl"
@@ -28,7 +28,7 @@ exit
 fi
 
 #npm check
-if [ -x $npm ]; then
+if [ -x "$npm" ]; then
 echo "npm Check Ok"
 else
 echo "Install npm: sudo apt install npm nodejs"
@@ -36,7 +36,7 @@ exit
 fi
 
 #go check
-if [ -x $go ]; then
+if [ -x "$go" ]; then
 echo "go Check Ok"
 else
 echo "Install go: sudo apt install golang"
@@ -134,3 +134,15 @@ echo "Run 'sudo go run bot/bot.go' to start the Discord Bot if the DISCORD BOT_T
 echo ""
 echo ""
 echo ""
+
+# Figure how to run everything with one service
+# [Unit]                                                              
+# Description=Patron server service                                                                                                       
+# [Service]                                                           
+# Type=simple                                                         
+# WorkingDirectory=/Patron                                  
+# Restart=always                                                      
+# RestartSec=10                                                       
+# ExecStart=/bin/bash -c 'build/server >> /var/log/patron/server.log'                                                                     
+# [Install]                                                           
+# WantedBy=multi-user.target
