@@ -7,7 +7,7 @@ fi
 base64=$(which base64)
 openssl=$(which openssl)
 npm=$(which npm)
-npm=$(which go)
+go=$(which go)
 dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 dirsedsafe=$(printf '%s\n' "$dir" | sed -e 's/[]\/$*.^[]/\\&/g');
 
@@ -116,14 +116,14 @@ echo "Installing node modules..."
 cd Web/client && npm install && cd ../../
 
 # configure patron service
-mkdir /var/log/patron
-sed -i "s/SCRIPT_FILE/$dirsedsafe/g" $dir/patron.service
-cp $dir/patron.service /etc/init.d/patron
-chmod 755 $dir/service_script.sh
-chmod 755 /etc/init.d/patron
-git -C $dir restore patron.service
-systemctl enable patron
-systemctl start patron
+# mkdir /var/log/patron
+# sed -i "s/SCRIPT_FILE/$dirsedsafe/g" $dir/patron.service
+# cp $dir/patron.service /etc/init.d/patron
+# chmod 755 $dir/service_script.sh
+# chmod 755 /etc/init.d/patron
+# git -C $dir restore patron.service
+# systemctl enable patron
+# systemctl start patron
 
 echo ""
 echo ""

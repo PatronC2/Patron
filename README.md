@@ -16,6 +16,10 @@ A Command and Control Framework made in Go.
 * Swappable/Flexible Agent
 * Discord Bot
 
+# Docker
+
+* Run `docker compose up` (have .env setup)
+
 
 # Install
 
