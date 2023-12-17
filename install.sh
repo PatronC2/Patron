@@ -7,12 +7,12 @@ fi
 base64=$(which base64)
 openssl=$(which openssl)
 npm=$(which npm)
-npm=$(which go)
+go=$(which go)
 dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 dirsedsafe=$(printf '%s\n' "$dir" | sed -e 's/[]\/$*.^[]/\\&/g');
 
 #base64 check
-if [ -x $base64 ]; then
+if [ -x "$base64" ]; then
 echo "base64 Check Ok"
 else
 echo "Install base64"
@@ -20,7 +20,7 @@ exit
 fi
 
 #openssl check
-if [ -x $openssl ]; then
+if [ -x "$openssl" ]; then
 echo "openssl Check Ok"
 else
 echo "Install openssl"
@@ -28,7 +28,7 @@ exit
 fi
 
 #npm check
-if [ -x $npm ]; then
+if [ -x "$npm" ]; then
 echo "npm Check Ok"
 else
 echo "Install npm: sudo apt install npm nodejs"
@@ -36,7 +36,7 @@ exit
 fi
 
 #go check
-if [ -x $go ]; then
+if [ -x "$go" ]; then
 echo "go Check Ok"
 else
 echo "Install go: sudo apt install golang"
@@ -68,6 +68,16 @@ read -p "Enter REACTCLIENT PORT: " reactclientport
 echo "Note: To listen on all inteface, leave C2SERVER IP blank"
 read -p "Enter C2SERVER IP: " c2serverip
 read -p "Enter C2SERVER PORT: " c2serverport
+read -p "Are you Using Nginx? (y/n): " nginxchoice
+
+if [ "$nginxchoice" = 'y' ]; then
+read -p "Enter NGINX IP: " nginxip
+read -p "Enter NGINX PORT: " nginxport
+echo "REACT_APP_NGINX_IP=$nginxip" >> Web/client/.env
+echo "REACT_APP_NGINX_PORT=$nginxport" >> Web/client/.env
+else
+echo "Not Good Choice"
+fi
 echo "Note: Leave discord bot token blank if you don't want"
 read -p "Enter DISCORD BOT TOKEN: " bottoken
 encpubkey=`base64 -w 0 certs/server.pem`
@@ -106,14 +116,14 @@ echo "Installing node modules..."
 cd Web/client && npm install && cd ../../
 
 # configure patron service
-mkdir /var/log/patron
-sed -i "s/SCRIPT_FILE/$dirsedsafe/g" $dir/patron.service
-cp $dir/patron.service /etc/init.d/patron
-chmod 755 $dir/service_script.sh
-chmod 755 /etc/init.d/patron
-git -C $dir restore patron.service
-systemctl enable patron
-systemctl start patron
+# mkdir /var/log/patron
+# sed -i "s/SCRIPT_FILE/$dirsedsafe/g" $dir/patron.service
+# cp $dir/patron.service /etc/init.d/patron
+# chmod 755 $dir/service_script.sh
+# chmod 755 /etc/init.d/patron
+# git -C $dir restore patron.service
+# systemctl enable patron
+# systemctl start patron
 
 echo ""
 echo ""
@@ -124,3 +134,15 @@ echo "Run 'sudo go run bot/bot.go' to start the Discord Bot if the DISCORD BOT_T
 echo ""
 echo ""
 echo ""
+
+# Figure how to run everything with one service
+# [Unit]                                                              
+# Description=Patron server service                                                                                                       
+# [Service]                                                           
+# Type=simple                                                         
+# WorkingDirectory=/Patron                                  
+# Restart=always                                                      
+# RestartSec=10                                                       
+# ExecStart=/bin/bash -c 'build/server >> /var/log/patron/server.log'                                                                     
+# [Install]                                                           
+# WantedBy=multi-user.target

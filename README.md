@@ -16,6 +16,27 @@ A Command and Control Framework made in Go.
 * Swappable/Flexible Agent
 * Discord Bot
 
+# Docker
+
+* Run `docker compose up --remove-orphans` 
+* Tear down `docker compose down`
+* debuging logs: 
+* * `docker compose logs patron_c2_api -f`
+* * `docker compose logs patron_c2_frontend -f`
+* * `docker compose logs patron_c2_server -f`
+* * `docker compose logs patron_c2_postgres -f`
+* * `docker compose logs patron_c2_nginx -f`
+* restarting
+* * `docker compose restart patron_c2_api`
+* * `docker compose restart patron_c2_frontend`
+* * `docker compose restart patron_c2_server`
+* * `docker compose restart patron_c2_postgres`
+* * `docker compose restart patron_c2_nginx`
+
+## Todo
+* (have .env setup)
+* conditionally setup discord bot
+* conditionally setup docker compose
 
 # Install
 
@@ -30,7 +51,7 @@ A Command and Control Framework made in Go.
 
 * `CGO_ENABLED=0 sudo go build -o build/server server/server.go`  OR `sudo go build -a -ldflags "-linkmode external -extldflags '-static' -s -w" -o build/server server/server.go `
 * `CGO_ENABLED=0 sudo go build -o build/webserver Web/server/webserver.go` OR `sudo go build -a -ldflags "-linkmode external -extldflags '-static' -s -w" -o build/webserver Web/server/webserver.go`
-* * `CGO_ENABLED=0 go build -o build/webserver Web/server/webserver.go` OR `sudo go build -a -ldflags "-linkmode external -extldflags '-static' -s -w" -o build/webserver bot/bot.go`
+* * `CGO_ENABLED=0 go build -o build/webserver Web/server/webserver.go` OR `sudo go build -a -ldflags "-linkmode external -extldflags '-static' -s -w" -o build/bot bot/bot.go`
 
 # Build agent manually 
 * deprecated (needs publickey variable)
@@ -39,6 +60,17 @@ A Command and Control Framework made in Go.
 
 # Bugs
 
+# Creating Discord bot
+* Go to discord dev portal
+* create new application (not actual bot)
+* go to bot tab
+* add bot (username , icon, uncheck public bot, check message content intent)
+* grab token (reset token, save for later)
+* generate url to add to server
+* * go to oauth2 -> url generator (check bot)
+* * check (read messages/view Channels, send messages, embed links, send messages in thread) #VERY IMPORTANT
+* * copy and open url in new tab
+* * add bot to each server
 
 # Credits
 

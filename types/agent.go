@@ -12,23 +12,6 @@ type ConfigAgent struct {
 	// ...
 }
 
-type BotConfigAgent []struct {
-	Uuid              string `json:"uuid"`
-	CallbackTo        string `json:"callbackto"`
-	CallbackFrequency string `json:"callbackfrequency"`
-	CallbackJitter    string `json:"callbackjitter"`
-	AgentIP           string `json:"agentip"`
-	Username          string `json:"username"`
-	Hostname          string `json:"hostname"`
-	Status            string `json:"status"`
-	// ...
-}
-
-//   type configListenerHttp struct {
-// 	uri string
-// 	// ...
-//   }
-
 type GiveAgentCommand struct {
 	UpdateAgentConfig ConfigAgent
 	// updateListenerConfig configListenerHttp
@@ -55,11 +38,6 @@ type KeyReceive struct {
 	Keys string `json:"keys"`
 }
 
-type KeyReceiveBot []struct {
-	Uuid string `json:"uuid"`
-	Keys string `json:"keys"`
-}
-
 //sample := &giveAgentCommand{&configAgent{"1234", "192.20.20.12", 5, 4.5}, "shell", "whoami", nil }
 
 // // WEB Types
@@ -70,18 +48,6 @@ type Agent struct {
 	Command     string `json:"command"`
 	CommandUUID string `json:"commanduuid"`
 	Output      string `json:"output"`
-}
-
-type BotAgent []struct {
-	Uuid        string `json:"uuid"`
-	CommandType string `json:"commandtype"`
-	Command     string `json:"command"`
-	CommandUUID string `json:"commanduuid"`
-	Output      string `json:"output"`
-}
-
-type BotCommand struct {
-	Command string `json:"command"`
 }
 
 type Payload struct {

