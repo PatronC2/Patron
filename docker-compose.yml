@@ -1,5 +1,5 @@
 services:
-  patron_C2_server:
+  patron_c2_server:
     image: patron_c2_server
     build: server
     command: sh -c "go run server/server.go"
@@ -12,7 +12,7 @@ services:
     ports:
       - 9000:9000
 
-  patron_C2_api:
+  patron_c2_api:
     image: patron_c2_server
     build: Web/server
     command: sh -c "go run Web/server/webserver.go"
@@ -25,7 +25,7 @@ services:
     # ports:
     #   - 8000:8000
 
-  patron_C2_frontend:
+  patron_c2_frontend:
     image: node:18-alpine
     command: sh -c "npm install && npm start"
     working_dir: /app
@@ -37,7 +37,7 @@ services:
     # ports:
     #   - 8081:8081
   
-  nginx:
+  patron_c2_nginx:
     image: nginx:latest
     volumes:
     - ./nginx:/etc/nginx/templates
@@ -49,6 +49,21 @@ services:
     # environment:
     # - NGINX_HOST=foobar.com
     # - NGINX_PORT=80
+
+  patron_c2_postgres:
+    image: postgres:latest
+    container_name: patron_c2_postgres
+    environment:
+      POSTGRES_USER: patron
+      POSTGRES_PASSWORD: qwerty
+      POSTGRES_DB: patron
+    volumes:
+      - ./data/postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      internal_c2_network:
+        ipv4_address: 172.18.0.9
 
 networks:
   internal_c2_network:

