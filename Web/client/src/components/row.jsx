@@ -3,7 +3,10 @@ import { Link } from 'react-router-dom';
 
 class Row extends Component {
 
-
+    handleCheckboxChange = () => {
+        const { onCheckboxChange, uuid } = this.props;
+        onCheckboxChange(uuid);
+      };
 
     renderRow = () => (
         <tr>
@@ -19,6 +22,11 @@ class Row extends Component {
                         <font size={2} color="#ff3333">
                             |
                         </font>
+                        <input
+                        type="checkbox"
+                        checked={this.props.isSelected}
+                        onChange={this.handleCheckboxChange}
+                        />
                         <font size={2} color="#888888">
                             {" "}
                             {this.props.uuid.substring(0, 3)}
