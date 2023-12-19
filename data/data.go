@@ -418,6 +418,26 @@ func Agents(db *sql.DB) []types.ConfigAgent {
 	return agentAppend
 }
 
+func GroupAgentsByIp(db *sql.DB) []types.AgentIP {
+	var agents types.AgentIP
+	FetchSQL := `
+	SELECT DISTINCT "Ip" FROM "Agents"
+	`
+	row, err := db.Query(FetchSQL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer row.Close()
+	var agentAppend []types.AgentIP
+	for row.Next() {
+		row.Scan(
+			&agents.AgentIP,
+		)
+		agentAppend = append(agentAppend, agents)
+	}
+	return agentAppend
+}
+
 func Payloads(db *sql.DB) []types.Payload {
 	var payloads types.Payload
 	FetchSQL := `
