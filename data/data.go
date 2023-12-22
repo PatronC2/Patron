@@ -418,6 +418,44 @@ func Agents(db *sql.DB) []types.ConfigAgent {
 	return agentAppend
 }
 
+func AgentsByIp(db *sql.DB, Ip string) []types.ConfigAgent {
+	var agents types.ConfigAgent
+	FetchSQL := `
+	SELECT 
+		"UUID", 
+		"CallBackToIP", 
+		"CallBackFeq", 
+		"CallBackJitter", 
+		"Ip", 
+		"User", 
+		"Hostname",
+		"Status"
+	FROM "Agents"
+	WHERE "isDeleted"='0'
+	AND "Ip" = $1
+	`
+	row, err := db.Query(FetchSQL, Ip)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer row.Close()
+	var agentAppend []types.ConfigAgent
+	for row.Next() {
+		row.Scan(
+			&agents.Uuid,
+			&agents.CallbackTo,
+			&agents.CallbackFrequency,
+			&agents.CallbackJitter,
+			&agents.AgentIP,
+			&agents.Username,
+			&agents.Hostname,
+			&agents.Status,
+		)
+		agentAppend = append(agentAppend, agents)
+	}
+	return agentAppend
+}
+
 func GroupAgentsByIp(db *sql.DB) []types.AgentIP {
 	var agents types.AgentIP
 	FetchSQL := `
