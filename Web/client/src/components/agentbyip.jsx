@@ -1,20 +1,19 @@
 import React, { useEffect } from 'react'
 import Banner from './banner'
-import { getCallbacks, deleteAgent, killAgent } from '../actions/c2actions'
-import Row from './row';
+import { getIps } from '../actions/c2actions'
+import AgentByIpRow from './agentbyiprow';
 
 
-const Home = () => {
+const AgentByIp = () => {
 
   const [state, setState] = React.useState({
     result: [],
-    selectedIds: [],
     loading: true,
   });
 
   useEffect(() => {
     const init = async () => {
-      var res = await getCallbacks();
+      var res = await getIps();
       console.log(res.payload);
       if (res.payload) {
         setState({
@@ -34,63 +33,6 @@ const Home = () => {
     // Cleanup the interval when the component unmounts
     // return () => clearInterval(intervalId);
   }, []); // Only run this effect once when the component mounts
-
-  const handleCheckboxChange = (uuid) => {
-    setState((prevState) => {
-      const isSelected = prevState.selectedIds.includes(uuid);
-      let updatedSelectedIds;
-
-      if (isSelected) {
-        updatedSelectedIds = prevState.selectedIds.filter((id) => id !== uuid);
-      } else {
-        updatedSelectedIds = [...prevState.selectedIds, uuid];
-      }
-
-      return {
-        ...prevState,
-        selectedIds: updatedSelectedIds,
-      };
-    });
-  };
-
-  const kill = async () => {
-    const { selectedIds } = state;
-
-    if (selectedIds.length === 0) {
-      return; // Do nothing if the selected IDs array is empty
-    }
-
-    for (const id of selectedIds) {
-      var res = await killAgent(id);
-      console.log(res.payload);
-      if (res.payload === 'Success') {
-        console.log('redirect');
-      } else {
-        console.log(res.payload);
-      }
-    }
-    location.reload(true);
-  };
-
-  const deleteAg = async () => {
-    const { selectedIds } = state;
-
-    if (selectedIds.length === 0) {
-      return; // Do nothing if the selected IDs array is empty
-    }
-
-    for (const id of selectedIds) {
-      var res = await deleteAgent(id)
-      console.log(res.payload)
-      if (res.payload === "Success"){
-        console.log("Success "+id)
-      }else {
-        console.log(res.payload)
-      }
-    }
-    location.reload(true);
-  };
-
         if (state.loading) {
           return (
             <font size={2} color="#FFFFFF">
@@ -123,24 +65,17 @@ const Home = () => {
                                   face="lucida console"
                                   color="#FFFFFF"
                                 >
-                                  CALLBACKS
+                                  IPs
                                   <br />
                                 </font>
-                                <button onClick={kill}>Kill Selected Agents</button>
-                                <button onClick={deleteAg}>Delete Selected Agents</button>
                                 {/* End Blurb*/}
                               </td>
                             </tr>
                             {/*End Blurb Row*/}
                              {state.result?.map((item) => (
-                                <Row
-                                  key={item.uuid}
-                                  uuid={item.uuid}
-                                  username={item.username}
-                                  status={item.status}
+                                <AgentByIpRow
+                                  key={item.agentip}
                                   agentip={item.agentip}
-                                  isSelected={state.selectedIds.includes(item.uuid)}
-                                  onCheckboxChange={handleCheckboxChange}
                                   // Pass other props as needed
                                 />
                               ))}
@@ -151,4 +86,4 @@ const Home = () => {
           );
 };
 
-export default Home
+export default AgentByIp

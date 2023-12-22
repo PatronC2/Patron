@@ -13,6 +13,28 @@ export var getCallbacks = async () => {
 
 }
 
+export var getIps = async () => {
+
+    const request = await axios.get(`${C2_ENDPOINT}/api/groupagents`, { withCredentials: true })
+        .then(response => response.data);
+    console.log(request)
+    return {
+        payload: request
+    }
+
+}
+
+export var getCallbacksByIp = async (ip) => {
+
+    const request = await axios.get(`${C2_ENDPOINT}/api/groupagents/${ip}`, { withCredentials: true })
+        .then(response => response.data);
+    console.log(request)
+    return {
+        payload: request
+    }
+
+}
+
 export var getPayloads = async () => {
 
     const request = await axios.get(`${C2_ENDPOINT}/api/payloads`, { withCredentials: true })
