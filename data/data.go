@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/PatronC2/Patron/helper"
 	"github.com/PatronC2/Patron/types"
@@ -24,19 +25,29 @@ const (
 
 
 func OpenDatabase() *sql.DB { 
+	var db *sql.DB
+	var err error
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
     "password=%s dbname=%s sslmode=disable",
     host, port, user, password, dbname)
-	var err error
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		log.Fatal(err)
+	for {
+
+		db, err = sql.Open("postgres", psqlInfo)
+		if err != nil {
+			logger.Logf(logger.Error, "Failed to connect to the database: %v\n", err)
+			time.Sleep(30 * time.Second)
+			continue
+		}
+		err = db.Ping()
+		if err != nil {
+			logger.Logf(logger.Error, "Failed to ping the database: %v\n", err)
+			db.Close()
+			time.Sleep(30 * time.Second)
+			continue
+		}
+		logger.Logf(logger.Info, "Postgres DB connected\n")
+		break
 	}
-	err = db.Ping()
-	if err != nil {
-		log.Fatal(err)
-	}
-	logger.Logf(logger.Info, "Postgres DB connected\n")
 	return db
 }
 

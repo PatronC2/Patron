@@ -164,7 +164,7 @@ func main() {
 		log.Fatalln(err)
 	}
 	// Update Agent status ricker
-	ticker := time.Tick(5 * time.Second)
+	ticker := time.Tick(300 * time.Second) //could possibly cause a deadlock
 
 	defer listener.Close()
 	for {
