@@ -20,3 +20,4 @@ const CommandBlock = (props) => {
 };
 
 export default CommandBlock;
+// Probably now redudant

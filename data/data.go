@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/PatronC2/Patron/helper"
 	"github.com/PatronC2/Patron/types"
@@ -24,19 +25,29 @@ const (
 
 
 func OpenDatabase() *sql.DB { 
+	var db *sql.DB
+	var err error
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
     "password=%s dbname=%s sslmode=disable",
     host, port, user, password, dbname)
-	var err error
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		log.Fatal(err)
+	for {
+
+		db, err = sql.Open("postgres", psqlInfo)
+		if err != nil {
+			logger.Logf(logger.Error, "Failed to connect to the database: %v\n", err)
+			time.Sleep(30 * time.Second)
+			continue
+		}
+		err = db.Ping()
+		if err != nil {
+			logger.Logf(logger.Error, "Failed to ping the database: %v\n", err)
+			db.Close()
+			time.Sleep(30 * time.Second)
+			continue
+		}
+		logger.Logf(logger.Info, "Postgres DB connected\n")
+		break
 	}
-	err = db.Ping()
-	if err != nil {
-		log.Fatal(err)
-	}
-	logger.Logf(logger.Info, "Postgres DB connected\n")
 	return db
 }
 
@@ -412,6 +423,64 @@ func Agents(db *sql.DB) []types.ConfigAgent {
 			&agents.Username,
 			&agents.Hostname,
 			&agents.Status,
+		)
+		agentAppend = append(agentAppend, agents)
+	}
+	return agentAppend
+}
+
+func AgentsByIp(db *sql.DB, Ip string) []types.ConfigAgent {
+	var agents types.ConfigAgent
+	FetchSQL := `
+	SELECT 
+		"UUID", 
+		"CallBackToIP", 
+		"CallBackFeq", 
+		"CallBackJitter", 
+		"Ip", 
+		"User", 
+		"Hostname",
+		"Status"
+	FROM "Agents"
+	WHERE "isDeleted"='0'
+	AND "Ip" = $1
+	`
+	row, err := db.Query(FetchSQL, Ip)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer row.Close()
+	var agentAppend []types.ConfigAgent
+	for row.Next() {
+		row.Scan(
+			&agents.Uuid,
+			&agents.CallbackTo,
+			&agents.CallbackFrequency,
+			&agents.CallbackJitter,
+			&agents.AgentIP,
+			&agents.Username,
+			&agents.Hostname,
+			&agents.Status,
+		)
+		agentAppend = append(agentAppend, agents)
+	}
+	return agentAppend
+}
+
+func GroupAgentsByIp(db *sql.DB) []types.AgentIP {
+	var agents types.AgentIP
+	FetchSQL := `
+	SELECT DISTINCT "Ip" FROM "Agents"
+	`
+	row, err := db.Query(FetchSQL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer row.Close()
+	var agentAppend []types.AgentIP
+	for row.Next() {
+		row.Scan(
+			&agents.AgentIP,
 		)
 		agentAppend = append(agentAppend, agents)
 	}

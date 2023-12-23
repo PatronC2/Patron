@@ -1,12 +1,8 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 
-class Row extends Component {
+class AgentByIpRow extends Component {
 
-    handleCheckboxChange = () => {
-        const { onCheckboxChange, uuid } = this.props;
-        onCheckboxChange(uuid);
-      };
 
     renderRow = () => (
         <tr>
@@ -22,21 +18,16 @@ class Row extends Component {
                         <font size={2} color="#ff3333">
                             |
                         </font>
-                        <input
-                        type="checkbox"
-                        checked={this.props.isSelected}
-                        onChange={this.handleCheckboxChange}
-                        />
                         <font size={2} color="#888888">
                             {" "}
-                            {this.props.uuid.substring(0, 3)}
+                            +{" "}
                         </font>
                         <font size={2} color="#888888">
                             {" "}
                             +{" "}
                         </font>
-                        <font size={2} style={{color: this.props.status == 'Online' ? '#00FF00' : '#FF3333'}}>
-                            {/*Start News 1 Title */}{this.props.username}@{this.props.agentip}
+                        <font size={2} style={{color: '#00FF00'}}>
+                            {/*Start News 1 Title */}
                             {/*End News 1 Title */}
                         </font>
                         <font size={2} color="#888888">
@@ -45,7 +36,7 @@ class Row extends Component {
                         </font>
                         <font size={2} color="#FFFFFF">
                             {/*Start News 1 Date */}
-                            <Link to={`/configagent/${this.props.uuid}`}> configure </Link>
+                            <Link to={`/groupagent/${this.props.agentip}`}> {this.props.agentip} </Link>
                             {/*End News 1 Date */}
                         </font>
                         <font size={2} color="#888888">
@@ -54,7 +45,7 @@ class Row extends Component {
                         </font>
                         <font size={2} color="#FFFFFF">
                             {/*Start News 1 Date */}
-                            <Link to={`/agent/${this.props.uuid}`}> interact </Link>
+                            {" "}
                             {/*End News 1 Date */}
                         </font>
                         <font size={2} color="#888888">
@@ -63,7 +54,7 @@ class Row extends Component {
                         </font>
                         <font size={2} color="#FFFFFF">
                             {/*Start News 1 Date */}
-                            <Link to={`/keylog/${this.props.uuid}`}>keylogs</Link>
+                            
                             {/*End News 1 Date */}
                         </font>
                         <font size={2} color="#888888">
@@ -92,4 +83,4 @@ class Row extends Component {
     }
 }
 
-export default Row;
+export default AgentByIpRow;

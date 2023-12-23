@@ -2,6 +2,7 @@ services:
   patron_c2_server:
     image: patron_c2_server
     build: server
+    restart: always
     command: sh -c "go run server/server.go"
     working_dir: /app
     volumes:
@@ -15,6 +16,7 @@ services:
   patron_c2_api:
     image: patron_c2_server
     build: Web/server
+    restart: always
     command: sh -c "go run Web/server/webserver.go"
     working_dir: /app
     volumes:
@@ -29,6 +31,7 @@ services:
     image: node:18-alpine
     command: sh -c "npm install && npm start"
     working_dir: /app
+    restart: always
     volumes:
       - ./Web/client:/app
     networks:
@@ -39,6 +42,7 @@ services:
   
   patron_c2_nginx:
     image: nginx:latest
+    restart: always
     volumes:
     - ./nginx:/etc/nginx/templates
     networks:
@@ -52,6 +56,7 @@ services:
 
   patron_c2_postgres:
     image: postgres:latest
+    restart: always
     container_name: patron_c2_postgres
     environment:
       POSTGRES_USER: patron

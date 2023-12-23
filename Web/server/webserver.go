@@ -51,6 +51,19 @@ func main() {
 		res.SendJSON(agents)
 	})
 
+	r.Get("/api/groupagents", func(w http.ResponseWriter, r *http.Request) {
+		res, _ := yin.Event(w, r)
+		ips := data.GroupAgentsByIp(db)
+		res.SendJSON(ips)
+	})
+
+	r.Get("/api/groupagents/{ip}", func(w http.ResponseWriter, r *http.Request) {
+		agentParam := chi.URLParam(r, "ip")
+		res, _ := yin.Event(w, r)
+		agent := data.AgentsByIp(db, agentParam)
+		res.SendJSON(agent)
+	})
+
 	r.Get("/api/oneagent/{agt}", func(w http.ResponseWriter, r *http.Request) {
 		agentParam := chi.URLParam(r, "agt")
 		res, _ := yin.Event(w, r)

@@ -12,6 +12,11 @@ type ConfigAgent struct {
 	// ...
 }
 
+type AgentIP struct {
+	AgentIP           string `json:"agentip"`
+	// ...
+}
+
 type GiveAgentCommand struct {
 	UpdateAgentConfig ConfigAgent
 	// updateListenerConfig configListenerHttp

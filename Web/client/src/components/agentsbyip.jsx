@@ -1,11 +1,13 @@
 import React, { useEffect } from 'react'
 import Banner from './banner'
-import { getCallbacks, deleteAgent, killAgent } from '../actions/c2actions'
+import { useParams } from 'react-router-dom';
+import { getCallbacksByIp, deleteAgent, killAgent } from '../actions/c2actions'
 import Row from './row';
 
 
-const Home = () => {
+const AgentsByIp = () => {
 
+  let { ip } = useParams();
   const [state, setState] = React.useState({
     result: [],
     selectedIds: [],
@@ -14,7 +16,7 @@ const Home = () => {
 
   useEffect(() => {
     const init = async () => {
-      var res = await getCallbacks();
+      var res = await getCallbacksByIp(ip);
       console.log(res.payload);
       if (res.payload) {
         setState({
@@ -151,4 +153,4 @@ const Home = () => {
           );
 };
 
-export default Home
+export default AgentsByIp
