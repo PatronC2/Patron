@@ -30,6 +30,7 @@ const (
 
 	ERR_CONNECTION int = 30
 	ERR_WRITE      int = 31
+	ERR_PARSE      int = 32
 )
 
 var MapTypesToColor = map[logType]*color.Color{
@@ -52,10 +53,19 @@ var MapTypesToPrefix = map[logType]string{
 
 // Log a timestamped message with a given logType.
 func Log(messageType logType, messages ...string) {
-	fmt.Printf("%s (%s)\t%s\n",
+	fmt.Printf("%s (%s) - %s\n",
 		MapTypesToPrefix[messageType],
-		time.Now().Format(time.RFC3339Nano),
+		time.Now().Format(time.RFC3339),
 		MapTypesToColor[messageType].Sprint(strings.Join(messages, " ")),
+	)
+}
+
+// `Log()` that functions like `fmt.Printf()`.
+func Logf(messageType logType, format string, data ...interface{}) {
+	fmt.Printf("%s (%s) - %s",
+		MapTypesToPrefix[messageType],
+		time.Now().Format(time.RFC3339),
+		MapTypesToColor[messageType].Sprintf(format, data...),
 	)
 }
 
@@ -66,9 +76,9 @@ func LogPlain(messageType logType, messages ...string) {
 
 // Return the `log()` string instead of printing it.
 func LogReturn(messageType logType, messages ...string) string {
-	return fmt.Sprintf("%s (%s)\t%s",
+	return fmt.Sprintf("%s (%s) - %s",
 		MapTypesToPrefix[messageType],
-		time.Now().Format(time.RFC3339Nano),
+		time.Now().Format(time.RFC3339),
 		MapTypesToColor[messageType].Sprint(strings.Join(messages, " ")),
 	)
 }
