@@ -13,9 +13,9 @@ import (
 
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/types"
+	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
-	"github.com/s-christian/gollehs/lib/logger"
 )
 
 func goDotEnvVariable(key string) string {
