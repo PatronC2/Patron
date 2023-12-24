@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/PatronC2/Patron/helper"
-	"github.com/PatronC2/Patron/types"
+	"github.com/PatronC2/Patron/types"	
+	"github.com/PatronC2/Patron/lib/logger"
 	_ "github.com/mattn/go-sqlite3"
 	_ "github.com/lib/pq"
-	"github.com/s-christian/gollehs/lib/logger"
 )
 
 // var db *sql.DB 
@@ -207,7 +207,7 @@ func FetchOneAgent(db *sql.DB, uuid string) types.ConfigAgent {
 			logger.Logf(logger.Info, "No rows were returned!! \n")
 			return info
 		case nil:
-			fmt.Println(info)
+			logger.Logf(logger.Info, "%v\n", info)
 		default:
 			panic(err)
 		}
@@ -253,7 +253,7 @@ func FetchNextCommand(db *sql.DB, uuid string) types.GiveAgentCommand {
 			logger.Logf(logger.Info, "No rows were returned!! \n")
 			return info
 		case nil:
-			fmt.Println(info)
+			logger.Logf(logger.Info, "%v\n", info)
 		default:
 			panic(err)
 		}
@@ -603,6 +603,6 @@ func FetchOne(db *sql.DB, uuid string) []types.ConfigAgent {
 		)
 	}
 	infoAppend = append(infoAppend, info)
-	fmt.Println(info)
+	logger.Logf(logger.Info, "%v\n", info)
 	return infoAppend
 }
