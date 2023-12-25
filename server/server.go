@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"database/sql"
 	"encoding/gob"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -144,6 +145,18 @@ func handleconn(db *sql.DB, connection net.Conn) {
 }
 
 func main() {
+	// Enable or disable logging based on a condition
+	enableLogging := true
+	logger.EnableLogging(enableLogging)
+
+	// Set the log file
+	logFileName := "logs/server.log"
+	err := logger.SetLogFile(logFileName)
+	if err != nil {
+		fmt.Printf("Error setting log file: %v\n", err)
+		return
+	}
+
 	c2serverip := goDotEnvVariable("C2SERVER_IP")
 	c2serverport := goDotEnvVariable("C2SERVER_PORT")
 

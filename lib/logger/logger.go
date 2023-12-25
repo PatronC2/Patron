@@ -3,7 +3,11 @@ package logger
 
 import (
 	"fmt"
-	"strings"
+	"strings"	
+	"io"
+	"log"
+	"os"
+	"sync"
 	"time"
 
 	"github.com/fatih/color"
@@ -30,6 +34,7 @@ const (
 
 	ERR_CONNECTION int = 30
 	ERR_WRITE      int = 31
+	ERR_PARSE      int = 32
 )
 
 var MapTypesToColor = map[logType]*color.Color{
@@ -50,28 +55,112 @@ var MapTypesToPrefix = map[logType]string{
 	Debug:   MapTypesToColor[Debug].Sprint("[DBG]"),
 }
 
+var (
+	enabled = true // Whether logging is enabled
+	logFile *os.File
+	logger  *log.Logger
+	mu      sync.Mutex
+)
+
+// EnableLogging enables or disables logging globally.
+func EnableLogging(flag bool) {
+	mu.Lock()
+	defer mu.Unlock()
+	enabled = flag
+}
+
+// SetLogFile sets the file to which logs will be written.
+func SetLogFile(filename string) error {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if logFile != nil {
+		logFile.Close()
+	}
+
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+
+	logger = log.New(io.MultiWriter(os.Stdout, file), "", log.LstdFlags)
+	return nil
+}
+
 // Log a timestamped message with a given logType.
 func Log(messageType logType, messages ...string) {
-	fmt.Printf("%s (%s)\t%s\n",
-		MapTypesToPrefix[messageType],
-		time.Now().Format(time.RFC3339Nano),
-		MapTypesToColor[messageType].Sprint(strings.Join(messages, " ")),
-	)
+	mu.Lock()
+	defer mu.Unlock()
+
+	if enabled {
+		fmt.Printf("%s (%s) - %s\n",
+			MapTypesToPrefix[messageType],
+			time.Now().Format(time.RFC3339),
+			MapTypesToColor[messageType].Sprint(strings.Join(messages, " ")),
+		)
+	}
+}
+
+// `Log()` that functions like `fmt.Printf()`.
+func Logf(messageType logType, format string, data ...interface{}) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if enabled {
+		logString := fmt.Sprintf("%s (%s) - %s",
+			MapTypesToPrefix[messageType],
+			time.Now().Format(time.RFC3339),
+			MapTypesToColor[messageType].Sprintf(format, data...),
+		)		
+		// // Print to console and log file
+		// fmt.Println(logString1)
+
+		if logger != nil {
+			logger.Print(logString)
+		}
+	}
 }
 
 // `Log()` without a timestamp.
 func LogPlain(messageType logType, messages ...string) {
-	fmt.Printf("%s %s\n", MapTypesToPrefix[messageType], MapTypesToColor[messageType].Sprint(strings.Join(messages, " ")))
+	mu.Lock()
+	defer mu.Unlock()
+
+	if enabled {
+		fmt.Printf("%s %s\n", MapTypesToPrefix[messageType], MapTypesToColor[messageType].Sprint(strings.Join(messages, " ")))
+	}
 }
 
 // Return the `log()` string instead of printing it.
 func LogReturn(messageType logType, messages ...string) string {
-	return fmt.Sprintf("%s (%s)\t%s",
-		MapTypesToPrefix[messageType],
-		time.Now().Format(time.RFC3339Nano),
-		MapTypesToColor[messageType].Sprint(strings.Join(messages, " ")),
-	)
+	mu.Lock()
+	defer mu.Unlock()
+
+	if enabled {
+		return fmt.Sprintf("%s (%s) - %s",
+			MapTypesToPrefix[messageType],
+			time.Now().Format(time.RFC3339),
+			MapTypesToColor[messageType].Sprint(strings.Join(messages, " ")),
+		)
+	} else{
+		return ""
+	}
 }
+
+// func LogRaw(messageType logType, messages ...interface{}) string {
+// 	mu.Lock()
+// 	defer mu.Unlock()
+
+// 	if enabled {
+// 		return fmt.Sprintf("%s (%s) - %v",
+// 			MapTypesToPrefix[messageType],
+// 			time.Now().Format(time.RFC3339),
+// 			MapTypesToColor[messageType].Sprint(strings.Join(messages, " ")),
+// 		)
+// 	} else {
+// 		return
+// 	}
+// }
 
 // Log the error string
 func LogError(err error) {

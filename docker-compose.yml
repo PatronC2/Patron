@@ -9,9 +9,9 @@ services:
       - ./:/app
     networks:
       internal_c2_network:
-        ipv4_address: 172.18.0.5
+        ipv4_address: "${DOCKER_INTERNAL}.5"
     ports:
-      - 9000:9000
+      - "${C2SERVER_PORT}:${C2SERVER_PORT}"
 
   patron_c2_api:
     image: patron_c2_server
@@ -23,7 +23,7 @@ services:
       - ./:/app
     networks:
       internal_c2_network:
-        ipv4_address: 172.18.0.6
+        ipv4_address: "${DOCKER_INTERNAL}.6"
     # ports:
     #   - 8000:8000
 
@@ -36,7 +36,7 @@ services:
       - ./Web/client:/app
     networks:
       internal_c2_network:
-        ipv4_address: 172.18.0.7
+        ipv4_address: "${DOCKER_INTERNAL}.7"
     # ports:
     #   - 8081:8081
   
@@ -44,31 +44,32 @@ services:
     image: nginx:latest
     restart: always
     volumes:
-    - ./nginx:/etc/nginx/templates
+    - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template
+    - ./nginx/.htpasswd:/etc/nginx/.htpasswd
+    environment:
+      - REACT_SERVER=${DOCKER_INTERNAL}.7:${REACT_SERVER_PORT}
+      - API_SERVER=${DOCKER_INTERNAL}.6:${WEBSERVER_PORT}
     networks:
       internal_c2_network:
-        ipv4_address: 172.18.0.8
+        ipv4_address: "${DOCKER_INTERNAL}.8"
     ports:
-    - "8082:80"
-    # environment:
-    # - NGINX_HOST=foobar.com
-    # - NGINX_PORT=80
+    - "${REACT_APP_NGINX_PORT}:80"
 
   patron_c2_postgres:
     image: postgres:latest
     restart: always
     container_name: patron_c2_postgres
     environment:
-      POSTGRES_USER: patron
-      POSTGRES_PASSWORD: qwerty
-      POSTGRES_DB: patron
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
       - ./data/postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "${DB_PORT}:${DB_PORT}"
     networks:
       internal_c2_network:
-        ipv4_address: 172.18.0.9
+        ipv4_address: "${DOCKER_INTERNAL}.9"
 
 networks:
   internal_c2_network:
@@ -76,4 +77,4 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.18.0.0/16
+        - subnet: "${DOCKER_INTERNAL}.0/16"

@@ -11,6 +11,7 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/joho/godotenv v1.4.0
+	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.12
 	github.com/qkgo/yin v0.0.0-20190403073632-bff3b50ba6e6
 	github.com/s-christian/gollehs v0.0.0-20220316081058-f0fcf0024a48
@@ -19,7 +20,6 @@ require (
 
 require (
 	github.com/gorilla/websocket v1.4.2 // indirect
-	github.com/lib/pq v1.10.9 // indirect
 	github.com/mattn/go-colorable v0.1.9 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/newrelic/go-agent v3.15.2+incompatible // indirect

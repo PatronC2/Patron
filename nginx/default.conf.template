@@ -9,25 +9,31 @@ server {
         server_tokens off;      
 
         location / {
+                auth_basic "Restricted Access";
+                auth_basic_user_file /etc/nginx/.htpasswd;
                 allow 0.0.0.0/0;
                 #allow 10.10.10.0/0;
                 deny all;
                 limit_req zone=root burst=20;
-                proxy_pass http://172.18.0.7:8081; #react client
+                proxy_pass http://${REACT_SERVER}; #react client
         }
 
         location /api {
+                auth_basic "Restricted Access";
+                auth_basic_user_file /etc/nginx/.htpasswd;
                 allow 0.0.0.0/0;
                 # allow 10.10.10.0/24;
                 deny all;
-                proxy_pass http://172.18.0.6:8000; #api server
+                proxy_pass http://${API_SERVER}; #api server
         }
 
         location /files {
+                auth_basic "Restricted Access";
+                auth_basic_user_file /etc/nginx/.htpasswd;
                 allow 0.0.0.0/0;
                 # allow 10.10.10.0/24;
                 deny all;
-                proxy_pass http://172.18.0.6:8000; #api server
+                proxy_pass http://${API_SERVER}; #api server
         }
 
         error_page 403 =302 https://www.youtube.com/watch?v=dQw4w9WgXcQ;

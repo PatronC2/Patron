@@ -267,7 +267,7 @@ const CreatePayload = () => {
                         </font> */}
                         <font size={2} color="#888888">
                             {" "}
-                        Callback Frequency
+                        Callback Frequency (300 healthy)
                             +{" "}
                         </font>
                         <font size={2} color="#FFFFFF">
@@ -304,7 +304,7 @@ const CreatePayload = () => {
                         </font> */}
                         <font size={2} color="#888888">
                             {" "}
-                        Callback Jitter
+                        Callback Jitter (80 healthy)
                             +{" "}
                         </font>
                         <font size={2} color="#FFFFFF">
