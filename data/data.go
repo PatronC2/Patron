@@ -4,29 +4,39 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/PatronC2/Patron/helper"
 	"github.com/PatronC2/Patron/types"	
-	"github.com/PatronC2/Patron/lib/logger"
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/PatronC2/Patron/lib/logger"	
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
-// var db *sql.DB 
+func goDotEnvVariable(key string) string {
 
-const (
-	host     = "172.18.0.9" // add to env setup
-	port     = 5432
-	user     = "patron"
-	password = "qwerty"
-	dbname   = "patron"
-  )
+	// load .env file
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	return os.Getenv(key)
+}
 
 
 func OpenDatabase() *sql.DB { 
 	var db *sql.DB
 	var err error
+	var port int
+	host := goDotEnvVariable("DB_HOST")
+	fmt.Sscan(goDotEnvVariable("DB_PORT"), &port)
+	user := goDotEnvVariable("DB_USER")
+	password := goDotEnvVariable("DB_PASS")
+	dbname := goDotEnvVariable("DB_NAME")
+
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
     "password=%s dbname=%s sslmode=disable",
     host, port, user, password, dbname)

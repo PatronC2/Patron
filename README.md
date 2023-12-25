@@ -15,9 +15,26 @@ A Command and Control Framework made in Go.
 * TLS C2 communication
 * Swappable/Flexible Agent
 * Discord Bot
+* Wrapped in docker
+
+# Install
+
+* Run `git clone https://github.com/PatronC2/Patron.git`
+* Run `./install.sh -d -p -s <your-ip>` for fresh install
+
+```
+Options:
+  -d    Use default options
+  -w    Wipe Database
+  -s    <your_ip_address>   Server Ip address
+  -p    Prompts you to enter passwords
+  -h    Show this help message
+```
+
 
 # Docker
 
+* Run the install steps above
 * Run `docker compose up --remove-orphans` 
 * Tear down `docker compose down`
 * debuging logs: 
@@ -34,14 +51,10 @@ A Command and Control Framework made in Go.
 * * `docker compose restart patron_c2_nginx`
 
 ## Todo
-* (have .env setup)
 * conditionally setup discord bot
-* conditionally setup docker compose
+* list / pull files with agents
+* test multiple server 
 
-# Install
-
-* Run `git clone https://github.com/PatronC2/Patron.git`
-* Run `./install.sh`
 
 
 ## Install Notes

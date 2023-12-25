@@ -7,3 +7,4 @@
 /agents
 .env
 /logs/server.log
+/nginx/.htpasswd
