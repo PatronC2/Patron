@@ -241,6 +241,10 @@ echo "REACT_APP_NGINX_IP=$nginxip" >> Web/client/.env
 echo "REACT_APP_NGINX_PORT=$nginxport" >> Web/client/.env
 echo "HOST=$reactclientip" >> Web/client/.env
 echo "PORT=$reactclientport" >> Web/client/.env
+authenticationKey=$(openssl rand -hex 32)
+if ! grep -qF "AUTHENTICATION_KEY" "Web/client/.env"; then
+   echo "AUTHENTICATION_KEY=$authenticationKey" >> "Web/client/.env"
+fi
 
 
 #go mod tidy
