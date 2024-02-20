@@ -134,6 +134,30 @@ func InitDatabase(db *sql.DB) {
 		log.Fatal(err.Error())
 	}
 	logger.Logf(logger.Info, "Payloads table initialized\n")
+	PayloadSQL := `
+	CREATE TABLE IF NOT EXISTS "USERS" (
+		"USERID" SERIAL PRIMARY KEY,
+		"USERNAME" TEXT,
+		"ROLE" TEXT,
+		"PASSWD" TEXT
+	);
+	`
+	_, err = db.Exec(PayloadSQL)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	logger.Logf(logger.Info, "Users table initialized\n")
+	PayloadSQL := `
+	CREATE TABLE IF NOT EXISTS "ROLES" (
+		"ROLEID" SERIAL PRIMARY KEY,
+		"NAME" TEXT
+	);
+	`
+	_, err = db.Exec(PayloadSQL)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	logger.Logf(logger.Info, "Roles table initialized\n")
 }
 
 func CreateAgent(db *sql.DB, uuid string, CallBackToIP string, CallBackFeq string, CallBackJitter string, Ip string, User string, Hostname string) {
@@ -615,4 +639,68 @@ func FetchOne(db *sql.DB, uuid string) []types.ConfigAgent {
 	infoAppend = append(infoAppend, info)
 	logger.Logf(logger.Info, "%v\n", info)
 	return infoAppend
+}
+
+func FetchUserPasswordHash(db *.sql.DB, username string) []types.PasswordHash {
+	var info types.PasswordHash
+	FetchSQL := `
+	SELECT "PASSWD"
+	FROM "USERS" WHERE "USERNAME"=$1
+	`
+	row, err := db.Query(FetchSQL, uuid)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer row.Close()
+	var infoAppend []types.ConfigAgent
+	for row.Next() {
+		row.Scan(
+			&info.passwd
+		)
+	}
+	infoAppend = append(infoAppend, info)
+	logger.Logf(logger.Info, "%v\n", info)
+	return infoAppend
+}
+
+func FetchRole(db *.sql.DB, role name) []types.Role {
+	var info types.PasswordHash
+	FetchSQL := `
+	SELECT "ROLEID", "NAME"
+	FROM "ROLES" WHERE "NAME"=$1
+	`
+	row, err := db.Query(FetchSQL, uuid)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer row.Close()
+	var infoAppend []types.ConfigAgent
+	for row.Next() {
+		row.Scan(
+			&info.passwd
+		)
+	}
+	infoAppend = append(infoAppend, info)
+	logger.Logf(logger.Info, "%v\n", info)
+	return infoAppend
+}
+
+func InsertNewUser(db *.sql.DB, username string, role string, passwdHash string) {
+	CreateUserSQL := `
+	INSERT INTO "USERS" ("USERNAME", "ROLE", "PASSWD")
+	VALUES ($1, $2, $3)
+	`
+
+	statement, err := db.Prepare(CreateUserSQL)
+	if err != nil {
+		log.Fatalln(err)
+		logger.Logf(logger.Info, "Error in DB\n")
+	}
+
+	_, err = statement.Exec(userid, username, role, passwd)
+	if err != nil {
+
+		log.Fatalln(err)
+	}
+	logger.Logf(logger.Info, "New User created in DB\n")
 }
