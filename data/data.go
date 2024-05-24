@@ -12,6 +12,7 @@ import (
 	"github.com/PatronC2/Patron/lib/logger"	
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func goDotEnvVariable(key string) string {
@@ -159,7 +160,7 @@ func InitDatabase(db *sql.DB) {
 
     CreateAdminUserSQL := `
 	INSERT INTO users (username, password_hash, role)
-	VALUES ($1, $2, 'super-admin')
+	VALUES ($1, $2, 'admin')
 	ON CONFLICT (username) DO NOTHING;
 	`
 
