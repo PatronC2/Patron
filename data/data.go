@@ -62,6 +62,9 @@ func OpenDatabase() *sql.DB {
 }
 
 func InitDatabase(db *sql.DB) {
+	default_user_name := "patron"
+	default_user_pass := goDotEnvVariable("ADMIN_AUTH_PASS")
+
 	AgentSQL := `
 	CREATE TABLE IF NOT EXISTS "Agents" (
 		"AgentID" SERIAL PRIMARY KEY,
@@ -134,6 +137,37 @@ func InitDatabase(db *sql.DB) {
 		log.Fatal(err.Error())
 	}
 	logger.Logf(logger.Info, "Payloads table initialized\n")
+
+    UsersSQL := `
+	CREATE TABLE IF NOT EXISTS users (
+		id SERIAL PRIMARY KEY,
+		username VARCHAR(50) UNIQUE NOT NULL,
+		password_hash TEXT NOT NULL,
+		role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'operator', 'readOnly'))
+	);
+	`
+    _, err = db.Exec(UsersSQL)
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+    log.Println("Users table initialized")
+
+    passwordHash, err := bcrypt.GenerateFromPassword([]byte(default_user_pass), bcrypt.DefaultCost)
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+
+    CreateAdminUserSQL := `
+	INSERT INTO users (username, password_hash, role)
+	VALUES ($1, $2, 'super-admin')
+	ON CONFLICT (username) DO NOTHING;
+	`
+
+    _, err = db.Exec(CreateAdminUserSQL, default_user_name, string(passwordHash))
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+    log.Println("Super admin user created")
 }
 
 func CreateAgent(db *sql.DB, uuid string, CallBackToIP string, CallBackFeq string, CallBackJitter string, Ip string, User string, Hostname string) {

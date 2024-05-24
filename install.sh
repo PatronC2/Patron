@@ -232,7 +232,7 @@ echo "REACT_APP_NGINX_PORT=$nginxport" >> .env
 echo "REACT_APP_NGINX_IP=$nginxip" >> .env
 echo "REACT_SERVER_IP=$reactclientip" >> .env
 echo "REACT_SERVER_PORT=$reactclientport" >> .env
-echo "BASIC_AUTH_PASS=$basicpass" >> .env
+echo "ADMIN_AUTH_PASS=$basicpass" >> .env
 
 #webclient env
 echo "REACT_APP_WEBSERVER_IP=$webserverip" >> Web/client/.env
