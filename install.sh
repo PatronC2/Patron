@@ -242,6 +242,8 @@ echo "REACT_APP_NGINX_PORT=$nginxport" >> Web/client/.env
 echo "HOST=$reactclientip" >> Web/client/.env
 echo "PORT=$reactclientport" >> Web/client/.env
 
+# make log dir
+mkdir -p logs
 
 #go mod tidy
 echo "Running: Go mod tidy"
