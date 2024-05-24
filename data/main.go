@@ -6,7 +6,6 @@ import (
 )
 
 func main() {
-    initDB()
     r := gin.Default()
 
     r.POST("/login", loginHandler)
