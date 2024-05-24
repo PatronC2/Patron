@@ -8,3 +8,6 @@
 .env
 /logs/server.log
 /nginx/.htpasswd
+go.mod
+go.sum
+data/postgres_data/
