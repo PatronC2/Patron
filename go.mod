@@ -19,9 +19,6 @@ require (
 )
 
 require (
-	github.com/gorilla/websocket v1.4.2 // indirect
-	github.com/mattn/go-colorable v0.1.9 // indirect
-	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/newrelic/go-agent v3.15.2+incompatible // indirect
 	golang.org/x/sys v0.0.0-20220422013727-9388b58f7150 // indirect
 )
