@@ -659,7 +659,7 @@ func FetchOne(db *sql.DB, uuid string) []types.ConfigAgent {
 	return infoAppend
 }
 
-func (u *User) SetPassword(password string) error {
+func (db *sql.DB, u *User) SetPassword(password string) error {
     hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
     if err != nil {
         return err
@@ -668,17 +668,17 @@ func (u *User) SetPassword(password string) error {
     return nil
 }
 
-func (u *User) CheckPassword(password string) error {
+func (db *sql.DB, u *User) CheckPassword(password string) error {
     return bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
 }
 
-func getUserByUsername(username string) (*User, error) {
+func getUserByUsername(db *sql.DB, username string) (*User, error) {
     var user User
     err := db.Query("SELECT * FROM users WHERE username=$1", username)
     return &user, err
 }
 
-func createUser(user *User) error {
+func createUser(db *sql.DB, user *User) error {
     _, err := db.Query(`INSERT INTO users (username, password_hash, role) 
                              VALUES (:username, :password_hash, :role)`, user)
     return err
