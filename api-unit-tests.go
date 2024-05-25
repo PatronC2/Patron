@@ -3,6 +3,8 @@ package main
 /*
  * Depends on API container and PostgreSQL DB running
  * Tests creating users, permissions, and more to come.
+ *
+ * Run with: go run api-unit-tests.go
 */
 
 import (
@@ -10,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"net/http"
 )
 
@@ -34,6 +37,7 @@ type CreateUserRequest struct {
 func main() {
 	ERROR_COUNT := 0
 	SUCCESS_COUNT := 0
+	// Test for admin login, creating a readOnly user
 	TEST_NAME := "LOGIN TEST"
 	fmt.Printf("Beginning Test: %s\n", TEST_NAME)
 	token, err := login(username, password)
@@ -67,6 +71,9 @@ func main() {
 		SUCCESS_COUNT += 1
 	}
 
+	// make sure read only user doesn't have admin privs
+	TEST_NAME = "PRIVILEGE TEST"
+	fmt.Printf("Beginning Test: %s\n", TEST_NAME)
 	fmt.Printf("%s: Trying login as %s\n", TEST_NAME, newUsername)
 	roToken, err := login(newUsername, newPassword)
 	if err != nil {
@@ -76,9 +83,7 @@ func main() {
 		fmt.Printf("%s: PASS\n", TEST_NAME)
 		SUCCESS_COUNT += 1
 	}
-
-	TEST_NAME = "PRIVILEGE TEST"
-	fmt.Printf("Beginning Test: %s\n", TEST_NAME)
+	
 	invalidUsername := "crap"
 	invalidPassword := "crap"
 	invalidRole := "admin"
@@ -88,14 +93,30 @@ func main() {
 		fmt.Printf("%s: Invalid user creation should have failed but did not\n", TEST_NAME)
 		ERROR_COUNT += 1
 	} else {
+		fmt.Printf("%s: User permissions are correct\n", TEST_NAME)
 		fmt.Printf("%s: PASS\n", TEST_NAME)
 		SUCCESS_COUNT += 1
 	}
+
+	// delete the RO test user
+	TEST_NAME = "DELETE TEST USER"
+	err = deleteUser(token, newUsername)
+	if err != nil {
+		fmt.Printf("%s: Failed to delete user: %v\n", TEST_NAME, err)
+		ERROR_COUNT += 1
+	} else {
+		fmt.Printf("%s: User %s deleted successfully\n", TEST_NAME, newUsername)
+		SUCCESS_COUNT += 1
+	}
+
+	// Test Summary
 	fmt.Printf("------------------\n\nSuccess Count: %d\nFailure Count: %d\n", SUCCESS_COUNT, ERROR_COUNT)
 	if ERROR_COUNT <= 0 {
 		fmt.Println("All Tests Successful")
+		os.Exit(0)
 	} else{
 		fmt.Println("Tests are unstable")
+		os.Exit(1)
 	}
 }
 
@@ -164,6 +185,26 @@ func createUser(token, username, password, role string) error {
 	if resp.StatusCode != http.StatusCreated {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return fmt.Errorf("failed to create user: %s", string(body))
+	}
+
+	return nil
+}
+
+func deleteUser(token, username string) error {
+	url := fmt.Sprintf("http://%s:%s/users/%s", patronIP, patronAPIPort, username)
+	req, _ := http.NewRequest("DELETE", url, nil)
+	req.Header.Set("Authorization", fmt.Sprintf("%s", token))
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to make delete user request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return fmt.Errorf("failed to delete user: %s", string(body))
 	}
 
 	return nil
