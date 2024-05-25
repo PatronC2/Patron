@@ -11,16 +11,17 @@ func main() {
     r := gin.Default()
 
     r.POST("/login", loginHandler)
-    r.POST("/users", Auth(), createUserHandler)
+    r.POST("/users", Auth("admin"), createUserHandler)
+	r.DELETE("/users/:username", Auth("admin"), deleteUserByUsernameHandler)
 
     api := r.Group("/api")
-    api.Use(Auth())
+    api.Use(Auth("readOnly"))
     {
         api.GET("/data", readOnlyHandler)
     }
 
     admin := r.Group("/admin")
-    admin.Use(Auth())
+    admin.Use(Auth("admin"))
     {
         admin.POST("/data", adminHandler)
     }
@@ -39,7 +40,11 @@ func loginHandler(c *gin.Context) {
     }
 
     user, err := getUserByUsername(loginRequest.Username)
+	fmt.Println("loginHandler getUser", user)
     if err != nil || user.CheckPassword(loginRequest.Password) != nil {
+		if err != nil {
+			fmt.Println("login error", err)
+		}
         c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
         return
     }
@@ -53,26 +58,6 @@ func loginHandler(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
-func createUserHandler(c *gin.Context) {
-    var user User
-    if err := c.ShouldBindJSON(&user); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
-        return
-    }
-
-    if err := user.SetPassword(user.PasswordHash); err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
-        return
-    }
-
-    if err := createUser(&user); err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
-        return
-    }
-
-    c.JSON(http.StatusCreated, gin.H{"message": "User created"})
-}
-
 func readOnlyHandler(c *gin.Context) {
     // Implement read-only access logic here
     c.JSON(http.StatusOK, gin.H{"data": "read-only data"})
@@ -80,5 +65,5 @@ func readOnlyHandler(c *gin.Context) {
 
 func adminHandler(c *gin.Context) {
     // Implement admin read/write access logic here
-    c.JSON(http.StatusOK, gin.H{"data": "admin data"})
+	c.JSON(http.StatusOK, gin.H{"data": "admmin data"})
 }

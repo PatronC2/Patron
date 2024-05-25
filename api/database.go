@@ -3,29 +3,14 @@ package main
 import (
     "log"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/PatronC2/Patron/lib/logger"	
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-	"golang.org/x/crypto/bcrypt"
     "github.com/jmoiron/sqlx"
 )
 
 var db *sqlx.DB
-
-func goDotEnvVariable(key string) string {
-
-	// load .env file
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
-
-	return os.Getenv(key)
-}
 
 func OpenDatabase(){ 
 	var err error
@@ -150,9 +135,9 @@ func InitDatabase() {
     }
     log.Println("Users table initialized")
 
-    passwordHash, err := bcrypt.GenerateFromPassword([]byte(default_user_pass), bcrypt.DefaultCost)
+	passwordHash, err := HashPassword(default_user_pass)
     if err != nil {
-        log.Fatal(err.Error())
+        logger.Logf(logger.Info, "Error hashing password: %v\n", err)
     }
 
     CreateAdminUserSQL := `

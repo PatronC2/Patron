@@ -1,17 +1,17 @@
 services:
-  patron_c2_server:
-    image: patron_c2_server
-    build: server
-    restart: always
-    command: sh -c "go run server/server.go"
-    working_dir: /app
-    volumes:
-      - ./:/app
-    networks:
-      internal_c2_network:
-        ipv4_address: "${DOCKER_INTERNAL}.5"
-    ports:
-      - "${C2SERVER_PORT}:${C2SERVER_PORT}"
+  #patron_c2_server:
+  #  image: patron_c2_server
+  #  build: server
+  #  restart: always
+  #  command: sh -c "go run server/server.go"
+  #  working_dir: /app
+  #  volumes:
+  #    - ./:/app
+  #  networks:
+  #    internal_c2_network:
+  #      ipv4_address: "${DOCKER_INTERNAL}.5"
+  #  ports:
+  #    - "${C2SERVER_PORT}:${C2SERVER_PORT}"
 
   patron_c2_api:
     image: patron_c2_server
@@ -27,33 +27,33 @@ services:
     # ports:
     #   - 8000:8000
 
-  patron_c2_frontend:
-    image: node:18-alpine
-    command: sh -c "npm install && npm start"
-    working_dir: /app
-    restart: always
-    volumes:
-      - ./Web/client:/app
-    networks:
-      internal_c2_network:
-        ipv4_address: "${DOCKER_INTERNAL}.7"
-    # ports:
-    #   - 8081:8081
+  #patron_c2_frontend:
+  #  image: node:18-alpine
+  #  command: sh -c "npm install && npm start"
+  #  working_dir: /app
+  #  restart: always
+  #  volumes:
+  #    - ./Web/client:/app
+  #  networks:
+  #    internal_c2_network:
+  #      ipv4_address: "${DOCKER_INTERNAL}.7"
+  #  # ports:
+  #  #   - 8081:8081
   
-  patron_c2_nginx:
-    image: nginx:latest
-    restart: always
-    volumes:
-    - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template
-    - ./nginx/.htpasswd:/etc/nginx/.htpasswd
-    environment:
-      - REACT_SERVER=${DOCKER_INTERNAL}.7:${REACT_SERVER_PORT}
-      - API_SERVER=${DOCKER_INTERNAL}.6:${WEBSERVER_PORT}
-    networks:
-      internal_c2_network:
-        ipv4_address: "${DOCKER_INTERNAL}.8"
-    ports:
-    - "${REACT_APP_NGINX_PORT}:80"
+  #patron_c2_nginx:
+  #  image: nginx:latest
+  #  restart: always
+  #  volumes:
+  #  - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template
+  #  - ./nginx/.htpasswd:/etc/nginx/.htpasswd
+  #  environment:
+  #    - REACT_SERVER=${DOCKER_INTERNAL}.7:${REACT_SERVER_PORT}
+  #    - API_SERVER=${DOCKER_INTERNAL}.6:${WEBSERVER_PORT}
+  #  networks:
+  #    internal_c2_network:
+  #      ipv4_address: "${DOCKER_INTERNAL}.8"
+  #  ports:
+  #  - "${REACT_APP_NGINX_PORT}:80"
 
   patron_c2_postgres:
     image: postgres:latest

@@ -2,6 +2,7 @@ package main
 
 import (
     "golang.org/x/crypto/bcrypt"
+	"github.com/PatronC2/Patron/lib/logger"	
 )
 
 type User struct {
@@ -12,9 +13,9 @@ type User struct {
 }
 
 func (u *User) SetPassword(password string) error {
-    hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+    hash, err := HashPassword(password)
     if err != nil {
-        return err
+        logger.Logf(logger.Info, "Error hashing password: %v\n", err)
     }
     u.PasswordHash = string(hash)
     return nil
@@ -31,7 +32,17 @@ func getUserByUsername(username string) (*User, error) {
 }
 
 func createUser(user *User) error {
-    _, err := db.NamedExec(`INSERT INTO users (username, password_hash, role) 
-                             VALUES (:username, :password_hash, :role)`, user)
-    return err
+    CreateUserSQL := `
+	INSERT INTO users (username, password_hash, role)
+	VALUES ($1, $2, $3)
+	ON CONFLICT (username) DO NOTHING;
+	`
+
+    _, err := db.Exec(CreateUserSQL, user.Username, user.PasswordHash, user.Role)
+    if err != nil {
+        logger.Logf(logger.Error, "Failed to create user: %v\n", err)
+    }
+    logger.Logf(logger.Info, "User %v created\n", user.Username)
+	return err
+
 }

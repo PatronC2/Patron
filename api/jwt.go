@@ -30,7 +30,7 @@ func GenerateJWT(username string, role string) (tokenString string, err error) {
 	return
 }
 
-func ValidateToken(signedToken string) (err error) {
+func ValidateToken(signedToken string, role string) (err error) {
 	token, err := jwt.ParseWithClaims(
 		signedToken,
 		&JWTClaim{},
@@ -51,6 +51,11 @@ func ValidateToken(signedToken string) (err error) {
 
 	if claims.ExpiresAt < time.Now().Local().Unix() {
 		err = errors.New("token expired")
+		return
+	}
+
+	if claims.Role != role && claims.Role != "admin" {
+		err = errors.New("Insufficient Privileges")
 		return
 	}
 	
