@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
     "net/http"
+	"fmt"
 
     "github.com/gin-gonic/gin"
 	"github.com/PatronC2/Patron/helper"
@@ -13,6 +14,13 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
+
+type UserCreationRequest struct {
+    Username string `json:"username" binding:"required"`
+    Password string `json:"password" binding:"required"`
+    Role     string `json:"role" binding:"required"`
+}
+
 
 func goDotEnvVariable(key string) string {
 
@@ -508,24 +516,35 @@ func FetchOne(db *sql.DB, uuid string) []types.ConfigAgent {
 }
 
 func createUserHandler(c *gin.Context) {
-    var user User
-    if err := c.ShouldBindJSON(&user); err != nil {
+    var req UserCreationRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
         return
     }
 
-    if err := user.SetPassword(user.PasswordHash); err != nil {
+    user := User{
+        Username: req.Username,
+        Role:     req.Role,
+    }
+
+    fmt.Println("Plaintext password:", req.Password)
+    if err := user.SetPassword(req.Password); err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+        fmt.Println("Failed to hash password", err)
         return
     }
 
+    logger.Logf(logger.Info, "Creating user in the database: %v", user.Username)
     if err := createUser(&user); err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+        logger.Logf(logger.Error, "Failed to create user: %v", err)
         return
     }
 
     c.JSON(http.StatusCreated, gin.H{"message": "User created"})
+    logger.Logf(logger.Info, "User %v created successfully", user.Username)
 }
+
 
 func deleteUserByUsernameHandler(c *gin.Context) {
     // Extract username from request

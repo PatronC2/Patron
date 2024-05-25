@@ -45,8 +45,6 @@ func OpenDatabase(){
 }
 
 func InitDatabase() {
-	default_user_name := "patron"
-	default_user_pass := goDotEnvVariable("ADMIN_AUTH_PASS")
 
 	AgentSQL := `
 	CREATE TABLE IF NOT EXISTS "Agents" (
@@ -135,20 +133,4 @@ func InitDatabase() {
     }
     log.Println("Users table initialized")
 
-	passwordHash, err := HashPassword(default_user_pass)
-    if err != nil {
-        logger.Logf(logger.Info, "Error hashing password: %v\n", err)
-    }
-
-    CreateAdminUserSQL := `
-	INSERT INTO users (username, password_hash, role)
-	VALUES ($1, $2, 'admin')
-	ON CONFLICT (username) DO NOTHING;
-	`
-
-    _, err = db.Exec(CreateAdminUserSQL, default_user_name, string(passwordHash))
-    if err != nil {
-        log.Fatal(err.Error())
-    }
-    log.Println("Admin user created")
 }

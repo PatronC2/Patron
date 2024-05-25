@@ -1,6 +1,8 @@
 package main
 
 import (
+    "fmt"
+
     "github.com/gin-gonic/gin"
     "net/http"
 )
@@ -8,6 +10,7 @@ import (
 func main() {
 	OpenDatabase()
     InitDatabase()
+    createAdminUser()
     r := gin.Default()
 
     r.POST("/login", loginHandler)

@@ -37,10 +37,7 @@ NEW_ROLE="admin"
 CREATE_USER_RESPONSE=$(curl -s -X POST http://${PATRON_IP}:${PATRON_API_PORT}/users \
   -H "Content-Type: application/json" \
   -H "Authorization: $TOKEN" \
-  -d "{\"username\":\"${NEW_USERNAME}\",\"password_hash\":\"${NEW_PASSWORD}\",\"role\":\"${NEW_ROLE}\"}")
-
-echo "Response from creating new user: $CREATE_USER_RESPONSE"
-
+  -d "{\"username\":\"${NEW_USERNAME}\",\"password\":\"${NEW_PASSWORD}\",\"role\":\"${NEW_ROLE}\"}")
 
 sleep 3
 

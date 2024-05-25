@@ -2,8 +2,6 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
-	"github.com/PatronC2/Patron/lib/logger"
 )
 
 func Auth(requiredRole string) gin.HandlerFunc{
@@ -22,14 +20,4 @@ func Auth(requiredRole string) gin.HandlerFunc{
 		}
 		context.Next()
 	}
-}
-
-
-func HashPassword(plaintextPassword string) (passwordHash string, err error) {
-    hashedBytes, err := bcrypt.GenerateFromPassword([]byte(plaintextPassword), bcrypt.DefaultCost)
-    if err != nil {
-        logger.Logf(logger.Info, "Error hashing password: %v\n", err)
-        return "", err
-    }
-    return string(hashedBytes), nil
 }
