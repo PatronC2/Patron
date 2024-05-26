@@ -8,19 +8,20 @@ package main
 */
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"os"
-	"net/http"
+    "bytes"
+	"crypto/tls"
+    "encoding/json"
+    "fmt"
+    "io/ioutil"
+    "net/http"
+    "os"
 )
 
 const (
 	username      = "patron"
 	password      = "password1!"
 	patronIP      = "192.168.50.240"
-	patronAPIPort = "8080"
+	patronAPIPort = "8443"
 )
 
 type LoginResponse struct {
@@ -120,38 +121,48 @@ func main() {
 	}
 }
 
+func createInsecureClient() *http.Client {
+    // Custom transport that skips SSL verification
+    tr := &http.Transport{
+        TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+    }
+    return &http.Client{Transport: tr}
+}
+
 func login(username, password string) (string, error) {
-	url := fmt.Sprintf("http://%s:%s/login", patronIP, patronAPIPort)
-	reqBody, _ := json.Marshal(map[string]string{
-		"username": username,
-		"password": password,
-	})
+    url := fmt.Sprintf("https://%s:%s/login", patronIP, patronAPIPort)
+    reqBody, _ := json.Marshal(map[string]string{
+        "username": username,
+        "password": password,
+    })
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(reqBody))
-	if err != nil {
-		return "", fmt.Errorf("failed to make login request: %w", err)
-	}
-	defer resp.Body.Close()
+    // Use the insecure client
+    client := createInsecureClient()
+    resp, err := client.Post(url, "application/json", bytes.NewBuffer(reqBody))
+    if err != nil {
+        return "", fmt.Errorf("failed to make login request: %w", err)
+    }
+    defer resp.Body.Close()
 
-	body, _ := ioutil.ReadAll(resp.Body)
-	var loginResp LoginResponse
-	if err := json.Unmarshal(body, &loginResp); err != nil {
-		return "", fmt.Errorf("failed to parse login response: %w", err)
-	}
+    body, _ := ioutil.ReadAll(resp.Body)
+    var loginResp LoginResponse
+    if err := json.Unmarshal(body, &loginResp); err != nil {
+        return "", fmt.Errorf("failed to parse login response: %w", err)
+    }
 
-	if loginResp.Token == "" {
-		return "", fmt.Errorf("login failed: %s", loginResp.Error)
-	}
+    if loginResp.Token == "" {
+        return "", fmt.Errorf("login failed: %s", loginResp.Error)
+    }
 
-	return loginResp.Token, nil
+    return loginResp.Token, nil
 }
 
 func getData(token string) (string, error) {
-	url := fmt.Sprintf("http://%s:%s/api/data", patronIP, patronAPIPort)
+	url := fmt.Sprintf("https://%s:%s/api/data", patronIP, patronAPIPort)
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("Authorization", fmt.Sprintf("%s", token))
 
-	client := &http.Client{}
+	client := createInsecureClient() // Use the insecure client
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to make get data request: %w", err)
@@ -163,7 +174,7 @@ func getData(token string) (string, error) {
 }
 
 func createUser(token, username, password, role string) error {
-	url := fmt.Sprintf("http://%s:%s/users", patronIP, patronAPIPort)
+	url := fmt.Sprintf("https://%s:%s/users", patronIP, patronAPIPort)
 	user := CreateUserRequest{
 		Username: username,
 		Password: password,
@@ -175,7 +186,7 @@ func createUser(token, username, password, role string) error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("%s", token))
 
-	client := &http.Client{}
+	client := createInsecureClient() // Use the insecure client
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to make create user request: %w", err)
@@ -191,11 +202,11 @@ func createUser(token, username, password, role string) error {
 }
 
 func deleteUser(token, username string) error {
-	url := fmt.Sprintf("http://%s:%s/users/%s", patronIP, patronAPIPort, username)
+	url := fmt.Sprintf("https://%s:%s/users/%s", patronIP, patronAPIPort, username)
 	req, _ := http.NewRequest("DELETE", url, nil)
 	req.Header.Set("Authorization", fmt.Sprintf("%s", token))
 
-	client := &http.Client{}
+	client := createInsecureClient() // Use the insecure client
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to make delete user request: %w", err)

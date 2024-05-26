@@ -3,19 +3,21 @@ package main
 import (
     "fmt"
 
+    "github.com/PatronC2/Patron/lib/logger"
     "github.com/gin-gonic/gin"
     "net/http"
 )
 
 func main() {
-	OpenDatabase()
+    OpenDatabase()
     InitDatabase()
     createAdminUser()
+    
     r := gin.Default()
 
     r.POST("/login", loginHandler)
     r.POST("/users", Auth("admin"), createUserHandler)
-	r.DELETE("/users/:username", Auth("admin"), deleteUserByUsernameHandler)
+    r.DELETE("/users/:username", Auth("admin"), deleteUserByUsernameHandler)
 
     api := r.Group("/api")
     api.Use(Auth("readOnly"))
@@ -29,7 +31,14 @@ func main() {
         admin.POST("/data", adminHandler)
     }
 
-    r.Run(":8080")
+    // Replace with your paths to the certificate and key files
+    certFile := "certs/server.pem"
+    keyFile := "certs/server.key"
+
+    // Use RunTLS to enable SSL
+    if err := r.RunTLS(":8443", certFile, keyFile); err != nil {
+        logger.Logf(logger.Error, "Failed to run server: %v\n", err)
+    }
 }
 
 func loginHandler(c *gin.Context) {
