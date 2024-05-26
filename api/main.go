@@ -15,21 +15,22 @@ func main() {
     
     r := gin.Default()
 
+    // handle logins
     r.POST("/login", loginHandler)
-    r.POST("/users", Auth("admin"), createUserHandler)
-    r.DELETE("/users/:username", Auth("admin"), deleteUserByUsernameHandler)
 
-    api := r.Group("/api")
-    api.Use(Auth("readOnly"))
-    {
-        api.GET("/data", readOnlyHandler)
-    }
+    readRoles := []string{"admin", "operator", "readOnly"}
+    writeRoles := []string{"admin", "operator"}
+    adminRoles := []string{"admin"}
 
-    admin := r.Group("/admin")
-    admin.Use(Auth("admin"))
-    {
-        admin.POST("/data", adminHandler)
-    }
+    // Admin functions
+    r.POST("/api/admin/users", Auth(adminRoles), createUserHandler)
+    r.DELETE("/api/admin/users/:username", Auth(adminRoles), deleteUserByUsernameHandler)
+
+    // POST / DELETE requests to non-admin areas use Auth(writeRoles)
+    r.POST("/api/data1", Auth(writeRoles))
+
+    // GET requests to non-admin areas use Auth(readRoles)
+    r.GET("/api/agents", Auth(readRoles), getAgentsHandler)
 
     // Replace with your paths to the certificate and key files
     certFile := "certs/server.pem"
@@ -68,14 +69,4 @@ func loginHandler(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, gin.H{"token": token})
-}
-
-func readOnlyHandler(c *gin.Context) {
-    // Implement read-only access logic here
-    c.JSON(http.StatusOK, gin.H{"data": "read-only data"})
-}
-
-func adminHandler(c *gin.Context) {
-    // Implement admin read/write access logic here
-	c.JSON(http.StatusOK, gin.H{"data": "admmin data"})
 }

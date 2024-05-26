@@ -12,7 +12,7 @@ import (
 // TODO: Pull this secret from .env
 var jwtKey = []byte("patronsecret")
 
-func Auth(requiredRole string) gin.HandlerFunc{
+func Auth(validRoles []string) gin.HandlerFunc {
 	return func(context *gin.Context) {
 		tokenString := context.GetHeader("Authorization")
 		if tokenString == "" {
@@ -20,7 +20,7 @@ func Auth(requiredRole string) gin.HandlerFunc{
 			context.Abort()
 			return
 		}
-		err:= ValidateToken(tokenString, requiredRole)
+		err:= ValidateToken(tokenString, validRoles)
 		if err != nil {
 			context.JSON(401, gin.H{"error": err.Error()})
 			context.Abort()
@@ -28,6 +28,15 @@ func Auth(requiredRole string) gin.HandlerFunc{
 		}
 		context.Next()
 	}
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }
 
 func GenerateJWT(username string, role string) (tokenString string, err error) {
@@ -44,7 +53,7 @@ func GenerateJWT(username string, role string) (tokenString string, err error) {
 	return
 }
 
-func ValidateToken(signedToken string, role string) (err error) {
+func ValidateToken(signedToken string, validRoles []string) (err error) {
 	token, err := jwt.ParseWithClaims(
 		signedToken,
 		&types.JWTClaim{},
@@ -68,11 +77,11 @@ func ValidateToken(signedToken string, role string) (err error) {
 		return
 	}
 
-	if claims.Role != role && claims.Role != "admin" {
+	// Check if the role is in the list of valid roles
+	if !contains(validRoles, claims.Role) {
 		err = errors.New("Insufficient Privileges")
 		return
-	}
-	
+	}	
 	return
 
 }

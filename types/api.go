@@ -15,3 +15,9 @@ type User struct {
     PasswordHash string `db:"password_hash"`
     Role         string `db:"role"`
 }
+
+type UserCreationRequest struct {
+    Username string `json:"username" binding:"required"`
+    Password string `json:"password" binding:"required"`
+    Role     string `json:"role" binding:"required"`
+}

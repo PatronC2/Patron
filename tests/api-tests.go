@@ -55,7 +55,7 @@ func main() {
 		fmt.Printf("%s: Failed to get data: %v", TEST_NAME, err)
 		ERROR_COUNT += 1
 	} else {
-		fmt.Printf("%s: Response from /api/data: %s\n\n", TEST_NAME, response)
+		fmt.Printf("%s: Response from /api/agents: %s\n\n", TEST_NAME, response)
 		SUCCESS_COUNT += 1
 	}
 
@@ -158,7 +158,7 @@ func login(username, password string) (string, error) {
 }
 
 func getData(token string) (string, error) {
-	url := fmt.Sprintf("https://%s:%s/api/data", patronIP, patronAPIPort)
+	url := fmt.Sprintf("https://%s:%s/api/agents", patronIP, patronAPIPort)
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("Authorization", fmt.Sprintf("%s", token))
 
@@ -174,7 +174,7 @@ func getData(token string) (string, error) {
 }
 
 func createUser(token, username, password, role string) error {
-	url := fmt.Sprintf("https://%s:%s/users", patronIP, patronAPIPort)
+	url := fmt.Sprintf("https://%s:%s/api/admin/users", patronIP, patronAPIPort)
 	user := CreateUserRequest{
 		Username: username,
 		Password: password,
@@ -202,7 +202,7 @@ func createUser(token, username, password, role string) error {
 }
 
 func deleteUser(token, username string) error {
-	url := fmt.Sprintf("https://%s:%s/users/%s", patronIP, patronAPIPort, username)
+	url := fmt.Sprintf("https://%s:%s/api/admin/users/%s", patronIP, patronAPIPort, username)
 	req, _ := http.NewRequest("DELETE", url, nil)
 	req.Header.Set("Authorization", fmt.Sprintf("%s", token))
 

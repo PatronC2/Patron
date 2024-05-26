@@ -28,31 +28,6 @@ func (u *User) CheckPassword(password string) error {
     return bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
 }
 
-func getUserByUsername(username string) (*User, error) {
-    var user User
-    err := db.Get(&user, "SELECT * FROM users WHERE username=$1", username)
-    return &user, err
-}
-
-func createUser(user *User) error {
-    CreateUserSQL := `
-	INSERT INTO users (username, password_hash, role)
-	VALUES ($1, $2, $3)
-	ON CONFLICT (username) DO NOTHING;
-	`
-
-    logger.Logf(logger.Info, "Username %v\n", user.Username)
-    logger.Logf(logger.Info, "User password hash %v\n", user.PasswordHash)
-    logger.Logf(logger.Info, "User role %v\n", user.Role)
-    _, err := db.Exec(CreateUserSQL, user.Username, user.PasswordHash, user.Role)
-    if err != nil {
-        logger.Logf(logger.Error, "Failed to create user: %v\n", err)
-    }
-    logger.Logf(logger.Info, "User %v created\n", user.Username)
-	return err
-
-}
-
 func createAdminUser() error {
     defaultUserName := "patron"
     defaultUserPass := goDotEnvVariable("ADMIN_AUTH_PASS")
@@ -79,7 +54,7 @@ func createAdminUser() error {
 }
 
 func createUserHandler(c *gin.Context) {
-    var req UserCreationRequest
+    var req types.UserCreationRequest
     if err := c.ShouldBindJSON(&req); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
         return
