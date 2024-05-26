@@ -4,15 +4,9 @@ import (
     "fmt"
 
     "golang.org/x/crypto/bcrypt"
-	"github.com/PatronC2/Patron/lib/logger"	
+	"github.com/PatronC2/Patron/lib/logger"
+    "github.com/PatronC2/Patron/types"
 )
-
-type User struct {
-    ID           int    `db:"id"`
-    Username     string `db:"username"`
-    PasswordHash string `db:"password_hash"`
-    Role         string `db:"role"`
-}
 
 func (u *User) SetPassword(password string) error {
     fmt.Println("Plaintext password", password)

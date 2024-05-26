@@ -12,15 +12,7 @@ import (
 	"github.com/PatronC2/Patron/lib/logger"	
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-	"golang.org/x/crypto/bcrypt"
 )
-
-type User struct {
-    ID           int    `db:"id"`
-    Username     string `db:"username"`
-    PasswordHash string `db:"password_hash"`
-    Role         string `db:"role"`
-}
 
 func goDotEnvVariable(key string) string {
 
@@ -70,9 +62,6 @@ func OpenDatabase() *sql.DB {
 }
 
 func InitDatabase(db *sql.DB) {
-	default_user_name := "patron"
-	default_user_pass := goDotEnvVariable("ADMIN_AUTH_PASS")
-
 	AgentSQL := `
 	CREATE TABLE IF NOT EXISTS "Agents" (
 		"AgentID" SERIAL PRIMARY KEY,
@@ -145,37 +134,6 @@ func InitDatabase(db *sql.DB) {
 		log.Fatal(err.Error())
 	}
 	logger.Logf(logger.Info, "Payloads table initialized\n")
-
-    UsersSQL := `
-	CREATE TABLE IF NOT EXISTS users (
-		id SERIAL PRIMARY KEY,
-		username VARCHAR(50) UNIQUE NOT NULL,
-		password_hash TEXT NOT NULL,
-		role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'operator', 'readOnly'))
-	);
-	`
-    _, err = db.Exec(UsersSQL)
-    if err != nil {
-        log.Fatal(err.Error())
-    }
-    log.Println("Users table initialized")
-
-    passwordHash, err := bcrypt.GenerateFromPassword([]byte(default_user_pass), bcrypt.DefaultCost)
-    if err != nil {
-        log.Fatal(err.Error())
-    }
-
-    CreateAdminUserSQL := `
-	INSERT INTO users (username, password_hash, role)
-	VALUES ($1, $2, 'admin')
-	ON CONFLICT (username) DO NOTHING;
-	`
-
-    _, err = db.Exec(CreateAdminUserSQL, default_user_name, string(passwordHash))
-    if err != nil {
-        log.Fatal(err.Error())
-    }
-    log.Println("Super admin user created")
 }
 
 func CreateAgent(db *sql.DB, uuid string, CallBackToIP string, CallBackFeq string, CallBackJitter string, Ip string, User string, Hostname string) {
@@ -657,29 +615,4 @@ func FetchOne(db *sql.DB, uuid string) []types.ConfigAgent {
 	infoAppend = append(infoAppend, info)
 	logger.Logf(logger.Info, "%v\n", info)
 	return infoAppend
-}
-
-func (db *sql.DB, u *User) SetPassword(password string) error {
-    hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-    if err != nil {
-        return err
-    }
-    u.PasswordHash = string(hash)
-    return nil
-}
-
-func (db *sql.DB, u *User) CheckPassword(password string) error {
-    return bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
-}
-
-func getUserByUsername(db *sql.DB, username string) (*User, error) {
-    var user User
-    err := db.Query("SELECT * FROM users WHERE username=$1", username)
-    return &user, err
-}
-
-func createUser(db *sql.DB, user *User) error {
-    _, err := db.Query(`INSERT INTO users (username, password_hash, role) 
-                             VALUES (:username, :password_hash, :role)`, user)
-    return err
 }
