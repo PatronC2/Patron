@@ -4,10 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"os"
-    "net/http"
-	"fmt"
 
-    "github.com/gin-gonic/gin"
 	"github.com/PatronC2/Patron/helper"
 	"github.com/PatronC2/Patron/types"	
 	"github.com/PatronC2/Patron/lib/logger"	
@@ -515,58 +512,6 @@ func FetchOne(db *sql.DB, uuid string) []types.ConfigAgent {
 	return infoAppend
 }
 
-func createUserHandler(c *gin.Context) {
-    var req UserCreationRequest
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
-        return
-    }
-
-    user := User{
-        Username: req.Username,
-        Role:     req.Role,
-    }
-
-    fmt.Println("Plaintext password:", req.Password)
-    if err := user.SetPassword(req.Password); err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
-        fmt.Println("Failed to hash password", err)
-        return
-    }
-
-    logger.Logf(logger.Info, "Creating user in the database: %v", user.Username)
-    if err := createUser(&user); err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
-        logger.Logf(logger.Error, "Failed to create user: %v", err)
-        return
-    }
-
-    c.JSON(http.StatusCreated, gin.H{"message": "User created"})
-    logger.Logf(logger.Info, "User %v created successfully", user.Username)
-}
-
-
-func deleteUserByUsernameHandler(c *gin.Context) {
-    // Extract username from request
-    username := c.Param("username")
-
-    // Retrieve user ID by username
-    userID, err := GetUserIDByUsername(username)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user ID"})
-        return
-    }
-
-    // Delete user by ID
-    err = DeleteUserByID(userID)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
-        return
-    }
-
-    c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
-}
-
 func GetUserIDByUsername(username string) (int, error) {
     var userID int
     query := "SELECT id FROM users WHERE username = $1"
@@ -595,4 +540,3 @@ func DeleteUserByID(userID int) error {
 
     return nil
 }
-

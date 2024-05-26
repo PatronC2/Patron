@@ -1,0 +1,132 @@
+package main
+
+import (
+    "fmt"
+    "net/http"
+
+    "golang.org/x/crypto/bcrypt"
+    "github.com/gin-gonic/gin"
+	"github.com/PatronC2/Patron/lib/logger"
+    "github.com/PatronC2/Patron/types"
+)
+
+type User struct {
+    types.User
+}
+
+func (u *User) SetPassword(password string) error {
+    fmt.Println("Plaintext password", password)
+    hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+    if err != nil {
+        return err
+    }
+    u.PasswordHash = string(hash)
+    return nil
+}
+
+func (u *User) CheckPassword(password string) error {
+    return bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
+}
+
+func getUserByUsername(username string) (*User, error) {
+    var user User
+    err := db.Get(&user, "SELECT * FROM users WHERE username=$1", username)
+    return &user, err
+}
+
+func createUser(user *User) error {
+    CreateUserSQL := `
+	INSERT INTO users (username, password_hash, role)
+	VALUES ($1, $2, $3)
+	ON CONFLICT (username) DO NOTHING;
+	`
+
+    logger.Logf(logger.Info, "Username %v\n", user.Username)
+    logger.Logf(logger.Info, "User password hash %v\n", user.PasswordHash)
+    logger.Logf(logger.Info, "User role %v\n", user.Role)
+    _, err := db.Exec(CreateUserSQL, user.Username, user.PasswordHash, user.Role)
+    if err != nil {
+        logger.Logf(logger.Error, "Failed to create user: %v\n", err)
+    }
+    logger.Logf(logger.Info, "User %v created\n", user.Username)
+	return err
+
+}
+
+func createAdminUser() error {
+    defaultUserName := "patron"
+    defaultUserPass := goDotEnvVariable("ADMIN_AUTH_PASS")
+    
+    user := &User{
+        User: types.User{
+            Username: defaultUserName,
+            Role:     "admin",
+        },
+    }
+    
+    err := user.SetPassword(defaultUserPass)
+    if err != nil {
+        return err
+    }
+    
+    err = createUser(user)
+    if err != nil {
+        return err
+    }
+    
+    logger.Logf(logger.Info, "User %v created\n", defaultUserName)
+    return nil
+}
+
+func createUserHandler(c *gin.Context) {
+    var req UserCreationRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+        return
+    }
+
+    user := &User{
+        User: types.User{
+            Username: req.Username,
+            Role:     req.Role,
+        },
+    }
+
+    fmt.Println("Plaintext password:", req.Password)
+    if err := user.SetPassword(req.Password); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+        fmt.Println("Failed to hash password", err)
+        return
+    }
+
+    logger.Logf(logger.Info, "Creating user in the database: %v", user.Username)
+    if err := createUser(user); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+        logger.Logf(logger.Error, "Failed to create user: %v", err)
+        return
+    }
+
+    c.JSON(http.StatusCreated, gin.H{"message": "User created"})
+    logger.Logf(logger.Info, "User %v created successfully", user.Username)
+}
+
+func deleteUserByUsernameHandler(c *gin.Context) {
+    // Extract username from request
+    username := c.Param("username")
+
+    // Retrieve user ID by username
+    userID, err := GetUserIDByUsername(username)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user ID"})
+        return
+    }
+
+    // Delete user by ID
+    err = DeleteUserByID(userID)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+}
