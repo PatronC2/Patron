@@ -81,8 +81,7 @@ func CreatePayload(uuid string, name string, description string, ServerIP string
 	logger.Logf(logger.Info, "New Payload created in DB\n")
 }
 
-func FetchOneAgent(uuid string) types.ConfigAgent {
-	var info types.ConfigAgent
+func FetchOneAgent(uuid string) (info types.ConfigAgent, err error ) {
 	FetchSQL := `
 	SELECT 
 		"UUID","CallBackToIP","CallBackFeq","CallBackJitter"
@@ -103,7 +102,7 @@ func FetchOneAgent(uuid string) types.ConfigAgent {
 		switch err {
 		case sql.ErrNoRows:
 			logger.Logf(logger.Info, "No rows were returned!! \n")
-			return info
+			return info, err
 		case nil:
 			logger.Logf(logger.Info, "%v\n", info)
 		default:
@@ -112,7 +111,7 @@ func FetchOneAgent(uuid string) types.ConfigAgent {
 	}
 
 	logger.Logf(logger.Info, "Agent %s Fetched \n", info.Uuid)
-	return info
+	return info, err
 }
 
 func FetchNextCommand(uuid string) types.GiveAgentCommand {
@@ -326,7 +325,7 @@ func Agents() (agentAppend []types.ConfigAgent, err error) {
 	return agentAppend, err
 }
 
-func AgentsByIp(Ip string) []types.ConfigAgent {
+func AgentsByIp(Ip string) (agentAppend []types.ConfigAgent, err error) {
 	var agents types.ConfigAgent
 	FetchSQL := `
 	SELECT 
@@ -347,7 +346,6 @@ func AgentsByIp(Ip string) []types.ConfigAgent {
 		log.Fatal(err)
 	}
 	defer row.Close()
-	var agentAppend []types.ConfigAgent
 	for row.Next() {
 		row.Scan(
 			&agents.Uuid,
@@ -361,10 +359,10 @@ func AgentsByIp(Ip string) []types.ConfigAgent {
 		)
 		agentAppend = append(agentAppend, agents)
 	}
-	return agentAppend
+	return agentAppend, err
 }
 
-func GroupAgentsByIp() []types.AgentIP {
+func GroupAgentsByIp() (agentAppend []types.AgentIP, err error){
 	var agents types.AgentIP
 	FetchSQL := `
 	SELECT DISTINCT "Ip" FROM "Agents"
@@ -374,14 +372,13 @@ func GroupAgentsByIp() []types.AgentIP {
 		log.Fatal(err)
 	}
 	defer row.Close()
-	var agentAppend []types.AgentIP
 	for row.Next() {
 		row.Scan(
 			&agents.AgentIP,
 		)
 		agentAppend = append(agentAppend, agents)
 	}
-	return agentAppend
+	return agentAppend, err
 }
 
 func Payloads() []types.Payload {
@@ -421,7 +418,7 @@ func Payloads() []types.Payload {
 	return payloadAppend
 }
 
-func Agent(uuid string) []types.Agent {
+func Agent(uuid string) (infoAppend []types.Agent, err error) {
 	var info types.Agent
 	FetchSQL := `
 	SELECT 
@@ -438,7 +435,6 @@ func Agent(uuid string) []types.Agent {
 		log.Fatal(err)
 	}
 	defer row.Close()
-	var infoAppend []types.Agent
 	for row.Next() {
 		row.Scan(
 			&info.Uuid,
@@ -449,7 +445,8 @@ func Agent(uuid string) []types.Agent {
 		)
 		infoAppend = append(infoAppend, info)
 	}
-	return infoAppend
+
+	return infoAppend, err
 }
 
 func Keylog(uuid string) []types.KeyReceive {
@@ -478,7 +475,7 @@ func Keylog(uuid string) []types.KeyReceive {
 	return infoAppend
 }
 
-func FetchOne(uuid string) []types.ConfigAgent {
+func FetchOne(uuid string) (infoAppend []types.ConfigAgent, err error) {
 	var info types.ConfigAgent
 	FetchSQL := `
 	SELECT 
@@ -486,11 +483,11 @@ func FetchOne(uuid string) []types.ConfigAgent {
 	FROM "Agents" WHERE "UUID"=$1
 	`
 	row, err := db.Query(FetchSQL, uuid)
+	fmt.Printf("Row: %s", row)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer row.Close()
-	var infoAppend []types.ConfigAgent
 	for row.Next() {
 		row.Scan(
 			&info.Uuid,
@@ -500,8 +497,9 @@ func FetchOne(uuid string) []types.ConfigAgent {
 		)
 	}
 	infoAppend = append(infoAppend, info)
+	fmt.Printf("infoAppend: %s", infoAppend)
 	logger.Logf(logger.Info, "%v\n", info)
-	return infoAppend
+	return infoAppend, err
 }
 
 func GetUserIDByUsername(username string) (int, error) {

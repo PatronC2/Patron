@@ -31,6 +31,10 @@ func main() {
 
     // GET requests to non-admin areas use Auth(readRoles)
     r.GET("/api/agents", Auth(readRoles), getAgentsHandler)
+    r.GET("/api/groupagents", Auth(readRoles), getGroupAgents)
+    r.GET("/api/groupagents/:ip", Auth(readRoles), getGroupAgentsByIP)
+    r.GET("/api/oneagent/:agt", Auth(readRoles), getOneAgentByUUID)
+    r.GET("/api/agent/:agt", Auth(readRoles), getAgentByUUID)
 
     // Replace with your paths to the certificate and key files
     certFile := "certs/server.pem"

@@ -11,6 +11,7 @@ import (
     "bytes"
 	"crypto/tls"
     "encoding/json"
+	"errors"
     "fmt"
     "io/ioutil"
     "net/http"
@@ -22,6 +23,7 @@ const (
 	password      = "password1!"
 	patronIP      = "192.168.50.240"
 	patronAPIPort = "8443"
+	AgentIP		  = "192.168.50.69"
 )
 
 type LoginResponse struct {
@@ -50,14 +52,6 @@ func main() {
 		fmt.Printf("%s: Login successful.\n%s: Token: %s\n", TEST_NAME, TEST_NAME, token)
 	}
 
-	response, err := getData(token)
-	if err != nil {
-		fmt.Printf("%s: Failed to get data: %v", TEST_NAME, err)
-		ERROR_COUNT += 1
-	} else {
-		fmt.Printf("%s: Response from /api/agents: %s\n\n", TEST_NAME, response)
-		SUCCESS_COUNT += 1
-	}
 
 	newUsername := "testuser"
 	newPassword := "password1!"
@@ -70,11 +64,74 @@ func main() {
 	} else {
 		fmt.Printf("%s: Created new user: %v\n", TEST_NAME, newUsername)
 		SUCCESS_COUNT += 1
+		fmt.Printf("%s: SUCCESS", TEST_NAME)
+	}
+	
+	TEST_NAME = "REGRESSION TESTS"
+	fmt.Printf("\n\nBeginning Test: %s\n", TEST_NAME)
+	endpoint := "/api/agents"
+	response, err := getRequest(token, endpoint)
+	if err != nil {
+		fmt.Printf("%s: Failed to get Agents: %v", TEST_NAME, err)
+		ERROR_COUNT += 1
+	} else {
+		fmt.Printf("%s: Response from /api/agents: %s\n", TEST_NAME, response)
+		SUCCESS_COUNT += 1
+	}
+
+	endpoint = "/api/groupagents/"
+	response, err = getRequest(token, endpoint)
+	if err != nil {
+		fmt.Printf("%s: Failed to get Agents: %v", TEST_NAME, err)
+		ERROR_COUNT += 1
+	} else {
+		fmt.Printf("%s: Response from /api/groupagents: %s\n", TEST_NAME, response)
+		SUCCESS_COUNT += 1
+	}
+
+	endpoint = fmt.Sprintf("/api/groupagents/%s", AgentIP)
+	response, err = getRequest(token, endpoint)
+	if err != nil {
+		fmt.Printf("%s: Failed to get Agents: %v", TEST_NAME, err)
+		ERROR_COUNT += 1
+	} else {
+		fmt.Printf("%s: Response from /api/groupagents: %s\n", TEST_NAME, response)
+		SUCCESS_COUNT += 1
+	}
+
+	agentUUID, err := findValueByKey(response, "uuid")
+	if err != nil {
+		fmt.Printf("%s: Failed to get a UUID: %v", TEST_NAME, err)
+		ERROR_COUNT += 1
+	} else {
+		SUCCESS_COUNT += 1
+	}
+	endpoint = fmt.Sprintf("/api/oneagent/%s", agentUUID)
+	response, err = getRequest(token, endpoint)
+	if err != nil {
+		fmt.Printf("%s: Failed to get Agents: %v", TEST_NAME, err)
+		ERROR_COUNT += 1
+	} else {
+		fmt.Printf("%s: Response from /api/oneagent/%s: %s\n", TEST_NAME, agentUUID, response)
+		SUCCESS_COUNT += 1
+	}
+	assertUUID, err := findValueByKey(response, "uuid")
+	if err != nil {
+		fmt.Printf("%s: Failed to get the uuid back: %s\n", TEST_NAME, err)
+		ERROR_COUNT += 1
+	} else {
+		if assertUUID != agentUUID {
+			fmt.Printf("%s: Expected UUID: %s, got %s\n", TEST_NAME, agentUUID, assertUUID)
+			ERROR_COUNT += 1
+		} else {
+			fmt.Printf("%s: Assert %s=%s\n", TEST_NAME, agentUUID, assertUUID)
+			SUCCESS_COUNT += 1
+		}
 	}
 
 	// make sure read only user doesn't have admin privs
 	TEST_NAME = "PRIVILEGE TEST"
-	fmt.Printf("Beginning Test: %s\n", TEST_NAME)
+	fmt.Printf("\n\nBeginning Test: %s\n", TEST_NAME)
 	fmt.Printf("%s: Trying login as %s\n", TEST_NAME, newUsername)
 	roToken, err := login(newUsername, newPassword)
 	if err != nil {
@@ -157,15 +214,15 @@ func login(username, password string) (string, error) {
     return loginResp.Token, nil
 }
 
-func getData(token string) (string, error) {
-	url := fmt.Sprintf("https://%s:%s/api/agents", patronIP, patronAPIPort)
+func getRequest(token string, endpoint string) (string, error) {
+	url := fmt.Sprintf("https://%s:%s%s", patronIP, patronAPIPort, endpoint)
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("Authorization", fmt.Sprintf("%s", token))
 
 	client := createInsecureClient() // Use the insecure client
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("failed to make get data request: %w", err)
+		return "", fmt.Errorf("failed to make get %s request: %w", endpoint, err)
 	}
 	defer resp.Body.Close()
 
@@ -219,4 +276,36 @@ func deleteUser(token, username string) error {
 	}
 
 	return nil
+}
+
+func findValueByKey(jsonStr, key string) (interface{}, error) {
+    var result interface{}
+    err := json.Unmarshal([]byte(jsonStr), &result)
+    if err != nil {
+        return nil, err
+    }
+
+    return searchKey(result, key)
+}
+
+func searchKey(data interface{}, key string) (interface{}, error) {
+    switch v := data.(type) {
+    case map[string]interface{}:
+        if value, found := v[key]; found {
+            return value, nil
+        }
+        for _, value := range v {
+            if res, err := searchKey(value, key); err == nil {
+                return res, nil
+            }
+        }
+    case []interface{}:
+        for _, item := range v {
+            if res, err := searchKey(item, key); err == nil {
+                return res, nil
+            }
+        }
+    }
+
+    return nil, errors.New("key not found")
 }
