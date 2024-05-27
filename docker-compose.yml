@@ -17,15 +17,15 @@ services:
     image: patron_c2_server
     build: api
     restart: always
-    command: sh -c "go run main.go"
+    command: sh -c "go run api/main.go"
     working_dir: /app
     volumes:
       - ./:/app
     networks:
       internal_c2_network:
         ipv4_address: "${DOCKER_INTERNAL}.6"
-      ports:
-        - 8443:8443
+    ports:
+      - 8443:8443
 
   #patron_c2_frontend:
   #  image: node:18-alpine

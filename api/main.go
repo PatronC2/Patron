@@ -15,8 +15,8 @@ func main() {
     InitDatabase()
     createAdminUser()
     
+    gin.SetMode(gin.ReleaseMode)
     r := gin.Default()
-    r.SetMode(gin.ReleaseMode)
 
     // host payloads server
     workDir, _ := os.Getwd()
