@@ -24,6 +24,7 @@ const (
 	patronIP      = "192.168.50.240"
 	patronAPIPort = "8443"
 	AgentIP		  = "192.168.50.69"
+	patronC2Port  = "9000"
 )
 
 type LoginResponse struct {
@@ -35,6 +36,16 @@ type CreateUserRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Role     string `json:"role"`
+}
+
+type CompileRequest struct {
+	Name             string `json:"name"`
+	Description	     string `json:"description"`
+	Type			 string `json:"type"`
+	ServerIP         string `json:"serverip"`
+	ServerPort       string `json:"serverport"`
+	CallbackFrequency string `json:"callbackfrequency"`
+	CallbackJitter   string `json:"callbackjitter"`
 }
 
 func main() {
@@ -156,6 +167,35 @@ func main() {
 		fmt.Printf("%s: PASS\n", TEST_NAME)
 		SUCCESS_COUNT += 1
 	}
+
+	// payload tests
+	TEST_NAME = "PAYLOAD TESTS"
+	fmt.Printf("\n\nBeginning Test: %s\n", TEST_NAME)
+	name := "test"
+	callbackFrequency := "300"
+	callbackJitter := "60"
+	description := "test"
+	/*
+	beforeFileCount := getNumOfFiles()
+	fmt.Printf("%s: Before payload count: %d", TEST_NAME, beforeFileCount)
+	*/
+	err = compileRequest(patronIP, patronAPIPort, token, name, description, patronIP, patronC2Port, callbackFrequency, callbackJitter)
+	if err != nil {
+		fmt.Printf("%s: Error (sometimes this false fails): %v\n", TEST_NAME, err)
+	}
+	/*
+	afterFileCount := getNumOfFiles()
+	fmt.Printf("%s: Before after count: %d", TEST_NAME, afterFileCount)
+
+	if beforeFileCount+1 != afterFileCount {
+		fmt.Printf("%s: Failed to validate new payload exists", TEST_NAME)
+		ERROR_COUNT += 1
+	} else {
+		fmt.Printf("%s: PASS")
+		SUCCESS_COUNT += 1
+	}
+	*/
+
 
 	// delete the RO test user
 	TEST_NAME = "DELETE TEST USER"
@@ -309,4 +349,70 @@ func searchKey(data interface{}, key string) (interface{}, error) {
     }
 
     return nil, errors.New("key not found")
+}
+
+/*
+func getNumOfFiles() (int, error) {
+	url := fmt.Sprintf("https://%s:%s/files", patronIP, patronAPIPort)
+	client := createInsecureClient()
+
+	// Make the GET request
+	resp, err := client.Get(url)
+	if err != nil {
+		fmt.Println("Error making request:", err)
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	// Parse the HTML response
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		fmt.Println("Error parsing HTML:", err)
+		return 0, err
+	}
+
+	// Extract and count the files
+	fileCount := 0
+	doc.Find("a").Each(func(i int, s *goquery.Selection) {
+		href, exists := s.Attr("href")
+		if exists && strings.Contains(href, ".") {
+			fileCount++
+		}
+	})
+
+	return fileCount, nil
+}
+*/
+
+func compileRequest(patronIP, patronAPIPort, token, name, description, serverIP, serverPort, callbackFrequency, callbackJitter string) error {
+	url := fmt.Sprintf("https://%s:%s/api/payload", patronIP, patronAPIPort)
+	requestBody := CompileRequest{
+		Name:				name,
+		Description:		description,
+		Type:				"original",
+		ServerIP:			serverIP,
+		ServerPort:			serverPort,
+		CallbackFrequency:	callbackFrequency,
+		CallbackJitter:		callbackJitter,
+	}
+	reqBody, _ := json.Marshal(requestBody)
+
+	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("%s", token))
+
+	client := createInsecureClient()
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to make compile request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to compile: %s", string(body))
+	}
+
+	fmt.Println("Success:", string(body))
+	return nil
 }

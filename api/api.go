@@ -5,7 +5,6 @@ import (
     "path/filepath"
     "os"
     "strings"
-    "fmt"
 
     "github.com/PatronC2/Patron/api/api"
     "github.com/PatronC2/Patron/lib/logger"
