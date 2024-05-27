@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"database/sql"
@@ -529,7 +529,7 @@ func DeleteUserByID(userID int) error {
     return nil
 }
 
-func getUserByUsername(username string) (*User, error) {
+func GetUserByUsername(username string) (*User, error) {
     var user User
     err := db.Get(&user, "SELECT * FROM users WHERE username=$1", username)
     return &user, err

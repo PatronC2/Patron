@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
     "net/http"
@@ -26,7 +26,7 @@ func (u *User) CheckPassword(password string) error {
     return bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
 }
 
-func createAdminUser() error {
+func CreateAdminUser() error {
     defaultUserName := "patron"
     defaultUserPass := goDotEnvVariable("ADMIN_AUTH_PASS")
     
@@ -51,7 +51,7 @@ func createAdminUser() error {
     return nil
 }
 
-func createUserHandler(c *gin.Context) {
+func CreateUserHandler(c *gin.Context) {
     var req types.UserCreationRequest
     if err := c.ShouldBindJSON(&req); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
@@ -81,7 +81,7 @@ func createUserHandler(c *gin.Context) {
     logger.Logf(logger.Info, "User %v created successfully", user.Username)
 }
 
-func deleteUserByUsernameHandler(c *gin.Context) {
+func DeleteUserByUsernameHandler(c *gin.Context) {
     // Extract username from request
     username := c.Param("username")
 

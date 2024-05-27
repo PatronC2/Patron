@@ -1,7 +1,8 @@
-package main
+package server
 
 import (
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -84,4 +85,32 @@ func ValidateToken(signedToken string, validRoles []string) (err error) {
 	}	
 	return
 
+}
+
+func LoginHandler(c *gin.Context) {
+    var loginRequest struct {
+        Username string `json:"username"`
+        Password string `json:"password"`
+    }
+    if err := c.ShouldBindJSON(&loginRequest); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+        return
+    }
+
+    user, err := GetUserByUsername(loginRequest.Username)
+    if err != nil || user.CheckPassword(loginRequest.Password) != nil {
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err})
+		}
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+        return
+    }
+
+    token, err := GenerateJWT(user.Username, user.Role)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"token": token})
 }
