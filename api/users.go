@@ -1,7 +1,6 @@
 package main
 
 import (
-    "fmt"
     "net/http"
 
     "golang.org/x/crypto/bcrypt"
@@ -15,7 +14,6 @@ type User struct {
 }
 
 func (u *User) SetPassword(password string) error {
-    fmt.Println("Plaintext password", password)
     hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
     if err != nil {
         return err
@@ -67,10 +65,8 @@ func createUserHandler(c *gin.Context) {
         },
     }
 
-    fmt.Println("Plaintext password:", req.Password)
     if err := user.SetPassword(req.Password); err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
-        fmt.Println("Failed to hash password", err)
         return
     }
 

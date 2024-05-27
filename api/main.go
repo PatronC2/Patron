@@ -1,7 +1,6 @@
 package main
 
 import (
-    "fmt"
     "net/http"
     "path/filepath"
     "os"
@@ -17,6 +16,7 @@ func main() {
     createAdminUser()
     
     r := gin.Default()
+    r.SetMode(gin.ReleaseMode)
 
     // host payloads server
     workDir, _ := os.Getwd()
@@ -70,10 +70,9 @@ func loginHandler(c *gin.Context) {
     }
 
     user, err := getUserByUsername(loginRequest.Username)
-	fmt.Println("loginHandler getUser", user)
     if err != nil || user.CheckPassword(loginRequest.Password) != nil {
 		if err != nil {
-			fmt.Println("login error", err)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err})
 		}
         c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
         return
