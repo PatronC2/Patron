@@ -67,6 +67,7 @@ func main() {
 		fmt.Printf("%s: SUCCESS", TEST_NAME)
 	}
 	
+	// make api calls to test functionality
 	TEST_NAME = "REGRESSION TESTS"
 	fmt.Printf("\n\nBeginning Test: %s\n", TEST_NAME)
 	endpoint := "/api/agents"

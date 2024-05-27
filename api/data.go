@@ -483,7 +483,6 @@ func FetchOne(uuid string) (infoAppend []types.ConfigAgent, err error) {
 	FROM "Agents" WHERE "UUID"=$1
 	`
 	row, err := db.Query(FetchSQL, uuid)
-	fmt.Printf("Row: %s", row)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -497,7 +496,6 @@ func FetchOne(uuid string) (infoAppend []types.ConfigAgent, err error) {
 		)
 	}
 	infoAppend = append(infoAppend, info)
-	fmt.Printf("infoAppend: %s", infoAppend)
 	logger.Logf(logger.Info, "%v\n", info)
 	return infoAppend, err
 }

