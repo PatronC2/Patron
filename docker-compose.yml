@@ -1,23 +1,26 @@
 services:
-  #patron_c2_server:
-  #  image: patron_c2_server
-  #  build: server
-  #  restart: always
-  #  command: sh -c "go run server/server.go"
-  #  working_dir: /app
-  #  volumes:
-  #    - ./:/app
-  #  networks:
-  #    internal_c2_network:
-  #      ipv4_address: "${DOCKER_INTERNAL}.5"
-  #  ports:
-  #    - "${C2SERVER_PORT}:${C2SERVER_PORT}"
+  patron_c2_server:
+    image: patron_c2_server
+    build: server
+    restart: always
+    command: sh -c "go run server/server.go"
+    working_dir: /app
+    volumes:
+      - ./:/app
+    networks:
+      internal_c2_network:
+        ipv4_address: "${DOCKER_INTERNAL}.5"
+    ports:
+      - "${C2SERVER_PORT}:${C2SERVER_PORT}"
+    depends_on:
+      - patron_c2_postgres
+      - patron_c2_api
 
   patron_c2_api:
     image: patron_c2_server
     build: api
     restart: always
-    command: sh -c "go run api/main.go"
+    command: sh -c "go run api/api.go"
     working_dir: /app
     volumes:
       - ./:/app
@@ -26,6 +29,8 @@ services:
         ipv4_address: "${DOCKER_INTERNAL}.6"
     ports:
       - 8443:8443
+    depends_on:
+      - patron_c2_postgres
 
   #patron_c2_frontend:
   #  image: node:18-alpine
@@ -39,7 +44,7 @@ services:
   #      ipv4_address: "${DOCKER_INTERNAL}.7"
   #  # ports:
   #  #   - 8081:8081
-  
+
   #patron_c2_nginx:
   #  image: nginx:latest
   #  restart: always
