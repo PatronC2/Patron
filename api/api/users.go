@@ -8,7 +8,10 @@ import (
 	"github.com/PatronC2/Patron/lib/logger"
     "github.com/PatronC2/Patron/types"
     "github.com/PatronC2/Patron/data"
+    "github.com/jmoiron/sqlx"
 )
+
+var db *sqlx.DB
 
 type User struct {
     types.User
@@ -29,7 +32,7 @@ func (u *User) CheckPassword(password string) error {
 
 func CreateAdminUser() error {
     defaultUserName := "patron"
-    defaultUserPass := data.goDotEnvVariable("ADMIN_AUTH_PASS")
+    defaultUserPass := data.GoDotEnvVariable("ADMIN_AUTH_PASS")
     
     user := &User{
         User: types.User{

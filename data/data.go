@@ -20,11 +20,11 @@ var db *sqlx.DB
 func OpenDatabase(){ 
 	var err error
 	var port int
-	host := goDotEnvVariable("DB_HOST")
-	fmt.Sscan(goDotEnvVariable("DB_PORT"), &port)
-	user := goDotEnvVariable("DB_USER")
-	password := goDotEnvVariable("DB_PASS")
-	dbname := goDotEnvVariable("DB_NAME")
+	host := GoDotEnvVariable("DB_HOST")
+	fmt.Sscan(GoDotEnvVariable("DB_PORT"), &port)
+	user := GoDotEnvVariable("DB_USER")
+	password := GoDotEnvVariable("DB_PASS")
+	dbname := GoDotEnvVariable("DB_NAME")
 
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
     "password=%s dbname=%s sslmode=disable",
@@ -49,7 +49,7 @@ func OpenDatabase(){
 	}
 }
 
-func goDotEnvVariable(key string) string {
+func GoDotEnvVariable(key string) string {
 
 	// load .env file
 	err := godotenv.Load(".env")

@@ -127,7 +127,7 @@ func GetPayloadsHandler(c *gin.Context) {
 }
 
 func CreatePayloadHandler(c *gin.Context) {
-	publickey := data.goDotEnvVariable("PUBLIC_KEY")
+	publickey := data.GoDotEnvVariable("PUBLIC_KEY")
 	newPayID := uuid.New().String()
 	var body map[string]string
 	if err := c.BindJSON(&body); err != nil {
