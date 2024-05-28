@@ -28,7 +28,7 @@ services:
       internal_c2_network:
         ipv4_address: "${DOCKER_INTERNAL}.6"
     ports:
-      - 8443:8443
+      - 8000:8000
     depends_on:
       - patron_c2_postgres
 

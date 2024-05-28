@@ -21,8 +21,8 @@ import (
 const (
 	username      = "patron"
 	password      = "password1!"
-	patronIP      = "192.168.50.240"
-	patronAPIPort = "8443"
+	patronIP      = "192.168.50.32"
+	patronAPIPort = "8000"
 	AgentIP		  = "192.168.50.69"
 	patronC2Port  = "9000"
 )
@@ -228,7 +228,7 @@ func createInsecureClient() *http.Client {
 }
 
 func login(username, password string) (string, error) {
-    url := fmt.Sprintf("https://%s:%s/login", patronIP, patronAPIPort)
+    url := fmt.Sprintf("http://%s:%s/login", patronIP, patronAPIPort)
     reqBody, _ := json.Marshal(map[string]string{
         "username": username,
         "password": password,
@@ -256,7 +256,7 @@ func login(username, password string) (string, error) {
 }
 
 func getRequest(token string, endpoint string) (string, error) {
-	url := fmt.Sprintf("https://%s:%s%s", patronIP, patronAPIPort, endpoint)
+	url := fmt.Sprintf("http://%s:%s%s", patronIP, patronAPIPort, endpoint)
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("Authorization", fmt.Sprintf("%s", token))
 
@@ -272,7 +272,7 @@ func getRequest(token string, endpoint string) (string, error) {
 }
 
 func createUser(token, username, password, role string) error {
-	url := fmt.Sprintf("https://%s:%s/api/admin/users", patronIP, patronAPIPort)
+	url := fmt.Sprintf("http://%s:%s/api/admin/users", patronIP, patronAPIPort)
 	user := CreateUserRequest{
 		Username: username,
 		Password: password,
@@ -300,7 +300,7 @@ func createUser(token, username, password, role string) error {
 }
 
 func deleteUser(token, username string) error {
-	url := fmt.Sprintf("https://%s:%s/api/admin/users/%s", patronIP, patronAPIPort, username)
+	url := fmt.Sprintf("http://%s:%s/api/admin/users/%s", patronIP, patronAPIPort, username)
 	req, _ := http.NewRequest("DELETE", url, nil)
 	req.Header.Set("Authorization", fmt.Sprintf("%s", token))
 
@@ -385,7 +385,7 @@ func getNumOfFiles() (int, error) {
 */
 
 func compileRequest(patronIP, patronAPIPort, token, name, description, serverIP, serverPort, callbackFrequency, callbackJitter string) error {
-	url := fmt.Sprintf("https://%s:%s/api/payload", patronIP, patronAPIPort)
+	url := fmt.Sprintf("http://%s:%s/api/payload", patronIP, patronAPIPort)
 	requestBody := CompileRequest{
 		Name:				name,
 		Description:		description,

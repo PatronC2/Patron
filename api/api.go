@@ -5,9 +5,10 @@ import (
     "path/filepath"
     "os"
     "strings"
+    "time"
+    "fmt"
 
     "github.com/PatronC2/Patron/api/api"
-    "github.com/PatronC2/Patron/lib/logger"
     "github.com/gin-gonic/gin"
 )
 
@@ -19,9 +20,12 @@ func main() {
     gin.SetMode(gin.ReleaseMode)
     r := gin.Default()
 
+    // Apply CORS middleware
+    r.Use(CORS())
+
     // host payloads server
     workDir, _ := os.Getwd()
-	filesDir := http.Dir(filepath.Join(workDir, "agents"))
+    filesDir := http.Dir(filepath.Join(workDir, "agents"))
     FileServer(r, "/files", filesDir)
 
     // handle logins
@@ -49,27 +53,49 @@ func main() {
     r.GET("/api/keylog/:agt", api.Auth(readRoles), api.GetKeylogHandler)
     r.GET("/api/payloads", api.Auth(readRoles), api.GetPayloadsHandler)
 
+    // Logging
+    r.Use(func(c *gin.Context) {
+        c.Next()
+        status := c.Writer.Status()
+        method := c.Request.Method
+        path := c.Request.URL.Path
+        clientIP := c.ClientIP()
+        c.Writer.Header().Set("X-Server-Timestamp", time.Now().Format(time.RFC3339))
+        fmt.Printf("[%d] %s %s %s", status, method, path, clientIP)
+    })
 
-    // Replace with your paths to the certificate and key files
-    certFile := "certs/server.pem"
-    keyFile := "certs/server.key"
-
-    // Use RunTLS to enable SSL
-    if err := r.RunTLS(":8443", certFile, keyFile); err != nil {
-        logger.Logf(logger.Error, "Failed to run server: %v\n", err)
-    }
+    // Start server
+    r.Run(":8000")
 }
 
 func FileServer(r *gin.Engine, path string, root http.FileSystem) {
-	if strings.ContainsAny(path, "{}*") {
-		panic("FileServer does not permit any URL parameters.")
-	}
+    if strings.ContainsAny(path, "{}*") {
+        panic("FileServer does not permit any URL parameters.")
+    }
 
-	if path != "/" && path[len(path)-1] != '/' {
-		r.GET(path, func(c *gin.Context) {
-			c.Redirect(http.StatusMovedPermanently, path+"/")
-		})
-		path += "/"
-	}
-	r.StaticFS(path, root)
+    if path != "/" && path[len(path)-1] != '/' {
+        r.GET(path, func(c *gin.Context) {
+            c.Redirect(http.StatusMovedPermanently, path+"/")
+        })
+        path += "/"
+    }
+    r.StaticFS(path, root)
 }
+
+func CORS() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+        c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+        c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+        c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
+
+        if c.Request.Method == "OPTIONS" {
+            c.Writer.Header().Set("Access-Control-Max-Age", "86400")
+            c.AbortWithStatus(204)
+            return
+        }
+
+        c.Next()
+    }
+}
+
