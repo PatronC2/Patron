@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"os"
+	"fmt"
 
 	"github.com/PatronC2/Patron/helper"
 	"github.com/PatronC2/Patron/types"	
@@ -17,11 +18,11 @@ var db *sqlx.DB
 func OpenDatabase(){ 
 	var err error
 	var port int
-	host := data.goDotEnvVariable("DB_HOST")
-	fmt.Sscan(data.goDotEnvVariable("DB_PORT"), &port)
-	user := data.goDotEnvVariable("DB_USER")
-	password := data.goDotEnvVariable("DB_PASS")
-	dbname := data.goDotEnvVariable("DB_NAME")
+	host := goDotEnvVariable("DB_HOST")
+	fmt.Sscan(goDotEnvVariable("DB_PORT"), &port)
+	user := goDotEnvVariable("DB_USER")
+	password := goDotEnvVariable("DB_PASS")
+	dbname := goDotEnvVariable("DB_NAME")
 
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
     "password=%s dbname=%s sslmode=disable",
