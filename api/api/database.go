@@ -8,7 +8,6 @@ import (
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/data"
 	_ "github.com/lib/pq"
-    "github.com/jmoiron/sqlx"
 )
 
 func InitDatabase() {
