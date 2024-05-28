@@ -15,6 +15,7 @@ import (
 
 func main() {
     data.OpenDatabase()
+    api.OpenDatabase()
     data.InitDatabase()
     api.CreateAdminUser()
     

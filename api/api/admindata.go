@@ -1,7 +1,9 @@
 package api
 
 import (
+    "fmt"
     "net/http"
+    "time"
 
     "golang.org/x/crypto/bcrypt"
     "github.com/gin-gonic/gin"
@@ -15,6 +17,38 @@ var db *sqlx.DB
 
 type User struct {
     types.User
+}
+
+func OpenDatabase(){ 
+	var err error
+	var port int
+	host := data.GoDotEnvVariable("DB_HOST")
+	fmt.Sscan(data.GoDotEnvVariable("DB_PORT"), &port)
+	user := data.GoDotEnvVariable("DB_USER")
+	password := data.GoDotEnvVariable("DB_PASS")
+	dbname := data.GoDotEnvVariable("DB_NAME")
+
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+    "password=%s dbname=%s sslmode=disable",
+    host, port, user, password, dbname)
+	for {
+
+		db, err = sqlx.Open("postgres", psqlInfo)
+		if err != nil {
+			logger.Logf(logger.Error, "Failed to connect to the database: %v\n", err)
+			time.Sleep(30 * time.Second)
+			continue
+		}
+		err = db.Ping()
+		if err != nil {
+			logger.Logf(logger.Error, "Failed to ping the database: %v\n", err)
+			db.Close()
+			time.Sleep(30 * time.Second)
+			continue
+		}
+		logger.Logf(logger.Info, "Postgres DB connected\n")
+		break
+	}
 }
 
 func (u *User) SetPassword(password string) error {
@@ -86,23 +120,17 @@ func CreateUserHandler(c *gin.Context) {
 }
 
 func DeleteUserByUsernameHandler(c *gin.Context) {
-    // Extract username from request
     username := c.Param("username")
-
-    // Retrieve user ID by username
     userID, err := GetUserIDByUsername(username)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user ID"})
         return
     }
-
-    // Delete user by ID
     err = DeleteUserByID(userID)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
         return
     }
-
     c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
 }
 
@@ -122,16 +150,13 @@ func DeleteUserByID(userID int) error {
     if err != nil {
         return err
     }
-
     rowsAffected, err := result.RowsAffected()
     if err != nil {
         return err
     }
-
     if rowsAffected == 0 {
         logger.Logf(logger.Error, "User could not be deleted")
     }
-
     return nil
 }
 
