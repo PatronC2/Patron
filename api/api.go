@@ -15,7 +15,7 @@ import (
 
 func main() {
     data.OpenDatabase()
-    api.InitDatabase()
+    data.InitDatabase()
     api.CreateAdminUser()
     
     gin.SetMode(gin.ReleaseMode)

@@ -122,7 +122,7 @@ func GetKeylogHandler(c *gin.Context) {
 }
 
 func GetPayloadsHandler(c *gin.Context) {
-	payloads := Payloads()
+	payloads := data.Payloads()
 	c.JSON(http.StatusOK, gin.H{"data": payloads})
 }
 
