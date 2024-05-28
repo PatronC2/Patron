@@ -1,4 +1,4 @@
-package api
+package data
 
 import (
 	"database/sql"
@@ -498,58 +498,4 @@ func FetchOne(uuid string) (infoAppend []types.ConfigAgent, err error) {
 	infoAppend = append(infoAppend, info)
 	logger.Logf(logger.Info, "%v\n", info)
 	return infoAppend, err
-}
-
-func GetUserIDByUsername(username string) (int, error) {
-    var userID int
-    query := "SELECT id FROM users WHERE username = $1"
-    err := db.QueryRow(query, username).Scan(&userID)
-    if err != nil {
-        return 0, err
-    }
-    return userID, nil
-}
-
-func DeleteUserByID(userID int) error {
-    query := "DELETE FROM users WHERE id = $1"
-    result, err := db.Exec(query, userID)
-    if err != nil {
-        return err
-    }
-
-    rowsAffected, err := result.RowsAffected()
-    if err != nil {
-        return err
-    }
-
-    if rowsAffected == 0 {
-        logger.Logf(logger.Error, "User could not be deleted")
-    }
-
-    return nil
-}
-
-func GetUserByUsername(username string) (*User, error) {
-    var user User
-    err := db.Get(&user, "SELECT * FROM users WHERE username=$1", username)
-    return &user, err
-}
-
-func createUser(user *User) error {
-    CreateUserSQL := `
-	INSERT INTO users (username, password_hash, role)
-	VALUES ($1, $2, $3)
-	ON CONFLICT (username) DO NOTHING;
-	`
-
-    logger.Logf(logger.Info, "Username %v\n", user.Username)
-    logger.Logf(logger.Info, "User password hash %v\n", user.PasswordHash)
-    logger.Logf(logger.Info, "User role %v\n", user.Role)
-    _, err := db.Exec(CreateUserSQL, user.Username, user.PasswordHash, user.Role)
-    if err != nil {
-        logger.Logf(logger.Error, "Failed to create user: %v\n", err)
-    }
-    logger.Logf(logger.Info, "User %v created\n", user.Username)
-	return err
-
 }

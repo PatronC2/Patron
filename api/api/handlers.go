@@ -7,13 +7,14 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/PatronC2/Patron/data"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 func GetAgentsHandler(c *gin.Context) {
     // Get all agents
-    agents, err := Agents()
+    agents, err := data.Agents()
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agents"})
         return
@@ -25,7 +26,7 @@ func GetAgentsHandler(c *gin.Context) {
 
 func GetGroupAgents(c *gin.Context) {
     // Get agent groups
-    agentGroups, err := GroupAgentsByIp()
+    agentGroups, err := data.GroupAgentsByIp()
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agents"})
         return
@@ -38,7 +39,7 @@ func GetGroupAgents(c *gin.Context) {
 func GetGroupAgentsByIP(c *gin.Context) {
     // Get agents by IP
 	ip := c.Param("ip")
-    agents, err := AgentsByIp(ip)
+    agents, err := data.AgentsByIp(ip)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agents"})
         return
@@ -52,7 +53,7 @@ func GetOneAgentByUUID(c *gin.Context) {
     // Get agents by UUID
 	uuid := c.Param("agt")
 	fmt.Println("Trying to find agent", uuid)
-    agents, err := FetchOne(uuid)
+    agents, err := data.FetchOne(uuid)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agent"})
         return
@@ -66,7 +67,7 @@ func GetAgentByUUID(c *gin.Context) {
     // Get agents by UUID
 	uuid := c.Param("agt")
 	fmt.Println("Trying to find agent", uuid)
-    agents, err := Agent(uuid)
+    agents, err := data.Agent(uuid)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agent"})
         return
@@ -100,8 +101,8 @@ func UpdateAgentHandler(c *gin.Context) {
 	} else if !vcallbackjitter {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Callback Jitter, Max 100"})
 	} else {
-		UpdateAgentConfig(agentParam, body["callbackserver"], body["callbackfreq"], body["callbackjitter"])
-		SendAgentCommand(agentParam, "0", "update", body["callbackfreq"]+":"+body["callbackjitter"], newCmdID)
+		data.UpdateAgentConfig(agentParam, body["callbackserver"], body["callbackfreq"], body["callbackjitter"])
+		data.SendAgentCommand(agentParam, "0", "update", body["callbackfreq"]+":"+body["callbackjitter"], newCmdID)
 		c.JSON(http.StatusOK, gin.H{"message": "Success"})
 	}
 }
@@ -109,14 +110,14 @@ func UpdateAgentHandler(c *gin.Context) {
 func KillAgentHandler(c *gin.Context) {
 	agentParam := c.Param("agt")
 	newCmdID := uuid.New().String()
-	SendAgentCommand(agentParam, "0", "kill", "Kill Agent", newCmdID)
-	DeleteAgent(agentParam)
+	data.SendAgentCommand(agentParam, "0", "kill", "Kill Agent", newCmdID)
+	data.DeleteAgent(agentParam)
 	c.JSON(http.StatusOK, gin.H{"message": "Success"})
 }
 
 func GetKeylogHandler(c *gin.Context) {
 	agentParam := c.Param("agt")
-	keylogs := Keylog(agentParam)
+	keylogs := data.Keylog(agentParam)
 	c.JSON(http.StatusOK, gin.H{"data": keylogs})
 }
 
@@ -126,7 +127,7 @@ func GetPayloadsHandler(c *gin.Context) {
 }
 
 func CreatePayloadHandler(c *gin.Context) {
-	publickey := goDotEnvVariable("PUBLIC_KEY")
+	publickey := data.goDotEnvVariable("PUBLIC_KEY")
 	newPayID := uuid.New().String()
 	var body map[string]string
 	if err := c.BindJSON(&body); err != nil {
@@ -189,7 +190,7 @@ func CreatePayloadHandler(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error"})
 		}
 
-		CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat) // from web
+		data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat) // from web
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Success"})
 	}
 }
