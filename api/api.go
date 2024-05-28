@@ -9,11 +9,12 @@ import (
     "fmt"
 
     "github.com/PatronC2/Patron/api/api"
+    "github.com/PatronC2/Patron/data"
     "github.com/gin-gonic/gin"
 )
 
 func main() {
-    api.OpenDatabase()
+    data.OpenDatabase()
     api.InitDatabase()
     api.CreateAdminUser()
     

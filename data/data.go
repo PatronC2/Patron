@@ -12,6 +12,40 @@ import (
 	_ "github.com/lib/pq"
 )
 
+var db *sqlx.DB
+
+func OpenDatabase(){ 
+	var err error
+	var port int
+	host := data.goDotEnvVariable("DB_HOST")
+	fmt.Sscan(data.goDotEnvVariable("DB_PORT"), &port)
+	user := data.goDotEnvVariable("DB_USER")
+	password := data.goDotEnvVariable("DB_PASS")
+	dbname := data.goDotEnvVariable("DB_NAME")
+
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+    "password=%s dbname=%s sslmode=disable",
+    host, port, user, password, dbname)
+	for {
+
+		db, err = sqlx.Open("postgres", psqlInfo)
+		if err != nil {
+			logger.Logf(logger.Error, "Failed to connect to the database: %v\n", err)
+			time.Sleep(30 * time.Second)
+			continue
+		}
+		err = db.Ping()
+		if err != nil {
+			logger.Logf(logger.Error, "Failed to ping the database: %v\n", err)
+			db.Close()
+			time.Sleep(30 * time.Second)
+			continue
+		}
+		logger.Logf(logger.Info, "Postgres DB connected\n")
+		break
+	}
+}
+
 func goDotEnvVariable(key string) string {
 
 	// load .env file
