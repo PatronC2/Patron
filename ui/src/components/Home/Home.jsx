@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import axios from '../../api/axios';
 import AuthContext from '../../context/AuthProvider';
-import './Home.css'; // Import the CSS file
+import './Home.css';
 
 const Home = () => {
   const { auth } = useContext(AuthContext);

@@ -35,11 +35,11 @@ const Login = ({ onSuccessfulLogin }) => {
                 }
             );
             const accessToken = response?.data?.token;
-            setAuth({ user, accessToken }); // Store the token in context
+            setAuth({ user, accessToken });
             setUser('');
             setPwd('');
-            onSuccessfulLogin(); // Notify the App component of the successful login
-            navigate('/home'); // Redirect to home after login
+            onSuccessfulLogin();
+            navigate('/home');
         } catch (err) {
             if (!err?.response) {
                 setErrMsg('No server response');

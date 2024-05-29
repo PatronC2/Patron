@@ -6,7 +6,7 @@ export const AuthProvider = ({ children }) => {
     const [auth, setAuth] = useState({});
 
     useEffect(() => {
-        // Load token from localStorage when the component mounts
+
         const storedAuth = localStorage.getItem('auth');
         if (storedAuth) {
             setAuth(JSON.parse(storedAuth));
@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
-        setAuthWithLocalStorage({}); // Clear auth state and remove from localStorage
+        setAuthWithLocalStorage({});
     };
 
     return (

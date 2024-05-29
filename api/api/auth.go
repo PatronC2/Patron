@@ -8,10 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/PatronC2/Patron/types"
+	"github.com/PatronC2/Patron/data"
 )
 
-// TODO: Pull this secret from .env
-var jwtKey = []byte("patronsecret")
+var jwtKey []byte
+
+func InitAuth() {
+	jwtKeyStr := data.GoDotEnvVariable("JWT_KEY")
+	jwtKey = []byte(jwtKeyStr)
+}
 
 func Auth(validRoles []string) gin.HandlerFunc {
 	return func(context *gin.Context) {

@@ -13,7 +13,7 @@ const SideMenu = ({ setIsLoggedIn }) => {
 
     const handleLogout = () => {
         logout();
-        setIsLoggedIn(false); // Update the isLoggedIn state
+        setIsLoggedIn(false);
         navigate('/login');
     };
 

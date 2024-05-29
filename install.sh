@@ -215,6 +215,8 @@ rm -rf ui/.env
 rm -rf Web/client/.env
 
 encpubkey=`base64 -w 0 certs/server.pem`
+# Generate JWT key for API auth
+JWT_KEY=$(openssl rand -base64 32)
 
 # server env
 echo "WEBSERVER_IP=$webserverip" >> .env
@@ -234,6 +236,7 @@ echo "REACT_APP_NGINX_IP=$nginxip" >> .env
 echo "REACT_SERVER_IP=$reactclientip" >> .env
 echo "REACT_SERVER_PORT=$reactclientport" >> .env
 echo "ADMIN_AUTH_PASS=$basicpass" >> .env
+echo "JWT_KEY=$JWT_KEY" >> .env
 
 # UI V1 env
 echo -n > Web/client/.env
@@ -246,8 +249,8 @@ echo "PORT=$reactclientport" >> Web/client/.env
 
 # UI V2 env
 echo -n > ui/.env
-echo "APP_API_HOST=$ipaddress" >> ui/.env
-echo "APP_API_PORT=$webserverport" >> ui/.env
+echo "REACT_APP_API_HOST=$ipaddress" >> ui/.env
+echo "REACT_APP_API_PORT=$webserverport" >> ui/.env
 
 # make log dir
 mkdir -p logs
