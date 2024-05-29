@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import SideMenu from './Menu';
+import Header from './Header/Header';
 import Login from './Login';
 import Home from './Home';
 import Payloads from './Payloads';
@@ -24,18 +25,28 @@ function App() {
       <Router>
         <div className="App">
           {isLoggedIn && <SideMenu setIsLoggedIn={setIsLoggedIn} />}
-          <main className="content">
-            <Routes>
-              <Route path="/" element={isLoggedIn ? <Navigate to="/home" /> : <Navigate to="/login" />} />
-              <Route path="/login" element={<Login onSuccessfulLogin={handleSuccessfulLogin} />} />
-              <Route path="/home" element={isLoggedIn ? <Home /> : <Navigate to="/login" />} />
-              <Route path="/payloads" element={isLoggedIn ? <Payloads /> : <Navigate to="/login" />} />
-            </Routes>
-          </main>
+          <MainContent isLoggedIn={isLoggedIn} onSuccessfulLogin={handleSuccessfulLogin} />
         </div>
       </Router>
     </AuthProvider>
   );
 }
+
+const MainContent = ({ isLoggedIn, onSuccessfulLogin }) => {
+  const location = useLocation();
+  const isLoginPage = location.pathname === '/login';
+
+  return (
+    <div className="main-content">
+      {!isLoginPage && <Header />}
+      <Routes>
+        <Route path="/" element={isLoggedIn ? <Navigate to="/home" /> : <Navigate to="/login" />} />
+        <Route path="/login" element={<Login onSuccessfulLogin={onSuccessfulLogin} />} />
+        <Route path="/home" element={isLoggedIn ? <Home /> : <Navigate to="/login" />} />
+        <Route path="/payloads" element={isLoggedIn ? <Payloads /> : <Navigate to="/login" />} />
+      </Routes>
+    </div>
+  );
+};
 
 export default App;

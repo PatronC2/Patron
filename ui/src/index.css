@@ -14,7 +14,7 @@ html {
 
 body {
     min-height: 100vh;
-    background-color: dodgerblue;
+    background-color: #66a4b0;
     display: flex;
     justify-content: center;
     align-items: center;
