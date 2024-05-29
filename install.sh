@@ -211,6 +211,7 @@ echo "Setting up agents dir"
 # Set Env file
 echo "Setting environment variables"
 rm -rf .env
+rm -rf ui/.env
 rm -rf Web/client/.env
 
 encpubkey=`base64 -w 0 certs/server.pem`
@@ -234,13 +235,19 @@ echo "REACT_SERVER_IP=$reactclientip" >> .env
 echo "REACT_SERVER_PORT=$reactclientport" >> .env
 echo "ADMIN_AUTH_PASS=$basicpass" >> .env
 
-#webclient env
+# UI V1 env
+echo -n > Web/client/.env
 echo "REACT_APP_WEBSERVER_IP=$webserverip" >> Web/client/.env
 echo "REACT_APP_WEBSERVER_PORT=$webserverport" >> Web/client/.env
 echo "REACT_APP_NGINX_IP=$nginxip" >> Web/client/.env
 echo "REACT_APP_NGINX_PORT=$nginxport" >> Web/client/.env
 echo "HOST=$reactclientip" >> Web/client/.env
 echo "PORT=$reactclientport" >> Web/client/.env
+
+# UI V2 env
+echo -n > ui/.env
+echo "APP_API_HOST=$ipaddress" >> ui/.env
+echo "APP_API_PORT=$webserverport" >> ui/.env
 
 # make log dir
 mkdir -p logs
@@ -253,7 +260,7 @@ go mod tidy
 echo "Installing node modules..."
 
 cd Web/client && npm install && cd ../../
-
+cd ui && npm install && cd ../
 
 echo ""
 echo ""

@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import SideMenu from './Menu';
 import Header from './Header/Header';
 import Login from './Login';
-import Home from './Home';
+import Home from './Home/Home';
 import Payloads from './Payloads';
 import { AuthProvider } from '../context/AuthProvider';
 import AuthContext from '../context/AuthProvider';

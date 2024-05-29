@@ -32,18 +32,20 @@ services:
     depends_on:
       - patron_c2_postgres
 
-  #patron_c2_frontend:
-  #  image: node:18-alpine
-  #  command: sh -c "npm install && npm start"
-  #  working_dir: /app
-  #  restart: always
-  #  volumes:
-  #    - ./Web/client:/app
-  #  networks:
-  #    internal_c2_network:
-  #      ipv4_address: "${DOCKER_INTERNAL}.7"
-  #  # ports:
-  #  #   - 8081:8081
+  patron_c2_frontend:
+    image: node:18-alpine
+    command: sh -c "npm install && npm start"
+    working_dir: /app
+    restart: always
+    volumes:
+      - ./ui:/app
+    networks:
+      internal_c2_network:
+        ipv4_address: "${DOCKER_INTERNAL}.7"
+    ports:
+      - 3000:3000
+    depends_on:
+      - patron_c2_api
 
   #patron_c2_nginx:
   #  image: nginx:latest
