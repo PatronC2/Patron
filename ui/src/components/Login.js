@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthProvider';
 
 import axios from '../api/axios';
@@ -6,13 +7,13 @@ const LOGIN_URL = '/login';
 
 const Login = ({ onSuccessfulLogin }) => {
     const { setAuth } = useContext(AuthContext);
+    const navigate = useNavigate();
     const userRef = useRef();
     const errRef = useRef();
 
     const [user, setUser] = useState('');
     const [pwd, setPwd] = useState('');
     const [errMsg, setErrMsg] = useState('');
-    const [success, setSuccess] = useState(false);
 
     useEffect(() => {
         userRef.current.focus();
@@ -24,23 +25,21 @@ const Login = ({ onSuccessfulLogin }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log(user, pwd);
         try {
             const response = await axios.post(LOGIN_URL, 
-                JSON.stringify({"username": user, "password": pwd}),
+                JSON.stringify({ "username": user, "password": pwd }),
                 {
                     headers: {
                         'Content-Type': 'application/json'
                     }
                 }
             );
-            console.log(JSON.stringify(response?.data));
             const accessToken = response?.data?.token;
             setAuth({ user, accessToken }); // Store the token in context
             setUser('');
             setPwd('');
-            setSuccess(true);
             onSuccessfulLogin(); // Notify the App component of the successful login
+            navigate('/home'); // Redirect to home after login
         } catch (err) {
             if (!err?.response) {
                 setErrMsg('No server response');
@@ -64,7 +63,7 @@ const Login = ({ onSuccessfulLogin }) => {
                 <input
                     type="text"
                     id="username"
-                    ref={userRef} // Make sure userRef is set here
+                    ref={userRef}
                     autoComplete="off"
                     onChange={(e) => setUser(e.target.value)}
                     value={user}

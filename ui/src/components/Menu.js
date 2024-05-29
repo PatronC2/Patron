@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import AuthContext from '../context/AuthProvider';
 
-const SideMenu = () => {
+const SideMenu = ({ setIsLoggedIn }) => {
     const [isOpen, setIsOpen] = useState(true);
+    const { logout } = useContext(AuthContext);
+    const navigate = useNavigate();
 
     const toggleMenu = () => {
         setIsOpen(!isOpen);
+    };
+
+    const handleLogout = () => {
+        logout();
+        setIsLoggedIn(false); // Update the isLoggedIn state
+        navigate('/login');
     };
 
     return (
@@ -16,10 +25,13 @@ const SideMenu = () => {
             <nav className="menu-nav">
                 <ul>
                     <li>
-                        <Link to="/">Home</Link>
+                        <Link to="/home">Home</Link>
                     </li>
                     <li>
                         <Link to="/payloads">Payloads</Link>
+                    </li>
+                    <li>
+                        <button className="menu-button" onClick={handleLogout}>Logout</button>
                     </li>
                 </ul>
             </nav>

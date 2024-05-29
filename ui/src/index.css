@@ -155,6 +155,22 @@ tr:hover {
     transform: translateX(0);
 }
 
+.menu-nav button.menu-button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    display: block;
+    padding: 10px 20px;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+}
+
+.menu-nav button.menu-button:hover {
+    background-color: #575757;
+}
+
 .toggle-button {
     position: absolute;
     top: 20px;
