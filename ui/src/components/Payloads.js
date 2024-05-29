@@ -2,14 +2,14 @@ import React, { useEffect, useState, useContext } from 'react';
 import axios from '../api/axios';
 import AuthContext from '../context/AuthProvider';
 
-const Home = () => {
+const Payloads = () => {
   const { auth } = useContext(AuthContext);
   const [data, setData] = useState([]);
   const [error, setError] = useState(null);
 
   const fetchData = async () => {
     try {
-      const response = await axios.get('/api/agents', {
+      const response = await axios.get('/api/payloads', {
         headers: {
           'Authorization': `${auth.accessToken}`
         }
@@ -38,36 +38,41 @@ const Home = () => {
   if (error) {
     return <div>Error: {error}</div>;
   }
-
   return (
     <div>
-      <h1>Agents</h1>
-      {data.length > 0 ? (
+      <h1>Payloads</h1>
+      {data.length > 0 ? ( 
         <table>
           <thead>
             <tr>
               <th>UUID</th>
-              <th>Hostname</th>
-              <th>Agent IP</th>
-              <th>Status</th>
+              <th>Name</th>
+              <th>Description</th>
+              <th>Listener IP</th>
+              <th>Listener Port</th>
+              <th>Callback Frequency</th>
+              <th>Callback Jitter</th>
             </tr>
           </thead>
           <tbody>
             {data.map(item => (
               <tr key={item.uuid}>
                 <td>{item.uuid.substring(0, 6)}</td>
-                <td>{item.hostname}</td>
-                <td>{item.agentip}</td>
-                <td>{item.status}</td>
+                <td>{item.name}</td>
+                <td>{item.description}</td>
+                <td>{item.serverip}</td>
+                <td>{item.serverport}</td>
+                <td>{item.callbackfrequency}</td>
+                <td>{item.callbackjitter}</td>
               </tr>
             ))}
           </tbody>
         </table>
       ) : (
-        <p>No Agents</p>
+        <p>No Payloads</p>
       )}
     </div>
   );
 };
 
-export default Home;
+export default Payloads;

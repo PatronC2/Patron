@@ -2,9 +2,9 @@ import { useRef, useState, useEffect, useContext } from 'react';
 import AuthContext from '../context/AuthProvider';
 
 import axios from '../api/axios';
-const LOGIN_URL = '/login'
+const LOGIN_URL = '/login';
 
-const Login = () => {
+const Login = ({ onSuccessfulLogin }) => {
     const { setAuth } = useContext(AuthContext);
     const userRef = useRef();
     const errRef = useRef();
@@ -34,46 +34,30 @@ const Login = () => {
                     }
                 }
             );
-            console.log(JSON.stringify(response?.data))
-            console.log(JSON.stringify(response))
+            console.log(JSON.stringify(response?.data));
             const accessToken = response?.data?.token;
-            // role stuff
-            // const role = response?.data?.role;
-            // setAuth({ user, pwd, roles, accessToken})
-            setAuth({ user, pwd, accessToken});
+            setAuth({ user, accessToken }); // Store the token in context
             setUser('');
             setPwd('');
             setSuccess(true);
+            onSuccessfulLogin(); // Notify the App component of the successful login
         } catch (err) {
             if (!err?.response) {
                 setErrMsg('No server response');
-            } else if (err.response?.status==400) {
+            } else if (err.response?.status === 400) {
                 setErrMsg('Missing username or password');
-            } else if (err.response?.status==401) {
+            } else if (err.response?.status === 401) {
                 setErrMsg('Unauthorized');
             } else {
-                setErrMsg('Login failed')
+                setErrMsg('Login failed');
             }
-            errRef.current.focus()
-
+            errRef.current.focus();
         }
-    }
+    };
 
     return (
-        <>
-            {success? (
-                <section>
-                    <h1>Successfully logged in!</h1>
-                    <br />
-                    <p>
-                        <a href='#'>Got to Home</a>
-                    </p>
-                </section>
-            ) :(
         <section>
-            <p ref={errRef} className={
-                errMsg ? "errmsg" : "offscreen"
-            } aria-live="assertive">{errMsg}</p>
+            <p ref={errRef} className={errMsg ? "errmsg" : "offscreen"} aria-live="assertive">{errMsg}</p>
             <h1>Patron C2</h1>
             <form onSubmit={handleSubmit}>
                 <label htmlFor="username">Username:</label>
@@ -95,14 +79,10 @@ const Login = () => {
                     required
                 />
                 <button>Sign in</button>
-                <p>
-                    Contact an Administrator if you need an account
-                </p>
+                <p>Contact an Administrator if you need an account</p>
             </form>
         </section>
-            )}
-            </>
     );
-}
+};
 
 export default Login;
