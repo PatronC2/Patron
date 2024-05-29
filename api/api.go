@@ -58,6 +58,9 @@ func main() {
     r.GET("/api/keylog/:agt", api.Auth(readRoles), api.GetKeylogHandler)
     r.GET("/api/payloads", api.Auth(readRoles), api.GetPayloadsHandler)
 
+    // functions strictly meant for testing
+    r.POST("/api/test/createagent", api.Auth(writeRoles), api.CreateAgentHandler)
+
     // Logging
     r.Use(func(c *gin.Context) {
         c.Next()

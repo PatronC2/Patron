@@ -48,6 +48,16 @@ type CompileRequest struct {
 	CallbackJitter   string `json:"callbackjitter"`
 }
 
+type CreateAgentRequest struct {
+	ServerIP         string `json:"serverip"`
+	ServerPort       string `json:"serverport"`
+	CallbackFrequency string `json:"callbackfrequency"`
+	Jitter           string `json:"jitter"`
+	AgentIP          string `json:"agentip"`
+	Username         string `json:"username"`
+	Hostname         string `json:"hostname"`
+}
+
 func main() {
 	ERROR_COUNT := 0
 	SUCCESS_COUNT := 0
@@ -168,12 +178,19 @@ func main() {
 		SUCCESS_COUNT += 1
 	}
 
+	// create a test agent
+	callbackFrequency := "300"
+	callbackJitter := "60"
+	hostname := "test.patron.com"
+	err := createAgent(patronIP, patronAPIPort, token, patronIP, patronC2Port, callbackFrequency, jitter, agentIP, username, hostname)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+	}
+
 	// payload tests
 	TEST_NAME = "PAYLOAD TESTS"
 	fmt.Printf("\n\nBeginning Test: %s\n", TEST_NAME)
 	name := "test"
-	callbackFrequency := "300"
-	callbackJitter := "60"
 	description := "test"
 	/*
 	beforeFileCount := getNumOfFiles()
@@ -411,6 +428,46 @@ func compileRequest(patronIP, patronAPIPort, token, name, description, serverIP,
 	body, _ := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to compile: %s", string(body))
+	}
+
+	fmt.Println("Success:", string(body))
+	return nil
+}
+
+
+func createAgent(patronIP, patronAPIPort, token, serverIP, serverPort, callbackFrequency, jitter, agentIP, username, hostname string) error {
+	url := fmt.Sprintf("http://%s:%s/api/test/createagent", patronIP, patronAPIPort)
+	requestBody := CreateAgentRequest{
+		ServerIP:         serverIP,
+		ServerPort:       serverPort,
+		CallbackFrequency: callbackFrequency,
+		Jitter:           jitter,
+		AgentIP:          agentIP,
+		Username:         username,
+		Hostname:         hostname,
+	}
+	reqBody, err := json.Marshal(requestBody)
+	if err != nil {
+		return fmt.Errorf("failed to marshal request body: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("%s", token))
+
+	client := createInsecureClient()
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to make create agent request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to create agent: %s", string(body))
 	}
 
 	fmt.Println("Success:", string(body))
