@@ -41,6 +41,7 @@ func main() {
     adminRoles := []string{"admin"}
 
     // Admin functions
+    r.GET("/api/admin/users", api.Auth(adminRoles), api.GetUsersHandler)
     r.POST("/api/admin/users", api.Auth(adminRoles), api.CreateUserHandler)
     r.DELETE("/api/admin/users/:username", api.Auth(adminRoles), api.DeleteUserByUsernameHandler)
 

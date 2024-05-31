@@ -627,3 +627,29 @@ func FetchOne(uuid string) (infoAppend []types.ConfigAgent, err error) {
 	logger.Logf(logger.Info, "%v\n", info)
 	return infoAppend, err
 }
+
+func GetUsers() ([]User, error) {
+    var users []User
+    FetchSQL := `
+    SELECT 
+        id, 
+        username,
+        role
+    FROM users
+    `
+    rows, err := db.Query(FetchSQL)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+    
+    for rows.Next() {
+        var user User
+        err := rows.Scan(&user.ID, &user.Username, &user.Role)
+        if err != nil {
+            return nil, err
+        }
+        users = append(users, user)
+    }
+    return users, nil
+}
