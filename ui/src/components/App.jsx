@@ -1,10 +1,10 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import SideMenu from './Menu';
+import SideMenu from './Menu/Menu';
 import Header from './Header/Header';
-import Login from './Login';
+import Login from './Login/Login';
 import Home from './Home/Home';
-import Payloads from './Payloads';
+import Payloads from './Payloads/Payloads';
 import { AuthProvider } from '../context/AuthProvider';
 import AuthContext from '../context/AuthProvider';
 

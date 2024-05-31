@@ -21,13 +21,13 @@ body {
 }
 
 .App {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100%;
-  padding: 1rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 1rem 0.5rem;
 }
 
 section {
@@ -58,19 +58,19 @@ input[type="text"],
 input[type="password"],
 button,
 textarea {
-  font-family: 'Nunito', sans-serif;
-  font-size: 22px;
-  padding: 0.25rem;
-  border-radius: 0.5rem;
+    font-family: 'Nunito', sans-serif;
+    font-size: 22px;
+    padding: 0.25rem;
+    border-radius: 0.5rem;
 }
 
 label,
 button {
-  margin-top: 1rem;
+    margin-top: 1rem;
 }
 
 button {
-  padding: 0.5rem;
+    padding: 0.5rem;
 }
 
 .instructions {
@@ -116,92 +116,4 @@ button {
 
 .line {
     display: inline-block;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 1rem 0;
-}
-
-th, td {
-  border: 1px solid #ddd;
-  padding: 0.5rem;
-  text-align: left;
-}
-
-th {
-  background-color: #e02b2b;
-  color: white;
-}
-
-tr:hover {
-  background-color: #ddd;
-}
-
-.side-menu {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 250px;
-    height: 100%;
-    background-color: #333;
-    color: white;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease-in-out;
-}
-
-.side-menu.open {
-    transform: translateX(0);
-}
-
-.menu-nav button.menu-button {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 18px;
-    display: block;
-    padding: 10px 20px;
-    width: 100%;
-    text-align: left;
-    cursor: pointer;
-}
-
-.menu-nav button.menu-button:hover {
-    background-color: #575757;
-}
-
-.toggle-button {
-    position: absolute;
-    top: 20px;
-    right: -50px;
-    background-color: #333;
-    color: white;
-    border: none;
-    cursor: pointer;
-    padding: 10px;
-    border-radius: 5px;
-}
-
-.menu-nav ul {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-    margin-top: 60px;
-}
-
-.menu-nav li {
-    margin: 20px 0;
-}
-
-.menu-nav a {
-    color: white;
-    text-decoration: none;
-    font-size: 18px;
-    display: block;
-    padding: 10px 20px;
-}
-
-.menu-nav a:hover {
-    background-color: #575757;
 }

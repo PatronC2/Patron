@@ -145,9 +145,23 @@ func CreateAgentHandler(c *gin.Context) {
 		return
 	}
 
-	// Create agent
 	uid := uuid.New().String()
 	data.CreateAgent(uid, body.AgentIP+":"+body.ServerPort, body.CallbackFrequency, body.Jitter, body.AgentIP, body.Username, body.Hostname)
+	c.JSON(http.StatusOK, gin.H{"data": "success"})
+}
+
+func DeleteAgentHandler(c *gin.Context) {
+	var body struct {
+		UUID string `json:"uuid"`
+	}
+
+	if err := c.ShouldBindJSON(&body); err != nil || body.UUID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "UUID is required"})
+		return
+	}
+
+	data.DeleteAgent(body.UUID)
+
 	c.JSON(http.StatusOK, gin.H{"data": "success"})
 }
 
@@ -159,7 +173,7 @@ func CreatePayloadHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
-	vnm := regexp.MustCompile(`^[a-zA-Z]{1,9}$`)
+	vnm := regexp.MustCompile(`^[a-zA-Z0-9]{1,9}$`)
 	vname := vnm.Match([]byte(body["name"]))
 	vserverip, _ := regexp.MatchString(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`, body["serverip"])
 	vserverport, _ := regexp.MatchString(`^(6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`, body["serverport"])
@@ -216,6 +230,6 @@ func CreatePayloadHandler(c *gin.Context) {
 		}
 
 		data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat) // from web
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Success"})
+		c.JSON(http.StatusOK, gin.H{"data": "success"})
 	}
 }

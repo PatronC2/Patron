@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import AuthContext from '../context/AuthProvider';
+import AuthContext from '../../context/AuthProvider';
+import './Menu.css';
 
 const SideMenu = ({ setIsLoggedIn }) => {
     const [isOpen, setIsOpen] = useState(true);
@@ -9,6 +10,7 @@ const SideMenu = ({ setIsLoggedIn }) => {
 
     const toggleMenu = () => {
         setIsOpen(!isOpen);
+        document.body.classList.toggle('menu-open', isOpen);
     };
 
     const handleLogout = () => {

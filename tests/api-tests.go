@@ -87,7 +87,20 @@ func main() {
 		SUCCESS_COUNT += 1
 		fmt.Printf("%s: SUCCESS", TEST_NAME)
 	}
-	
+
+	// create a test agent
+	callbackFrequency := "300"
+	callbackJitter := "60"
+	hostname := "test.patron.com"
+	err = createAgent(patronIP, patronAPIPort, token, patronIP, patronC2Port, callbackFrequency, callbackJitter, AgentIP, username, hostname)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		ERROR_COUNT += 1
+	} else {
+		fmt.Printf("%s: Created temporary agent for testing", TEST_NAME)
+		SUCCESS_COUNT += 1
+	}
+
 	// make api calls to test functionality
 	TEST_NAME = "REGRESSION TESTS"
 	fmt.Printf("\n\nBeginning Test: %s\n", TEST_NAME)
@@ -150,6 +163,14 @@ func main() {
 			SUCCESS_COUNT += 1
 		}
 	}
+	err = deleteAgent(token, agentUUID)
+	if err != nil {
+		fmt.Printf("Error deleting test agent: %v\n", err)
+		ERROR_COUNT += 1
+	} else {
+		fmt.Println("Deleted test agent")
+		SUCCESS_COUNT += 1
+	}
 
 	// make sure read only user doesn't have admin privs
 	TEST_NAME = "PRIVILEGE TEST"
@@ -178,15 +199,6 @@ func main() {
 		SUCCESS_COUNT += 1
 	}
 
-	// create a test agent
-	callbackFrequency := "300"
-	callbackJitter := "60"
-	hostname := "test.patron.com"
-	err := createAgent(patronIP, patronAPIPort, token, patronIP, patronC2Port, callbackFrequency, jitter, agentIP, username, hostname)
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-	}
-
 	// payload tests
 	TEST_NAME = "PAYLOAD TESTS"
 	fmt.Printf("\n\nBeginning Test: %s\n", TEST_NAME)
@@ -198,7 +210,11 @@ func main() {
 	*/
 	err = compileRequest(patronIP, patronAPIPort, token, name, description, patronIP, patronC2Port, callbackFrequency, callbackJitter)
 	if err != nil {
-		fmt.Printf("%s: Error (sometimes this false fails): %v\n", TEST_NAME, err)
+		fmt.Printf("%s: Error: %v\n", TEST_NAME, err)
+		ERROR_COUNT += 1
+	} else {
+		fmt.Printf("%s: Successfully compiled a payload", TEST_NAME)
+		SUCCESS_COUNT += 1
 	}
 	/*
 	afterFileCount := getNumOfFiles()
@@ -436,7 +452,7 @@ func compileRequest(patronIP, patronAPIPort, token, name, description, serverIP,
 
 
 func createAgent(patronIP, patronAPIPort, token, serverIP, serverPort, callbackFrequency, jitter, agentIP, username, hostname string) error {
-	url := fmt.Sprintf("http://%s:%s/api/test/createagent", patronIP, patronAPIPort)
+	url := fmt.Sprintf("http://%s:%s/api/test/agent", patronIP, patronAPIPort)
 	requestBody := CreateAgentRequest{
 		ServerIP:         serverIP,
 		ServerPort:       serverPort,
@@ -471,5 +487,42 @@ func createAgent(patronIP, patronAPIPort, token, serverIP, serverPort, callbackF
 	}
 
 	fmt.Println("Success:", string(body))
+	return nil
+}
+
+func deleteAgent(token string, uuid interface{}) error {
+	uuidStr, ok := uuid.(string)
+	if !ok {
+		return fmt.Errorf("UUID is not a string")
+	}
+
+	url := fmt.Sprintf("http://%s:%s/api/test/agent", patronIP, patronAPIPort)
+	requestBody := map[string]string{
+		"uuid": uuidStr,
+	}
+	reqBody, err := json.Marshal(requestBody)
+	if err != nil {
+		return fmt.Errorf("failed to marshal request body: %w", err)
+	}
+
+	req, err := http.NewRequest("DELETE", url, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return fmt.Errorf("failed to create delete request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("%s", token))
+
+	client := createInsecureClient()
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to make delete agent request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return fmt.Errorf("failed to delete agent: %s", string(body))
+	}
+
 	return nil
 }

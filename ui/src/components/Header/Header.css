@@ -1,3 +1,4 @@
+/* Header.css */
 .app-header {
     background-color: #333;
     color: rgba(251, 18, 29, 255);
@@ -65,13 +66,12 @@
     text-decoration: underline;
 }
 
-/* index.css */
 .side-menu {
     position: fixed;
-    top: 60px; /* Adjust this value based on the header height */
+    top: 60px;
     left: 0;
     width: 250px;
-    height: calc(100% - 60px); /* Adjust this value based on the header height */
+    height: calc(100% - 60px);
     background-color: #333;
     color: white;
     transform: translateX(-100%);
@@ -133,9 +133,8 @@
     background-color: #575757;
 }
 
-/* Additional styles */
 .main-content {
-    margin-top: 60px; /* Adjust this value based on the header height */
+    margin-top: 60px; /* Ensure this matches the height of the app-header */
     flex-grow: 1;
     width: 100%;
     display: flex;

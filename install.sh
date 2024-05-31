@@ -212,7 +212,6 @@ echo "Setting up agents dir"
 echo "Setting environment variables"
 rm -rf .env
 rm -rf ui/.env
-rm -rf Web/client/.env
 
 encpubkey=`base64 -w 0 certs/server.pem`
 # Generate JWT key for API auth
@@ -238,15 +237,6 @@ echo "REACT_SERVER_PORT=$reactclientport" >> .env
 echo "ADMIN_AUTH_PASS=$basicpass" >> .env
 echo "JWT_KEY=$JWT_KEY" >> .env
 
-# UI V1 env
-echo -n > Web/client/.env
-echo "REACT_APP_WEBSERVER_IP=$webserverip" >> Web/client/.env
-echo "REACT_APP_WEBSERVER_PORT=$webserverport" >> Web/client/.env
-echo "REACT_APP_NGINX_IP=$nginxip" >> Web/client/.env
-echo "REACT_APP_NGINX_PORT=$nginxport" >> Web/client/.env
-echo "HOST=$reactclientip" >> Web/client/.env
-echo "PORT=$reactclientport" >> Web/client/.env
-
 # UI V2 env
 echo -n > ui/.env
 echo "REACT_APP_API_HOST=$ipaddress" >> ui/.env
@@ -262,7 +252,6 @@ go mod tidy
 # npm install
 echo "Installing node modules..."
 
-cd Web/client && npm install && cd ../../
 cd ui && npm install && cd ../
 
 echo ""
@@ -271,9 +260,9 @@ echo "------------------------------------------Raw Dog Run---------------------
 echo ""
 echo "Run 'sudo go run server/server.go' to start the C2 server"
 echo ""
-echo "Run 'sudo go run Web/server/webserver.go' to start the api sever"
+echo "Run 'sudo go run api/api.go' to start the api sever"
 echo ""
-echo "Run 'cd Web/client && npm start' to start start the web client"
+echo "Run 'cd ui && npm start' to start start the web client"
 echo ""
 echo "Run 'sudo go run bot/bot.go' to start the Discord Bot if the DISCORD BOT_TOKEN Was provided"
 echo ""
@@ -292,6 +281,6 @@ echo "Visit http://$nginxip:$nginxport for Web"
 echo ""
 echo "C2 Server on $nginxip:$c2serverport"
 echo ""
-echo "See .env and Web/client/.env to tweak enviroment variables (not advised)"
+echo "See .env and ui/.env to tweak enviroment variables (not advised)"
 echo ""
 

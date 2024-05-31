@@ -13,8 +13,8 @@ services:
     ports:
       - "${C2SERVER_PORT}:${C2SERVER_PORT}"
     depends_on:
-      - patron_c2_postgres
-      - patron_c2_api
+      patron_c2_postgres:
+        condition: service_healthy
 
   patron_c2_api:
     image: patron_c2_server
@@ -30,10 +30,11 @@ services:
     ports:
       - 8000:8000
     depends_on:
-      - patron_c2_postgres
+      patron_c2_postgres:
+        condition: service_healthy
 
   patron_c2_frontend:
-    image: node:18-alpine
+    image: node:22-alpine
     command: sh -c "npm install && npm start"
     working_dir: /app
     restart: always
@@ -46,21 +47,6 @@ services:
       - 3000:3000
     depends_on:
       - patron_c2_api
-
-  #patron_c2_nginx:
-  #  image: nginx:latest
-  #  restart: always
-  #  volumes:
-  #  - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template
-  #  - ./nginx/.htpasswd:/etc/nginx/.htpasswd
-  #  environment:
-  #    - REACT_SERVER=${DOCKER_INTERNAL}.7:${REACT_SERVER_PORT}
-  #    - API_SERVER=${DOCKER_INTERNAL}.6:${WEBSERVER_PORT}
-  #  networks:
-  #    internal_c2_network:
-  #      ipv4_address: "${DOCKER_INTERNAL}.8"
-  #  ports:
-  #  - "${REACT_APP_NGINX_PORT}:80"
 
   patron_c2_postgres:
     image: postgres:latest
@@ -77,6 +63,11 @@ services:
     networks:
       internal_c2_network:
         ipv4_address: "${DOCKER_INTERNAL}.9"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
 
 networks:
   internal_c2_network:

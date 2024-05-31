@@ -1,8 +1,9 @@
 import { useRef, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AuthContext from '../context/AuthProvider';
+import AuthContext from '../../context/AuthProvider';
+import './Login.css';
 
-import axios from '../api/axios';
+import axios from '../../api/axios';
 const LOGIN_URL = '/login';
 
 const Login = ({ onSuccessfulLogin }) => {
@@ -16,6 +17,7 @@ const Login = ({ onSuccessfulLogin }) => {
     const [errMsg, setErrMsg] = useState('');
 
     useEffect(() => {
+        document.body.classList.add('login-page');
         userRef.current.focus();
     }, []);
 

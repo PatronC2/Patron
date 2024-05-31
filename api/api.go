@@ -59,7 +59,8 @@ func main() {
     r.GET("/api/payloads", api.Auth(readRoles), api.GetPayloadsHandler)
 
     // functions strictly meant for testing
-    r.POST("/api/test/createagent", api.Auth(writeRoles), api.CreateAgentHandler)
+    r.POST("/api/test/agent", api.Auth(writeRoles), api.CreateAgentHandler)
+    r.DELETE("/api/test/agent", api.Auth(writeRoles), api.DeleteAgentHandler)
 
     // Logging
     r.Use(func(c *gin.Context) {
@@ -69,7 +70,7 @@ func main() {
         path := c.Request.URL.Path
         clientIP := c.ClientIP()
         c.Writer.Header().Set("X-Server-Timestamp", time.Now().Format(time.RFC3339))
-        fmt.Printf("[%d] %s %s %s", status, method, path, clientIP)
+        fmt.Printf("[%d] %s %s %s\n", status, method, path, clientIP)
     })
 
     // Start server
@@ -106,4 +107,3 @@ func CORS() gin.HandlerFunc {
         c.Next()
     }
 }
-
