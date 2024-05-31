@@ -184,3 +184,39 @@ func createUser(user *User) error {
 	return err
 
 }
+
+func GetUsersHandler(c *gin.Context) {
+	users, err := GetUsers()
+    if err != nil {
+        logger.Logf(logger.Error, "Failed to get users: %v\n", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve users"})
+    }
+	c.JSON(http.StatusOK, gin.H{"data": users})
+}
+
+
+func GetUsers() ([]User, error) {
+    var users []User
+    FetchSQL := `
+    SELECT 
+        id, 
+        username,
+        role
+    FROM users
+    `
+    rows, err := db.Query(FetchSQL)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+    
+    for rows.Next() {
+        var user User
+        err := rows.Scan(&user.ID, &user.Username, &user.Role)
+        if err != nil {
+            return nil, err
+        }
+        users = append(users, user)
+    }
+    return users, nil
+}

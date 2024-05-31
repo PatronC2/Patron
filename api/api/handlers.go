@@ -233,12 +233,3 @@ func CreatePayloadHandler(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"data": "success"})
 	}
 }
-
-func GetUsersHandler(c *gin.Context) {
-	users, err := data.GetUsers()
-    if err != nil {
-        logger.Logf(logger.Error, "Failed to get users: %v\n", err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve users"})
-    }
-	c.JSON(http.StatusOK, gin.H{"data": users})
-}
