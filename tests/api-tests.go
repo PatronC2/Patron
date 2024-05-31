@@ -213,7 +213,7 @@ func main() {
 		fmt.Printf("%s: Error: %v\n", TEST_NAME, err)
 		ERROR_COUNT += 1
 	} else {
-		fmt.Printf("%s: Successfully compiled a payload", TEST_NAME)
+		fmt.Printf("%s: Successfully compiled a payload\n", TEST_NAME)
 		SUCCESS_COUNT += 1
 	}
 	/*
@@ -231,6 +231,16 @@ func main() {
 
 
 	// delete the RO test user
+	TEST_NAME = "GET USERS TEST"
+	users, err := getRequest(token, "/api/admin/users")
+	if err != nil {
+		fmt.Printf("%s: Failed to get users: %v\n", TEST_NAME, err)
+		ERROR_COUNT += 1
+	} else {
+		fmt.Printf("%s: Users: %s\n", TEST_NAME, users)
+		SUCCESS_COUNT += 1
+	}
+
 	TEST_NAME = "DELETE TEST USER"
 	err = deleteUser(token, newUsername)
 	if err != nil {

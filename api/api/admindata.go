@@ -115,7 +115,7 @@ func CreateUserHandler(c *gin.Context) {
         return
     }
 
-    c.JSON(http.StatusCreated, gin.H{"message": "User created"})
+    c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Created user %s with role %s", user.Username, user.Role),})
     logger.Logf(logger.Info, "User %v created successfully", user.Username)
 }
 

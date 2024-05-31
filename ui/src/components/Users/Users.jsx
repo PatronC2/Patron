@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useContext } from 'react';
 import axios from '../../api/axios';
 import AuthContext from '../../context/AuthProvider';
-
-
-const FILE_SERVER = `http://${process.env.REACT_APP_API_HOST}:${process.env.REACT_APP_API_PORT}/files/`
+import NewUserForm from './NewUser';
+import './Users.css'
 
 const Users = () => {
     const { auth } = useContext(AuthContext);
@@ -26,7 +25,7 @@ const Users = () => {
 
     const fetchData = async () => {
         try {
-            const response = await axios.get('/api/users', {
+            const response = await axios.get('/api/admin/users', {
                 headers: {
                     'Authorization': `${auth.accessToken}`
                 }
@@ -79,20 +78,21 @@ const Users = () => {
                             </tr>
                         </thead>
                         <tbody>
-                          {data.map(item => (
-                              <tr key={item.uuid}>
-                                  <td>{item.id}</td>
-                                  <td>{item.username}</td>
-                                  <td>{item.role}</td>
-                              </tr>
-                          ))}
-                      </tbody>
+                            {data.map(user => (
+                                <tr key={user.ID}>
+                                    <td>{user.ID}</td>
+                                    <td>{user.Username}</td>
+                                    <td>{user.Role}</td>
+                                </tr>
+                            ))}
+                        </tbody>
                     </table>
                 ) : (
                     <p>No Users</p>
                 )
             ) : (
                 <div>
+                    <NewUserForm fetchData={fetchData} setActiveTab={setActiveTab} />
                 </div>
             )}
         </div>
@@ -100,4 +100,3 @@ const Users = () => {
 };
 
 export default Users;
-
