@@ -37,7 +37,7 @@ const Payloads = () => {
             if (Array.isArray(responseData)) {
                 setData(responseData);
             } else {
-                setError('Data format is not as expected');
+                setData('');
             }
         } catch (err) {
             setError(err.message);

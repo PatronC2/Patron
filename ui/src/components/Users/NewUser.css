@@ -45,10 +45,19 @@ select {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    color: white;
     padding: 10px;
     border-radius: 5px;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
     z-index: 9999;
+}
+
+.notification.success {
+    background-color: green;
+}
+
+.notification.error {
+    background-color: red;
 }
 
 .error {
@@ -57,6 +66,6 @@ select {
 }
 
 .success {
-    background-color: lightgreen;
+    background-color: green;
     color: white;
 }

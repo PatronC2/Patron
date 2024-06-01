@@ -10,8 +10,9 @@ const NewUserForm = ({ fetchData, setActiveTab }) => {
         role: 'readOnly',
         password: '',
     });
-    const [notification, setNotification] = useState('');
     const [error, setError] = useState('');
+    const [notification, setNotification] = useState('');
+    const [notificationType, setNotificationType] = useState('');
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -24,6 +25,7 @@ const NewUserForm = ({ fetchData, setActiveTab }) => {
         if (password !== confirmPassword) {
             setError('Passwords do not match');
             setNotification('Passwords do not match')
+            setNotificationType('error');
             setTimeout(() => {
                 setNotification('');
                 setError('');
@@ -45,14 +47,31 @@ const NewUserForm = ({ fetchData, setActiveTab }) => {
             }
 
             setNotification('User created successfully!');
+            setNotificationType('success');
             fetchData();
             setTimeout(() => {
                 setActiveTab('current_users');
                 setNotification('');
             }, 3000);
         } catch (error) {
-            console.error(`Failed to make compile request: ${error.message}`);
-            setNotification(`Failed to create user ${error.message}`);
+            if (error.response) {
+                if (error.response.status === 401) {
+                    setNotification('Error: Unauthorized.');
+                    setNotificationType('error');
+                } else {
+                    console.error(`Failed to create user: ${error.response.data}`);
+                    setNotification(`Failed to create user: ${error.response.data}`);
+                    setNotificationType('error');
+                }
+            } else if (error.request) {
+                console.error('Error: No response received from server.');
+                setNotification('Error: No response received from server.');
+                setNotificationType('error');
+            } else {
+                console.error(`Error: ${error.message}`);
+                setNotification(`Error: ${error.message}`);
+                setNotificationType('error');
+            }
         }
     };
 

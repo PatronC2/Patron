@@ -1,11 +1,12 @@
 import React, { useState, useContext } from 'react';
 import axios from '../../api/axios';
 import AuthContext from '../../context/AuthProvider';
-import './NewPayloadForm.css'
+import './NewPayloadForm.css';
 
 const NewPayloadForm = ({ fetchData, setActiveTab }) => {
     const { auth } = useContext(AuthContext);
     const [notification, setNotification] = useState('');
+    const [notificationType, setNotificationType] = useState('');
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -23,7 +24,7 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const url = `http://${process.env.REACT_APP_API_HOST}:${process.env.REACT_APP_API_PORT}/api/payload`;
+        const url = `/api/payload`;
         try {
             const response = await axios.post(url, formData, {
                 headers: {
@@ -32,18 +33,35 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
                 },
             });
 
-            if (response.status !== 200) {
-                throw new Error(`Failed to compile: ${response.data}`);
+            if (response.status === 200) {
+                setNotification('Payload created successfully!');
+                setNotificationType('success');
+                fetchData();
+                setTimeout(() => {
+                    setActiveTab('current_payloads');
+                }, 3000);
+            } else {
+                throw new Error(`Unexpected status code: ${response.status}`);
             }
-
-            setNotification('Payload created successfully!');
-            fetchData();
-            setTimeout(() => {
-                setActiveTab('current_payloads');
-            }, 3000);
         } catch (error) {
-            console.error(`Failed to make compile request: ${error.message}`);
-            setNotification(`Failed to compile payload ${error.message}`);
+            if (error.response) {
+                if (error.response.status === 401) {
+                    setNotification('Error: Unauthorized.');
+                    setNotificationType('error');
+                } else {
+                    console.error(`Failed to compile: ${error.response.data}`);
+                    setNotification(`Failed to compile: ${error.response.data}`);
+                    setNotificationType('error');
+                }
+            } else if (error.request) {
+                console.error('Error: No response received from server.');
+                setNotification('Error: No response received from server.');
+                setNotificationType('error');
+            } else {
+                console.error(`Error: ${error.message}`);
+                setNotification(`Error: ${error.message}`);
+                setNotificationType('error');
+            }
         }
     };
 
@@ -81,7 +99,9 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
                 <input type="text" id="callbackjitter" name="callbackjitter" value={formData.callbackjitter} onChange={handleChange} />
             </div>
             <button type="submit">Create Payload</button>
-            {notification && <div className="notification">{notification}</div>}
+            {notification && (
+                <div className={`notification ${notificationType}`}>{notification}</div>
+            )}
         </form>
     );
 };

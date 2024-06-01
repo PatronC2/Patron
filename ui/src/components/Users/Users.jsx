@@ -9,6 +9,8 @@ const Users = () => {
     const [data, setData] = useState([]);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('current_users');
+    const [notification, setNotification] = useState('');
+    const [notificationType, setNotificationType] = useState('');
 
     useEffect(() => {
         document.body.classList.add('users-page');
@@ -37,8 +39,25 @@ const Users = () => {
             } else {
                 setError('Data format is not as expected');
             }
-        } catch (err) {
-            setError(err.message);
+        } catch (error) {
+            if (error.response) {
+                if (error.response.status === 401) {
+                    setNotification('Error: Unauthorized.');
+                    setNotificationType('error');
+                } else {
+                    console.error(`Failed: ${error.response.data}`);
+                    setNotification(`Failed: ${error.response.data}`);
+                    setNotificationType('error');
+                }
+            } else if (error.request) {
+                console.error('Error: No response received from server.');
+                setNotification('Error: No response received from server.');
+                setNotificationType('error');
+            } else {
+                console.error(`Error: ${error.message}`);
+                setNotification(`Error: ${error.message}`);
+                setNotificationType('error');
+            }
         }
     };
 
@@ -88,7 +107,7 @@ const Users = () => {
                         </tbody>
                     </table>
                 ) : (
-                    <p>No Users</p>
+                    <p>Unauthorized</p>
                 )
             ) : (
                 <div>
