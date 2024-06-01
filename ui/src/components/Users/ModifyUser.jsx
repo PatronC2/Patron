@@ -1,13 +1,14 @@
 import React, { useState, useContext } from 'react';
 import axios from '../../api/axios';
 import AuthContext from '../../context/AuthProvider';
-import './PasswordChange.css';
+import './ModifyUser.css';
 
 const ChangePasswordForm = ({ username, setActiveTab }) => {
     const { auth } = useContext(AuthContext);
     const [formData, setFormData] = useState({
         newPassword: '',
         confirmNewPassword: '',
+        newRole: ''
     });
     const [notification, setNotification] = useState('');
     const [notificationType, setNotificationType] = useState('');
@@ -19,26 +20,29 @@ const ChangePasswordForm = ({ username, setActiveTab }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const { newPassword, confirmNewPassword } = formData;
+        const { newPassword, confirmNewPassword, newRole } = formData;
 
-        if (newPassword !== confirmNewPassword) {
+        if (newPassword && newPassword !== confirmNewPassword) {
             setNotification('New passwords do not match');
             setNotificationType('error');
             setTimeout(() => setNotification(''), 3000);
             return;
         }
 
+        const requestBody = {
+            ...(newPassword && { newPassword }),
+            ...(newRole && { newRole })
+        };
+
         try {
-            const response = await axios.put(`/api/admin/users/${username}`, {
-                newPassword,
-            }, {
+            const response = await axios.put(`/api/admin/users/${username}`, requestBody, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `${auth.accessToken}`,
                 },
             });
 
-            setNotification('Password updated successfully!');
+            setNotification('Changes saved successfully!');
             setNotificationType('success');
             setTimeout(() => {
                 setNotification('');
@@ -58,7 +62,7 @@ const ChangePasswordForm = ({ username, setActiveTab }) => {
             setTimeout(() => {
                 setNotification('');
                 setNotificationType('');
-         }, 3000);
+            }, 3000);
         }
     };
 
@@ -72,7 +76,6 @@ const ChangePasswordForm = ({ username, setActiveTab }) => {
                     name="newPassword"
                     value={formData.newPassword}
                     onChange={handleChange}
-                    required
                 />
             </div>
             <div>
@@ -83,10 +86,18 @@ const ChangePasswordForm = ({ username, setActiveTab }) => {
                     name="confirmNewPassword"
                     value={formData.confirmNewPassword}
                     onChange={handleChange}
-                    required
                 />
             </div>
-            <button type="submit">Change Password</button>
+            <div>
+                <label htmlFor="newRole">User role:</label>
+                <select id="newRole" name="newRole" value={formData.newRole} onChange={handleChange}>
+                    <option value="">No Change</option>
+                    <option value="readOnly">Read-Only</option>
+                    <option value="operator">Operator</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <button type="submit">Save Changes</button>
             {notification && (
                 <div className={`notification ${notificationType}`}>
                     {notification}

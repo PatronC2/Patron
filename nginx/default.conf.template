@@ -9,8 +9,6 @@ server {
         server_tokens off;      
 
         location / {
-                auth_basic "Restricted Access";
-                auth_basic_user_file /etc/nginx/.htpasswd;
                 allow 0.0.0.0/0;
                 #allow 10.10.10.0/0;
                 deny all;
@@ -18,18 +16,7 @@ server {
                 proxy_pass http://${REACT_SERVER}; #react client
         }
 
-        location /api {
-                auth_basic "Restricted Access";
-                auth_basic_user_file /etc/nginx/.htpasswd;
-                allow 0.0.0.0/0;
-                # allow 10.10.10.0/24;
-                deny all;
-                proxy_pass http://${API_SERVER}; #api server
-        }
-
-        location /files {
-                auth_basic "Restricted Access";
-                auth_basic_user_file /etc/nginx/.htpasswd;
+        location / {
                 allow 0.0.0.0/0;
                 # allow 10.10.10.0/24;
                 deny all;

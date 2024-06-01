@@ -54,9 +54,7 @@ function ask_prompt {
 
 function wipe_db {
    rm -rf data/postgres_data
-   rm -rf nginx/.htpasswd
    echo "Database Wiped!"
-   echo "htpasswd Wiped!"
    dbpass=`openssl rand -base64 9 | tr -dc 'a-zA-Z0-9' | head -c 12`
    patronUsername="patron"
    patronPassword=`openssl rand -base64 9 | tr -dc 'a-zA-Z0-9' | head -c 12`
@@ -67,7 +65,6 @@ function pass_prompt {
    read -p "Enter Database Password: " dbpass
    read -p "Enter UI Username: " patronUsername
    read -p "Enter UI Password: " patronPassword
-   set_htpasswd
 }
 
 function prereq_app_check {
@@ -75,7 +72,6 @@ function prereq_app_check {
    openssl=$(which openssl)
    npm=$(which npm)
    go=$(which go)
-   htpass=$(which htpasswd)
 
    # Prereqs
    #base64 check
@@ -107,14 +103,6 @@ function prereq_app_check {
    echo "go Check Ok"
    else
    echo "Install go: sudo apt install golang"
-   exit
-   fi
-
-   #go check
-   if [ -x "$htpass" ]; then
-   echo "htpasswd Check Ok"
-   else
-   echo "Install htpasswd: sudo apt install apache2-utils"
    exit
    fi
 }

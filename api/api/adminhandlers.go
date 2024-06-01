@@ -7,6 +7,7 @@ import (
     "github.com/gin-gonic/gin"
 	"github.com/PatronC2/Patron/lib/logger"
     "github.com/PatronC2/Patron/types"
+	"github.com/PatronC2/Patron/data"
 )
 
 type UpdateUserRequest struct {
@@ -109,7 +110,13 @@ func UpdateUserHandler(c *gin.Context) {
         return
     }
 
+    defaultUserName := data.GoDotEnvVariable("ADMIN_AUTH_USER")
     username := c.Param("username")
+    if defaultUserName == username {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("User %s cannot be modified", username)})
+        return
+    }
+
     user, err := GetUserByUsername(username)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
@@ -123,7 +130,7 @@ func UpdateUserHandler(c *gin.Context) {
         }
     }
 
-    if req.NewRole != nil {
+    if req.NewRole != nil && *req.NewRole != "" {
         user.Role = *req.NewRole
     }
 
