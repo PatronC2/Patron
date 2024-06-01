@@ -92,6 +92,24 @@ func ValidateToken(signedToken string, validRoles []string) (err error) {
 
 }
 
+func ValidateAndGetClaims(tokenString string) (*types.JWTClaim, error) {
+	token, err := jwt.ParseWithClaims(
+		tokenString,
+		&types.JWTClaim{},
+		func(token *jwt.Token) (interface{}, error) {
+			return []byte(jwtKey), nil
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	claims, ok := token.Claims.(*types.JWTClaim)
+	if !ok || !token.Valid {
+		return nil, errors.New("invalid token")
+	}
+	return claims, nil
+}
+
 func LoginHandler(c *gin.Context) {
     var loginRequest struct {
         Username string `json:"username"`

@@ -59,6 +59,10 @@ func main() {
     r.GET("/api/keylog/:agt", api.Auth(readRoles), api.GetKeylogHandler)
     r.GET("/api/payloads", api.Auth(readRoles), api.GetPayloadsHandler)
 
+    // Functions which can only modify / view their own user
+    r.PUT("/api/profile/password", api.Auth(readRoles), api.UpdatePasswordHandler)
+    r.GET("/api/profile/user", api.Auth(readRoles), api.GetCurrentUserHandler)
+
     // functions strictly meant for testing
     r.POST("/api/test/agent", api.Auth(writeRoles), api.CreateAgentHandler)
     r.DELETE("/api/test/agent", api.Auth(writeRoles), api.DeleteAgentHandler)

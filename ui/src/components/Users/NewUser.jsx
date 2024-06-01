@@ -42,7 +42,7 @@ const NewUserForm = ({ fetchData, setActiveTab }) => {
                 },
             });
 
-            if (response.status !== 200) {
+            if (response.status !== 201) {
                 throw new Error(`Failed to compile: ${response.data}`);
             }
 
@@ -100,7 +100,9 @@ const NewUserForm = ({ fetchData, setActiveTab }) => {
                 </div>
             </div>
             <button type="submit">Create User</button>
-            {notification && <div className="notification">{notification}</div>}
+            {notification && (
+                <div className={`notification ${notificationType}`}>{notification}</div>
+            )}
         </form>
     );
 };

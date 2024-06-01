@@ -66,7 +66,7 @@ func main() {
 	fmt.Printf("Beginning Test: %s\n", TEST_NAME)
 	token, err := login(username, password)
 	if err != nil {
-		fmt.Printf("%s: Login failed: %v", TEST_NAME, err)
+		fmt.Printf("%s: FAILURE - Login failed: %v\n", TEST_NAME, err)
 		ERROR_COUNT += 1
 	} else {
 		SUCCESS_COUNT += 1
@@ -80,7 +80,7 @@ func main() {
 
 	err = createUser(token, newUsername, newPassword, newRole)
 	if err != nil {
-		fmt.Printf("%s: Failed to create new user: %v\n", TEST_NAME, err)
+		fmt.Printf("%s: FAILURE - Failed to create new user: %v\n", TEST_NAME, err)
 		ERROR_COUNT += 1
 	} else {
 		fmt.Printf("%s: Created new user: %v\n", TEST_NAME, newUsername)
@@ -94,10 +94,10 @@ func main() {
 	hostname := "test.patron.com"
 	err = createAgent(patronIP, patronAPIPort, token, patronIP, patronC2Port, callbackFrequency, callbackJitter, AgentIP, username, hostname)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		fmt.Printf("%s: FAILURE - %v\n", TEST_NAME, err)
 		ERROR_COUNT += 1
 	} else {
-		fmt.Printf("%s: Created temporary agent for testing", TEST_NAME)
+		fmt.Printf("%s: Created temporary agent for testing\n", TEST_NAME)
 		SUCCESS_COUNT += 1
 	}
 
@@ -107,17 +107,27 @@ func main() {
 	endpoint := "/api/agents"
 	response, err := getRequest(token, endpoint)
 	if err != nil {
-		fmt.Printf("%s: Failed to get Agents: %v", TEST_NAME, err)
+		fmt.Printf("%s: FAILURE-  Failed to get Agents: %v\n", TEST_NAME, err)
 		ERROR_COUNT += 1
 	} else {
 		fmt.Printf("%s: Response from /api/agents: %s\n", TEST_NAME, response)
 		SUCCESS_COUNT += 1
 	}
 
+	endpoint = "/api/profile/user"
+	response, err = getRequest(token, endpoint)
+	if err != nil {
+		fmt.Printf("%s: FAILURE - Failed to get current user: %v\n", TEST_NAME, err)
+		ERROR_COUNT += 1
+	} else {
+		fmt.Printf("%s: Response from %s: %s\n", TEST_NAME, endpoint, response)
+		SUCCESS_COUNT += 1
+	}
+
 	endpoint = "/api/groupagents/"
 	response, err = getRequest(token, endpoint)
 	if err != nil {
-		fmt.Printf("%s: Failed to get Agents: %v", TEST_NAME, err)
+		fmt.Printf("%s: FAILURE - Failed to get Agents: %v\n", TEST_NAME, err)
 		ERROR_COUNT += 1
 	} else {
 		fmt.Printf("%s: Response from /api/groupagents: %s\n", TEST_NAME, response)
@@ -127,7 +137,7 @@ func main() {
 	endpoint = fmt.Sprintf("/api/groupagents/%s", AgentIP)
 	response, err = getRequest(token, endpoint)
 	if err != nil {
-		fmt.Printf("%s: Failed to get Agents: %v", TEST_NAME, err)
+		fmt.Printf("%s: FAILURE - Failed to get Agents: %v\n", TEST_NAME, err)
 		ERROR_COUNT += 1
 	} else {
 		fmt.Printf("%s: Response from /api/groupagents: %s\n", TEST_NAME, response)
@@ -136,7 +146,7 @@ func main() {
 
 	agentUUID, err := findValueByKey(response, "uuid")
 	if err != nil {
-		fmt.Printf("%s: Failed to get a UUID: %v", TEST_NAME, err)
+		fmt.Printf("%s: FAILURE - Failed to get a UUID: %v\n", TEST_NAME, err)
 		ERROR_COUNT += 1
 	} else {
 		SUCCESS_COUNT += 1
@@ -144,7 +154,7 @@ func main() {
 	endpoint = fmt.Sprintf("/api/oneagent/%s", agentUUID)
 	response, err = getRequest(token, endpoint)
 	if err != nil {
-		fmt.Printf("%s: Failed to get Agents: %v", TEST_NAME, err)
+		fmt.Printf("%s: FAILURE - Failed to get Agents: %v\n", TEST_NAME, err)
 		ERROR_COUNT += 1
 	} else {
 		fmt.Printf("%s: Response from /api/oneagent/%s: %s\n", TEST_NAME, agentUUID, response)
@@ -152,11 +162,11 @@ func main() {
 	}
 	assertUUID, err := findValueByKey(response, "uuid")
 	if err != nil {
-		fmt.Printf("%s: Failed to get the uuid back: %s\n", TEST_NAME, err)
+		fmt.Printf("%s: FAILURE - Failed to get the uuid back: %s\n", TEST_NAME, err)
 		ERROR_COUNT += 1
 	} else {
 		if assertUUID != agentUUID {
-			fmt.Printf("%s: Expected UUID: %s, got %s\n", TEST_NAME, agentUUID, assertUUID)
+			fmt.Printf("%s: FAILURE - Expected UUID: %s, got %s\n", TEST_NAME, agentUUID, assertUUID)
 			ERROR_COUNT += 1
 		} else {
 			fmt.Printf("%s: Assert %s=%s\n", TEST_NAME, agentUUID, assertUUID)
@@ -165,7 +175,7 @@ func main() {
 	}
 	err = deleteAgent(token, agentUUID)
 	if err != nil {
-		fmt.Printf("Error deleting test agent: %v\n", err)
+		fmt.Printf("FAILURE: Error deleting test agent: %v\n", err)
 		ERROR_COUNT += 1
 	} else {
 		fmt.Println("Deleted test agent")
@@ -178,7 +188,7 @@ func main() {
 	fmt.Printf("%s: Trying login as %s\n", TEST_NAME, newUsername)
 	roToken, err := login(newUsername, newPassword)
 	if err != nil {
-		fmt.Printf("%s: Login failed: %v\n", TEST_NAME, err)
+		fmt.Printf("%s: FAILURE - Login failed: %v\n", TEST_NAME, err)
 		ERROR_COUNT += 1
 	} else {
 		fmt.Printf("%s: PASS\n", TEST_NAME)
@@ -191,7 +201,7 @@ func main() {
 
 	err = createUser(roToken, invalidUsername, invalidPassword, invalidRole)
 	if err == nil {
-		fmt.Printf("%s: Invalid user creation should have failed but did not\n", TEST_NAME)
+		fmt.Printf("%s: FAILURE - Invalid user creation should have failed but did not\n", TEST_NAME)
 		ERROR_COUNT += 1
 	} else {
 		fmt.Printf("%s: User permissions are correct\n", TEST_NAME)
@@ -210,7 +220,7 @@ func main() {
 	*/
 	err = compileRequest(patronIP, patronAPIPort, token, name, description, patronIP, patronC2Port, callbackFrequency, callbackJitter)
 	if err != nil {
-		fmt.Printf("%s: Error: %v\n", TEST_NAME, err)
+		fmt.Printf("%s: FAILURE - %v\n", TEST_NAME, err)
 		ERROR_COUNT += 1
 	} else {
 		fmt.Printf("%s: Successfully compiled a payload\n", TEST_NAME)
@@ -234,7 +244,7 @@ func main() {
 	TEST_NAME = "GET USERS TEST"
 	users, err := getRequest(token, "/api/admin/users")
 	if err != nil {
-		fmt.Printf("%s: Failed to get users: %v\n", TEST_NAME, err)
+		fmt.Printf("%s: FAILURE - Failed to get users: %v\n", TEST_NAME, err)
 		ERROR_COUNT += 1
 	} else {
 		fmt.Printf("%s: Users: %s\n", TEST_NAME, users)
@@ -244,7 +254,7 @@ func main() {
 	TEST_NAME = "DELETE TEST USER"
 	err = deleteUser(token, newUsername)
 	if err != nil {
-		fmt.Printf("%s: Failed to delete user: %v\n", TEST_NAME, err)
+		fmt.Printf("%s: DAILURE - Failed to delete user: %v\n", TEST_NAME, err)
 		ERROR_COUNT += 1
 	} else {
 		fmt.Printf("%s: User %s deleted successfully\n", TEST_NAME, newUsername)

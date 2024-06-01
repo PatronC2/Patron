@@ -1,6 +1,7 @@
 package api
 
 import (
+    "database/sql"
     "fmt"
     "net/http"
     "time"
@@ -10,10 +11,9 @@ import (
 	"github.com/PatronC2/Patron/lib/logger"
     "github.com/PatronC2/Patron/types"
     "github.com/PatronC2/Patron/data"
-    "github.com/jmoiron/sqlx"
 )
 
-var db *sqlx.DB
+var db *sql.DB
 
 type User struct {
     types.User
@@ -33,7 +33,7 @@ func OpenDatabase(){
     host, port, user, password, dbname)
 	for {
 
-		db, err = sqlx.Open("postgres", psqlInfo)
+		db, err = sql.Open("postgres", psqlInfo)
 		if err != nil {
 			logger.Logf(logger.Error, "Failed to connect to the database: %v\n", err)
 			time.Sleep(30 * time.Second)
@@ -115,8 +115,46 @@ func CreateUserHandler(c *gin.Context) {
         return
     }
 
-    c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Created user %s with role %s", user.Username, user.Role),})
+    c.JSON(http.StatusCreated, gin.H{"message": fmt.Sprintf("Created user %s with role %s", user.Username, user.Role),})
     logger.Logf(logger.Info, "User %v created successfully", user.Username)
+}
+
+func UpdatePasswordHandler(c *gin.Context) {
+	var passwordUpdateRequest struct {
+		OldPassword string `json:"oldPassword"`
+		NewPassword string `json:"newPassword"`
+	}
+
+	if err := c.ShouldBindJSON(&passwordUpdateRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+	tokenString := c.GetHeader("Authorization")
+	claims, err := ValidateAndGetClaims(tokenString)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	username := claims.Username
+	user, err := GetUserByUsername(username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
+		return
+	}
+	if err := user.CheckPassword(passwordUpdateRequest.OldPassword); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid old password"})
+		return
+	}
+	if err := user.SetPassword(passwordUpdateRequest.NewPassword); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
+		return
+	}
+	if err := updateUserPassword(user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully"})
 }
 
 func DeleteUserByUsernameHandler(c *gin.Context) {
@@ -162,8 +200,22 @@ func DeleteUserByID(userID int) error {
 
 func GetUserByUsername(username string) (*User, error) {
     var user User
-    err := db.Get(&user, "SELECT * FROM users WHERE username=$1", username)
-    return &user, err
+    query := "SELECT id, username, password_hash, role FROM users WHERE username = $1"
+    err := db.QueryRow(query, username).Scan(&user.ID, &user.Username, &user.PasswordHash, &user.Role)
+    if err != nil {
+        if err == sql.ErrNoRows {
+            return nil, fmt.Errorf("user not found")
+        }
+        return nil, err
+    }
+    return &user, nil
+}
+
+
+func updateUserPassword(user *User) error {
+	query := "UPDATE users SET password_hash = $1 WHERE username = $2"
+	_, err := db.Exec(query, user.PasswordHash, user.Username)
+	return err
 }
 
 func createUser(user *User) error {
@@ -186,30 +238,44 @@ func createUser(user *User) error {
 }
 
 func GetUsersHandler(c *gin.Context) {
-	users, err := GetUsers()
+    users, err := GetUsers()
     if err != nil {
         logger.Logf(logger.Error, "Failed to get users: %v\n", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve users"})
+        return
     }
-	c.JSON(http.StatusOK, gin.H{"data": users})
+    c.JSON(http.StatusOK, gin.H{"data": users})
 }
 
+func GetCurrentUserHandler(c *gin.Context) {
+    tokenString := c.GetHeader("Authorization")
+    claims, err := ValidateAndGetClaims(tokenString)
+    if err != nil {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+        return
+    }
+    username := claims.Username
+    user, err := GetUserByUsername(username)
+    if err != nil {
+        if err.Error() == "user not found" {
+            c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+        } else {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user"})
+        }
+        return
+    }
+    c.JSON(http.StatusOK, gin.H{"data": user})
+}
 
 func GetUsers() ([]User, error) {
     var users []User
-    FetchSQL := `
-    SELECT 
-        id, 
-        username,
-        role
-    FROM users
-    `
-    rows, err := db.Query(FetchSQL)
+    query := "SELECT id, username, role FROM users"
+    rows, err := db.Query(query)
     if err != nil {
         return nil, err
     }
     defer rows.Close()
-    
+
     for rows.Next() {
         var user User
         err := rows.Scan(&user.ID, &user.Username, &user.Role)
@@ -220,3 +286,4 @@ func GetUsers() ([]User, error) {
     }
     return users, nil
 }
+

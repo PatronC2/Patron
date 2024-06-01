@@ -12,10 +12,9 @@ import (
 	"github.com/PatronC2/Patron/lib/logger"	
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-	"github.com/jmoiron/sqlx"
 )
 
-var db *sqlx.DB
+var db *sql.DB
 
 func OpenDatabase(){ 
 	var err error
@@ -31,7 +30,7 @@ func OpenDatabase(){
     host, port, user, password, dbname)
 	for {
 
-		db, err = sqlx.Open("postgres", psqlInfo)
+		db, err = sql.Open("postgres", psqlInfo)
 		if err != nil {
 			logger.Logf(logger.Error, "Failed to connect to the database: %v\n", err)
 			time.Sleep(30 * time.Second)

@@ -5,6 +5,7 @@ import Header from './Header/Header';
 import Login from './Login/Login';
 import Home from './Home/Home';
 import Payloads from './Payloads/Payloads';
+import Profile from './Profile/Profile';
 import Users from './Users/Users';
 import { AuthProvider } from '../context/AuthProvider';
 import AuthContext from '../context/AuthProvider';
@@ -45,6 +46,7 @@ const MainContent = ({ isLoggedIn, onSuccessfulLogin }) => {
         <Route path="/login" element={<Login onSuccessfulLogin={onSuccessfulLogin} />} />
         <Route path="/home" element={isLoggedIn ? <Home /> : <Navigate to="/login" />} />
         <Route path="/payloads" element={isLoggedIn ? <Payloads /> : <Navigate to="/login" />} />
+        <Route path="/profile" element={isLoggedIn ? <Profile /> : <Navigate to="/profile" />} />
         <Route path="/users" element={isLoggedIn ? <Users /> : <Navigate to="/login" />} />
       </Routes>
     </div>
