@@ -36,7 +36,7 @@ const SideMenu = ({ setIsLoggedIn }) => {
                         <Link to="/profile">Profile</Link>
                     </li>
                     <li>
-                        <Link to="/users">Users</Link>
+                        <Link to="/users">Admin</Link>
                     </li>
                     <li>
                         <button className="menu-button" onClick={handleLogout}>Logout</button>

@@ -58,27 +58,16 @@ function wipe_db {
    echo "Database Wiped!"
    echo "htpasswd Wiped!"
    dbpass=`openssl rand -base64 9 | tr -dc 'a-zA-Z0-9' | head -c 12`
-   basicpass=`openssl rand -base64 9 | tr -dc 'a-zA-Z0-9' | head -c 12`
+   patronUsername="patron"
+   patronPassword=`openssl rand -base64 9 | tr -dc 'a-zA-Z0-9' | head -c 12`
    set_htpasswd
 }
 
 function pass_prompt {
    read -p "Enter Database Password: " dbpass
-   read -p "Enter Basic Auth Password: " basicpass
+   read -p "Enter UI Username: " patronUsername
+   read -p "Enter UI Password: " patronPassword
    set_htpasswd
-}
-
-function set_htpasswd {
-   # Check if the .htpasswd file exists
-   if [ ! -f "nginx/.htpasswd" ]; then
-      # Create the file for the first time
-      htpasswd -B -b -c "nginx/.htpasswd" "$dbuser" "$basicpass"
-      echo "Password for user $dbuser has been added to nginx/.htpasswd"
-   else
-      # Append the user to the existing file
-      htpasswd -B -b "nginx/.htpasswd" "$dbuser" "$basicpass"
-      echo "Password for user $dbuser has been added to nginx/.htpasswd"
-   fi
 }
 
 function prereq_app_check {
@@ -125,7 +114,7 @@ function prereq_app_check {
    if [ -x "$htpass" ]; then
    echo "htpasswd Check Ok"
    else
-   echo "Install htpasswd: sudo apt install htpasswd"
+   echo "Install htpasswd: sudo apt install apache2-utils"
    exit
    fi
 }
@@ -234,7 +223,8 @@ echo "REACT_APP_NGINX_PORT=$nginxport" >> .env
 echo "REACT_APP_NGINX_IP=$nginxip" >> .env
 echo "REACT_SERVER_IP=$reactclientip" >> .env
 echo "REACT_SERVER_PORT=$reactclientport" >> .env
-echo "ADMIN_AUTH_PASS=$basicpass" >> .env
+echo "ADMIN_AUTH_USER=$patronUsername" >> .env
+echo "ADMIN_AUTH_PASS=$patronPassword" >> .env
 echo "JWT_KEY=$JWT_KEY" >> .env
 
 # UI V2 env

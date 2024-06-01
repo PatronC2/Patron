@@ -1,12 +1,11 @@
 import React, { useState, useContext } from 'react';
 import axios from '../../api/axios';
 import AuthContext from '../../context/AuthProvider';
-import './ChangePassword.css';
+import './PasswordChange.css';
 
-const ChangePasswordForm = ({ userId, setActiveTab }) => {
+const ChangePasswordForm = ({ username, setActiveTab }) => {
     const { auth } = useContext(AuthContext);
     const [formData, setFormData] = useState({
-        oldPassword: '',
         newPassword: '',
         confirmNewPassword: '',
     });
@@ -20,7 +19,7 @@ const ChangePasswordForm = ({ userId, setActiveTab }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const { oldPassword, newPassword, confirmNewPassword } = formData;
+        const { newPassword, confirmNewPassword } = formData;
 
         if (newPassword !== confirmNewPassword) {
             setNotification('New passwords do not match');
@@ -30,8 +29,7 @@ const ChangePasswordForm = ({ userId, setActiveTab }) => {
         }
 
         try {
-            const response = await axios.put(`/api/admin/user/password`, {
-                oldPassword,
+            const response = await axios.put(`/api/admin/users/${username}`, {
                 newPassword,
             }, {
                 headers: {
@@ -43,8 +41,8 @@ const ChangePasswordForm = ({ userId, setActiveTab }) => {
             setNotification('Password updated successfully!');
             setNotificationType('success');
             setTimeout(() => {
-                setActiveTab('current_users');
                 setNotification('');
+                setNotificationType('');
             }, 3000);
         } catch (error) {
             if (error.response) {
@@ -57,23 +55,15 @@ const ChangePasswordForm = ({ userId, setActiveTab }) => {
                 setNotification(`Error: ${error.message}`);
                 setNotificationType('error');
             }
-            setTimeout(() => setNotification(''), 3000);
+            setTimeout(() => {
+                setNotification('');
+                setNotificationType('');
+         }, 3000);
         }
     };
 
     return (
         <form onSubmit={handleSubmit}>
-            <div>
-                <label htmlFor="oldPassword">Old Password:</label>
-                <input
-                    type="password"
-                    id="oldPassword"
-                    name="oldPassword"
-                    value={formData.oldPassword}
-                    onChange={handleChange}
-                    required
-                />
-            </div>
             <div>
                 <label htmlFor="newPassword">New Password:</label>
                 <input

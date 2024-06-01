@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import axios from '../../api/axios';
 import AuthContext from '../../context/AuthProvider';
 import NewUserForm from './NewUser';
-import ChangePasswordForm from './ChangePasswordForm';  // Import ChangePasswordForm
+import ChangePasswordForm from './ModifyUser';
 import './Users.css';
 
 const Users = () => {
@@ -83,9 +83,17 @@ const Users = () => {
             setNotification('User deleted successfully');
             setNotificationType('success');
             fetchData();
+            setTimeout(() => {
+                setNotification('');
+                setNotificationType('');
+            }, 3000);
         } catch (error) {
             setNotification(`Error deleting user: ${error.message}`);
             setNotificationType('error');
+            setTimeout(() => {
+                setNotification('');
+                setNotificationType('');
+            }, 3000);
         }
     };
 
@@ -101,7 +109,7 @@ const Users = () => {
     return (
         <div className="main-content">
             <div className="header">
-                <h1>Users</h1>
+                <h1>Admin</h1>
                 <button
                     className={activeTab === 'current_users' ? 'active' : ''}
                     onClick={() => handleTabChange('current_users')}
@@ -109,8 +117,8 @@ const Users = () => {
                     Existing Users
                 </button>
                 <button
-                    className={activeTab === 'new' ? 'active' : ''}
-                    onClick={() => handleTabChange('new')}
+                    className={activeTab === 'new_user' ? 'active' : ''}
+                    onClick={() => handleTabChange('new_user')}
                 >
                     Create New User
                 </button>
@@ -134,7 +142,7 @@ const Users = () => {
                                     <td>{user.Role}</td>
                                     <td>
                                         <button onClick={() => handleUserClick(user)}>Edit</button>
-                                        <button onClick={() => handleDeleteUser(user.ID)}>Delete</button>
+                                        <button onClick={() => handleDeleteUser(user.Username)}>Delete</button>
                                     </td>
                                 </tr>
                             ))}
@@ -143,17 +151,15 @@ const Users = () => {
                 ) : (
                     <p>No users available</p>
                 )
-            ) : activeTab === 'new' ? (
+            ) : activeTab === 'new_user' ? (
                 <NewUserForm fetchData={fetchData} setActiveTab={setActiveTab} />
             ) : activeTab === 'edit_user' && selectedUser ? (
                 <div>
                     <h2>Edit User: {selectedUser.Username}</h2>
-                    <ChangePasswordForm setActiveTab={setActiveTab} />
-                    {/* Add form to change user role here */}
+                    <ChangePasswordForm username={selectedUser.Username} setActiveTab={setActiveTab} />
                 </div>
             ) : (
                 <div>
-                    {/* Other content */}
                 </div>
             )}
             {notification && (

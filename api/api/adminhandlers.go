@@ -14,7 +14,12 @@ type UpdateUserRequest struct {
 }
 
 func DeleteUserByUsernameHandler(c *gin.Context) {
+	defaultUserName := data.GoDotEnvVariable("ADMIN_AUTH_USER")
     username := c.Param("username")
+	if defaultUserName == username {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("user %s cannot be deleted", username)})
+		return
+	}
     userID, err := GetUserIDByUsername(username)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user ID"})
@@ -77,7 +82,7 @@ func UpdatePasswordHandler(c *gin.Context) {
 	username := claims.Username
 	user, err := GetUserByUsername(username)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("User %s not found", username)})
 		return
 	}
 	if err := user.CheckPassword(passwordUpdateRequest.OldPassword); err != nil {
