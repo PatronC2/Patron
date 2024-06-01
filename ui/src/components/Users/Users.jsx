@@ -2,7 +2,8 @@ import React, { useEffect, useState, useContext } from 'react';
 import axios from '../../api/axios';
 import AuthContext from '../../context/AuthProvider';
 import NewUserForm from './NewUser';
-import './Users.css'
+import ChangePasswordForm from './ChangePasswordForm';  // Import ChangePasswordForm
+import './Users.css';
 
 const Users = () => {
     const { auth } = useContext(AuthContext);
@@ -11,6 +12,7 @@ const Users = () => {
     const [activeTab, setActiveTab] = useState('current_users');
     const [notification, setNotification] = useState('');
     const [notificationType, setNotificationType] = useState('');
+    const [selectedUser, setSelectedUser] = useState(null);
 
     useEffect(() => {
         document.body.classList.add('users-page');
@@ -63,6 +65,33 @@ const Users = () => {
 
     const handleTabChange = (tab) => {
         setActiveTab(tab);
+        setSelectedUser(null);  // Clear selected user when tab changes
+    };
+
+    const handleUserClick = (user) => {
+        setSelectedUser(user);
+        setActiveTab('edit_user');
+    };
+
+    const handleDeleteUser = async (userId) => {
+        try {
+            await axios.delete(`/api/admin/users/${userId}`, {
+                headers: {
+                    'Authorization': `${auth.accessToken}`
+                }
+            });
+            setNotification('User deleted successfully');
+            setNotificationType('success');
+            fetchData();
+        } catch (error) {
+            setNotification(`Error deleting user: ${error.message}`);
+            setNotificationType('error');
+        }
+    };
+
+    const handleUpdateUser = (user) => {
+        setSelectedUser(user);
+        setActiveTab('edit_user');
     };
 
     if (error) {
@@ -94,6 +123,7 @@ const Users = () => {
                                 <th>ID</th>
                                 <th>Name</th>
                                 <th>Role</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -102,16 +132,33 @@ const Users = () => {
                                     <td>{user.ID}</td>
                                     <td>{user.Username}</td>
                                     <td>{user.Role}</td>
+                                    <td>
+                                        <button onClick={() => handleUserClick(user)}>Edit</button>
+                                        <button onClick={() => handleDeleteUser(user.ID)}>Delete</button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 ) : (
-                    <p>Unauthorized</p>
+                    <p>No users available</p>
                 )
+            ) : activeTab === 'new' ? (
+                <NewUserForm fetchData={fetchData} setActiveTab={setActiveTab} />
+            ) : activeTab === 'edit_user' && selectedUser ? (
+                <div>
+                    <h2>Edit User: {selectedUser.Username}</h2>
+                    <ChangePasswordForm setActiveTab={setActiveTab} />
+                    {/* Add form to change user role here */}
+                </div>
             ) : (
                 <div>
-                    <NewUserForm fetchData={fetchData} setActiveTab={setActiveTab} />
+                    {/* Other content */}
+                </div>
+            )}
+            {notification && (
+                <div className={`notification ${notificationType}`}>
+                    {notification}
                 </div>
             )}
         </div>

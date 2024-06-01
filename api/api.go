@@ -44,6 +44,7 @@ func main() {
     r.GET("/api/admin/users", api.Auth(adminRoles), api.GetUsersHandler)
     r.POST("/api/admin/users", api.Auth(adminRoles), api.CreateUserHandler)
     r.DELETE("/api/admin/users/:username", api.Auth(adminRoles), api.DeleteUserByUsernameHandler)
+    r.PUT("/api/admin/users/:username", api.Auth(adminRoles), api.UpdateUserHandler)
 
     // POST / DELETE requests to non-admin areas use Auth(writeRoles)
     r.POST("/api/updateagent/:agt", api.Auth(writeRoles), api.UpdateAgentHandler)

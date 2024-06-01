@@ -21,3 +21,8 @@ type UserCreationRequest struct {
     Password string `json:"password" binding:"required"`
     Role     string `json:"role" binding:"required"`
 }
+
+type UpdateUserRequest struct {
+    NewPassword *string `json:"newPassword,omitempty"`
+    NewRole     *string `json:"newRole,omitempty"`
+}
