@@ -4,7 +4,7 @@ import AuthContext from '../../context/AuthProvider';
 import './Login.css';
 import axios from '../../api/axios';
 
-const LOGIN_URL = '/login';
+const LOGIN_URL = '/api/login';
 
 const Login = ({ onSuccessfulLogin }) => {
     const { setAuth } = useContext(AuthContext);

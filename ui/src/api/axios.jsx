@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_ENDPOINT = `http://${process.env.REACT_APP_API_HOST}:${process.env.REACT_APP_API_PORT}`;
+const API_ENDPOINT = `https://${process.env.REACT_APP_NGINX_IP}:${process.env.REACT_APP_NGINX_PORT}`;
 
 const instance = axios.create({
     baseURL: API_ENDPOINT,

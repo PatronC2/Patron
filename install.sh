@@ -30,6 +30,7 @@ function set_global_default_variable {
     dbuser="patron"
     dbport="5432"
     dbname="patron"
+    patronUsername="patron"
 }
 
 function ask_prompt {
@@ -56,9 +57,7 @@ function wipe_db {
    rm -rf data/postgres_data
    echo "Database Wiped!"
    dbpass=`openssl rand -base64 9 | tr -dc 'a-zA-Z0-9' | head -c 12`
-   patronUsername="patron"
    patronPassword=`openssl rand -base64 9 | tr -dc 'a-zA-Z0-9' | head -c 12`
-   set_htpasswd
 }
 
 function pass_prompt {
@@ -217,6 +216,8 @@ echo "JWT_KEY=$JWT_KEY" >> .env
 
 # UI V2 env
 echo -n > ui/.env
+echo "REACT_APP_NGINX_IP=$nginxip" >> ui/.env
+echo "REACT_APP_NGINX_PORT=$nginxport" >> ui/.env
 echo "REACT_APP_API_HOST=$ipaddress" >> ui/.env
 echo "REACT_APP_API_PORT=$webserverport" >> ui/.env
 echo "REACT_APP_PATRON_C2_IP=$ipaddress" >> ui/.env

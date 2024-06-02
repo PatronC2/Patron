@@ -34,7 +34,7 @@ func main() {
     FileServer(r, "/files", filesDir)
 
     // handle logins
-    r.POST("/login", api.LoginHandler)
+    r.POST("/api/login", api.LoginHandler)
 
     readRoles := []string{"admin", "operator", "readOnly"}
     writeRoles := []string{"admin", "operator"}

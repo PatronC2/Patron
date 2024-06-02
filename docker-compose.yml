@@ -27,8 +27,6 @@ services:
     networks:
       internal_c2_network:
         ipv4_address: "${DOCKER_INTERNAL}.6"
-    ports:
-      - 8000:8000
     depends_on:
       patron_c2_postgres:
         condition: service_healthy
@@ -43,8 +41,6 @@ services:
     networks:
       internal_c2_network:
         ipv4_address: "${DOCKER_INTERNAL}.7"
-    ports:
-            - 8081:8081
     depends_on:
       - patron_c2_api
 
@@ -68,6 +64,22 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
+
+  patron_c2_nginx:
+    image: nginx:latest
+    restart: always
+    volumes:
+      - ./nginx/conf.d/default.conf.template:/etc/nginx/templates/default.conf.template
+      - ./certs/server.pem:/etc/nginx/ssl/nginx.crt
+      - ./certs/server.key:/etc/nginx/ssl/nginx.key
+    environment:
+      - REACT_SERVER=${DOCKER_INTERNAL}.7:${REACT_SERVER_PORT}
+      - API_SERVER=${DOCKER_INTERNAL}.6:8000
+    networks:
+      internal_c2_network:
+        ipv4_address: "${DOCKER_INTERNAL}.8"
+    ports:
+      - "${REACT_APP_NGINX_PORT}:8443"
 
 networks:
   internal_c2_network:
