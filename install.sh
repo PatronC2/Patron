@@ -219,6 +219,8 @@ echo "JWT_KEY=$JWT_KEY" >> .env
 echo -n > ui/.env
 echo "REACT_APP_API_HOST=$ipaddress" >> ui/.env
 echo "REACT_APP_API_PORT=$webserverport" >> ui/.env
+echo "HOST=$reactclientip" >> ui/.env
+echo "PORT=$reactclientport" >> ui/.env
 
 # make log dir
 mkdir -p logs

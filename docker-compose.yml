@@ -44,7 +44,7 @@ services:
       internal_c2_network:
         ipv4_address: "${DOCKER_INTERNAL}.7"
     ports:
-      - 3000:3000
+            - 8081:8081
     depends_on:
       - patron_c2_api
 
