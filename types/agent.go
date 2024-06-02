@@ -12,6 +12,17 @@ type ConfigAgent struct {
 	// ...
 }
 
+// type strictly for testing
+type CreateAgentRequest struct {
+	ServerIP         string `json:"serverip"`
+	ServerPort       string `json:"serverport"`
+	CallbackFrequency string `json:"callbackfrequency"`
+	Jitter           string `json:"jitter"`
+	AgentIP          string `json:"agentip"`
+	Username         string `json:"username"`
+	Hostname         string `json:"hostname"`
+}
+
 type AgentIP struct {
 	AgentIP           string `json:"agentip"`
 	// ...

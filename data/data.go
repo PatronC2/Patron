@@ -14,28 +14,16 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func goDotEnvVariable(key string) string {
+var db *sql.DB
 
-	// load .env file
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
-
-	return os.Getenv(key)
-}
-
-
-func OpenDatabase() *sql.DB { 
-	var db *sql.DB
+func OpenDatabase(){ 
 	var err error
 	var port int
-	host := goDotEnvVariable("DB_HOST")
-	fmt.Sscan(goDotEnvVariable("DB_PORT"), &port)
-	user := goDotEnvVariable("DB_USER")
-	password := goDotEnvVariable("DB_PASS")
-	dbname := goDotEnvVariable("DB_NAME")
+	host := GoDotEnvVariable("DB_HOST")
+	fmt.Sscan(GoDotEnvVariable("DB_PORT"), &port)
+	user := GoDotEnvVariable("DB_USER")
+	password := GoDotEnvVariable("DB_PASS")
+	dbname := GoDotEnvVariable("DB_NAME")
 
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
     "password=%s dbname=%s sslmode=disable",
@@ -58,10 +46,22 @@ func OpenDatabase() *sql.DB {
 		logger.Logf(logger.Info, "Postgres DB connected\n")
 		break
 	}
-	return db
 }
 
-func InitDatabase(db *sql.DB) {
+func GoDotEnvVariable(key string) string {
+
+	// load .env file
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	return os.Getenv(key)
+}
+
+func InitDatabase() {
+
 	AgentSQL := `
 	CREATE TABLE IF NOT EXISTS "Agents" (
 		"AgentID" SERIAL PRIMARY KEY,
@@ -134,9 +134,24 @@ func InitDatabase(db *sql.DB) {
 		log.Fatal(err.Error())
 	}
 	logger.Logf(logger.Info, "Payloads table initialized\n")
+
+    UsersSQL := `
+	CREATE TABLE IF NOT EXISTS users (
+		id SERIAL PRIMARY KEY,
+		username VARCHAR(50) UNIQUE NOT NULL,
+		password_hash TEXT NOT NULL,
+		role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'operator', 'readOnly'))
+	);
+	`
+    _, err = db.Exec(UsersSQL)
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+    log.Println("Users table initialized")
+
 }
 
-func CreateAgent(db *sql.DB, uuid string, CallBackToIP string, CallBackFeq string, CallBackJitter string, Ip string, User string, Hostname string) {
+func CreateAgent(uuid string, CallBackToIP string, CallBackFeq string, CallBackJitter string, Ip string, User string, Hostname string) {
 	CreateAgentSQL := `INSERT INTO "Agents" ("UUID", "CallBackToIP", "CallBackFeq", "CallBackJitter", "Ip", "User", "Hostname")
 VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
@@ -155,7 +170,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7)`
 	logger.Logf(logger.Info, "New Agent created in DB\n")
 }
 
-func CreateKeys(db *sql.DB, uuid string) {
+func CreateKeys(uuid string) {
 	CreateKeysSQL := `INSERT INTO "Keylog" ("UUID", "Keys")
 	VALUES ($1, $2)`
 
@@ -174,7 +189,7 @@ func CreateKeys(db *sql.DB, uuid string) {
 	logger.Logf(logger.Info, "New Keylog Agent created in DB\n")
 }
 
-func CreatePayload(db *sql.DB, uuid string, name string, description string, ServerIP string, ServerPort string, CallBackFeq string, CallBackJitter string, Concat string) {
+func CreatePayload(uuid string, name string, description string, ServerIP string, ServerPort string, CallBackFeq string, CallBackJitter string, Concat string) {
 	CreateAgentSQL := `INSERT INTO "Payloads" ("UUID", "Name", "Description", "ServerIP", "ServerPort", "CallbackFrequency", "CallbackJitter", "Concat")
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
 
@@ -193,8 +208,7 @@ func CreatePayload(db *sql.DB, uuid string, name string, description string, Ser
 	logger.Logf(logger.Info, "New Payload created in DB\n")
 }
 
-func FetchOneAgent(db *sql.DB, uuid string) types.ConfigAgent {
-	var info types.ConfigAgent
+func FetchOneAgent(uuid string) (info types.ConfigAgent, err error ) {
 	FetchSQL := `
 	SELECT 
 		"UUID","CallBackToIP","CallBackFeq","CallBackJitter"
@@ -215,7 +229,7 @@ func FetchOneAgent(db *sql.DB, uuid string) types.ConfigAgent {
 		switch err {
 		case sql.ErrNoRows:
 			logger.Logf(logger.Info, "No rows were returned!! \n")
-			return info
+			return info, err
 		case nil:
 			logger.Logf(logger.Info, "%v\n", info)
 		default:
@@ -224,10 +238,10 @@ func FetchOneAgent(db *sql.DB, uuid string) types.ConfigAgent {
 	}
 
 	logger.Logf(logger.Info, "Agent %s Fetched \n", info.Uuid)
-	return info
+	return info, err
 }
 
-func FetchNextCommand(db *sql.DB, uuid string) types.GiveAgentCommand {
+func FetchNextCommand(uuid string) types.GiveAgentCommand {
 	var info types.GiveAgentCommand
 	FetchSQL := `
 	SELECT 
@@ -272,7 +286,7 @@ func FetchNextCommand(db *sql.DB, uuid string) types.GiveAgentCommand {
 	logger.Logf(logger.Info, "Agent %s Fetched Next Command %s \n", info.UpdateAgentConfig.Uuid, info.Command)
 	return info
 }
-func SendAgentCommand(db *sql.DB, uuid string, result string, CommandType string, Command string, CommandUUID string) {
+func SendAgentCommand(uuid string, result string, CommandType string, Command string, CommandUUID string) {
 	SendAgentCommandSQL := `INSERT INTO "Commands" ("UUID", "Result", "CommandType", "Command", "CommandUUID")
 	VALUES ($1, $2, $3, $4, $5)`
 
@@ -291,7 +305,7 @@ func SendAgentCommand(db *sql.DB, uuid string, result string, CommandType string
 	logger.Logf(logger.Info, "Agent %s Reveived New Command \n", uuid)
 }
 
-func UpdateAgentConfig(db *sql.DB, UUID string, CallbackServer string, CallbackFrequency string, CallbackJitter string) {
+func UpdateAgentConfig(UUID string, CallbackServer string, CallbackFrequency string, CallbackJitter string) {
 	updateAgentConfigSQL := `UPDATE "Agents" SET "CallBackToIP"= $1, "CallBackFeq"= $2, "CallBackJitter"= $3 WHERE "UUID"= $4`
 
 	statement, err := db.Prepare(updateAgentConfigSQL)
@@ -309,7 +323,7 @@ func UpdateAgentConfig(db *sql.DB, UUID string, CallbackServer string, CallbackF
 	logger.Logf(logger.Info, "Agent %s Reveived Config Update  \n", UUID)
 }
 
-func UpdateAgentCheckIn(db *sql.DB, UUID string, LastCallBack int64) {
+func UpdateAgentCheckIn(UUID string, LastCallBack int64) {
 	updateAgentCheckInSQL := `UPDATE "Agents" SET "LastCallBack"= $1 WHERE "UUID"= $2`
 
 	statement, err := db.Prepare(updateAgentCheckInSQL)
@@ -327,7 +341,7 @@ func UpdateAgentCheckIn(db *sql.DB, UUID string, LastCallBack int64) {
 	logger.Logf(logger.Done, "Agent %s Check in Update  \n", UUID)
 }
 
-func UpdateAgentStatus(db *sql.DB) {
+func UpdateAgentStatus() {
 	updateAgentStatusSQL := `UPDATE "Agents"
 	SET "Status" = CASE WHEN (EXTRACT(EPOCH FROM CURRENT_TIMESTAMP)  - "LastCallBack" > (2 * ("CallBackFeq"::numeric)))
 		THEN 'Offline' ELSE 'Online' END
@@ -348,7 +362,7 @@ func UpdateAgentStatus(db *sql.DB) {
 	logger.Logf(logger.Info, "Agent Status Updated\n")
 }
 
-func UpdateAgentCommand(db *sql.DB, CommandUUID string, Output string, uuid string) {
+func UpdateAgentCommand(CommandUUID string, Output string, uuid string) {
 	updateAgentCommandSQL := `UPDATE "Commands" SET "Result"='1', "Output"= $1 WHERE "CommandUUID"= $2`
 
 	statement, err := db.Prepare(updateAgentCommandSQL)
@@ -366,7 +380,7 @@ func UpdateAgentCommand(db *sql.DB, CommandUUID string, Output string, uuid stri
 	logger.Logf(logger.Info, "Agent %s Reveived Output with CommandID %s \n", uuid, CommandUUID)
 }
 
-func UpdateAgentKeys(db *sql.DB, UUID string, Keys string) {
+func UpdateAgentKeys(UUID string, Keys string) {
 	updateAgentKeylogSQL := `UPDATE "Keylog" SET "Keys"="Keys" || $1 WHERE "UUID"= $2`
 
 	statement, err := db.Prepare(updateAgentKeylogSQL)
@@ -383,7 +397,7 @@ func UpdateAgentKeys(db *sql.DB, UUID string, Keys string) {
 	}
 }
 
-func DeleteAgent(db *sql.DB, UUID string) {
+func DeleteAgent(UUID string) {
 	DeleteAgentSQL := `UPDATE "Agents" SET "isDeleted"=1 WHERE "UUID"= $1`
 
 	statement, err := db.Prepare(DeleteAgentSQL)
@@ -402,7 +416,7 @@ func DeleteAgent(db *sql.DB, UUID string) {
 
 // WEB Functions
 
-func Agents(db *sql.DB) []types.ConfigAgent {
+func Agents() (agentAppend []types.ConfigAgent, err error) {
 	var agents types.ConfigAgent
 	FetchSQL := `
 	SELECT 
@@ -422,7 +436,6 @@ func Agents(db *sql.DB) []types.ConfigAgent {
 		log.Fatal(err)
 	}
 	defer row.Close()
-	var agentAppend []types.ConfigAgent
 	for row.Next() {
 		row.Scan(
 			&agents.Uuid,
@@ -436,10 +449,10 @@ func Agents(db *sql.DB) []types.ConfigAgent {
 		)
 		agentAppend = append(agentAppend, agents)
 	}
-	return agentAppend
+	return agentAppend, err
 }
 
-func AgentsByIp(db *sql.DB, Ip string) []types.ConfigAgent {
+func AgentsByIp(Ip string) (agentAppend []types.ConfigAgent, err error) {
 	var agents types.ConfigAgent
 	FetchSQL := `
 	SELECT 
@@ -460,7 +473,6 @@ func AgentsByIp(db *sql.DB, Ip string) []types.ConfigAgent {
 		log.Fatal(err)
 	}
 	defer row.Close()
-	var agentAppend []types.ConfigAgent
 	for row.Next() {
 		row.Scan(
 			&agents.Uuid,
@@ -474,10 +486,10 @@ func AgentsByIp(db *sql.DB, Ip string) []types.ConfigAgent {
 		)
 		agentAppend = append(agentAppend, agents)
 	}
-	return agentAppend
+	return agentAppend, err
 }
 
-func GroupAgentsByIp(db *sql.DB) []types.AgentIP {
+func GroupAgentsByIp() (agentAppend []types.AgentIP, err error){
 	var agents types.AgentIP
 	FetchSQL := `
 	SELECT DISTINCT "Ip" FROM "Agents"
@@ -487,17 +499,16 @@ func GroupAgentsByIp(db *sql.DB) []types.AgentIP {
 		log.Fatal(err)
 	}
 	defer row.Close()
-	var agentAppend []types.AgentIP
 	for row.Next() {
 		row.Scan(
 			&agents.AgentIP,
 		)
 		agentAppend = append(agentAppend, agents)
 	}
-	return agentAppend
+	return agentAppend, err
 }
 
-func Payloads(db *sql.DB) []types.Payload {
+func Payloads() []types.Payload {
 	var payloads types.Payload
 	FetchSQL := `
 	SELECT 
@@ -534,7 +545,7 @@ func Payloads(db *sql.DB) []types.Payload {
 	return payloadAppend
 }
 
-func Agent(db *sql.DB, uuid string) []types.Agent {
+func Agent(uuid string) (infoAppend []types.Agent, err error) {
 	var info types.Agent
 	FetchSQL := `
 	SELECT 
@@ -551,7 +562,6 @@ func Agent(db *sql.DB, uuid string) []types.Agent {
 		log.Fatal(err)
 	}
 	defer row.Close()
-	var infoAppend []types.Agent
 	for row.Next() {
 		row.Scan(
 			&info.Uuid,
@@ -562,10 +572,11 @@ func Agent(db *sql.DB, uuid string) []types.Agent {
 		)
 		infoAppend = append(infoAppend, info)
 	}
-	return infoAppend
+
+	return infoAppend, err
 }
 
-func Keylog(db *sql.DB, uuid string) []types.KeyReceive {
+func Keylog(uuid string) []types.KeyReceive {
 	var info types.KeyReceive
 	FetchSQL := `
 	SELECT 
@@ -591,7 +602,7 @@ func Keylog(db *sql.DB, uuid string) []types.KeyReceive {
 	return infoAppend
 }
 
-func FetchOne(db *sql.DB, uuid string) []types.ConfigAgent {
+func FetchOne(uuid string) (infoAppend []types.ConfigAgent, err error) {
 	var info types.ConfigAgent
 	FetchSQL := `
 	SELECT 
@@ -603,7 +614,6 @@ func FetchOne(db *sql.DB, uuid string) []types.ConfigAgent {
 		log.Fatal(err)
 	}
 	defer row.Close()
-	var infoAppend []types.ConfigAgent
 	for row.Next() {
 		row.Scan(
 			&info.Uuid,
@@ -614,5 +624,5 @@ func FetchOne(db *sql.DB, uuid string) []types.ConfigAgent {
 	}
 	infoAppend = append(infoAppend, info)
 	logger.Logf(logger.Info, "%v\n", info)
-	return infoAppend
+	return infoAppend, err
 }

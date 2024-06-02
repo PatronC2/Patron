@@ -1,3 +1,3 @@
 #build stage
-FROM golang:1.20-alpine
+FROM golang:1.22.3-bookworm
 RUN apk add --no-cache build-base

