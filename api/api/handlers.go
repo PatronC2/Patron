@@ -227,9 +227,9 @@ func CreatePayloadHandler(c *gin.Context) {
 		err := exec.Command("sh", "-c", commandString).Run()
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error"})
+		} else {
+			data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat) // from web
+			c.JSON(http.StatusOK, gin.H{"data": "success"})
 		}
-
-		data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat) // from web
-		c.JSON(http.StatusOK, gin.H{"data": "success"})
 	}
 }
