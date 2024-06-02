@@ -3,6 +3,9 @@ import axios from '../../api/axios';
 import AuthContext from '../../context/AuthProvider';
 import './NewPayloadForm.css';
 
+const PATRON_C2_IP = `${process.env.REACT_APP_PATRON_C2_IP}`
+const PATRON_C2_PORT = `${process.env.REACT_APP_PATRON_C2_PORT}`
+
 const NewPayloadForm = ({ fetchData, setActiveTab }) => {
     const { auth } = useContext(AuthContext);
     const [notification, setNotification] = useState('');
@@ -11,10 +14,10 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
         name: '',
         description: '',
         type: 'original',
-        serverip: '',
-        serverport: '',
-        callbackfrequency: '',
-        callbackjitter: '',
+        serverip: `${PATRON_C2_IP}`,
+        serverport: `${PATRON_C2_PORT}`,
+        callbackfrequency: '300',
+        callbackjitter: '80',
     });
 
     const handleChange = (e) => {
