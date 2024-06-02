@@ -218,8 +218,6 @@ echo "JWT_KEY=$JWT_KEY" >> .env
 echo -n > ui/.env
 echo "REACT_APP_NGINX_IP=$nginxip" >> ui/.env
 echo "REACT_APP_NGINX_PORT=$nginxport" >> ui/.env
-echo "REACT_APP_API_HOST=$ipaddress" >> ui/.env
-echo "REACT_APP_API_PORT=$webserverport" >> ui/.env
 echo "REACT_APP_PATRON_C2_IP=$ipaddress" >> ui/.env
 echo "REACT_APP_PATRON_C2_PORT=$c2serverport" >> ui/.env
 echo "HOST=$reactclientip" >> ui/.env
