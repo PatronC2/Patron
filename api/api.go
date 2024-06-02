@@ -19,7 +19,6 @@ func main() {
     data.OpenDatabase()
     // admin api functions
     api.OpenDatabase()
-    data.InitDatabase()
     api.CreateAdminUser()
     
     gin.SetMode(gin.ReleaseMode)
@@ -30,7 +29,7 @@ func main() {
 
     // host payloads server
     workDir, _ := os.Getwd()
-    filesDir := http.Dir(filepath.Join(workDir, "agents"))
+    filesDir := http.Dir(filepath.Join(workDir, "payloads"))    
     FileServer(r, "/files", filesDir)
 
     // handle logins

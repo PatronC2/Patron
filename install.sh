@@ -181,8 +181,8 @@ openssl ecparam -genkey -name prime256v1 -out certs/server.key
 openssl req -new -x509 -key certs/server.key -out certs/server.pem -days 3650 -subj "/C=US/ST=Maryland/L=Towson/O=Case Studies/OU=Offensive Op/CN=example.com"
 
 #Setting up agents dir
-echo "Setting up agents dir"
-[ ! -d "$PWD/agents" ] && mkdir agents
+echo "Setting up payloads dir"
+[ ! -d "$PWD/payloads" ] && mkdir payloads
 
 # Set Env file
 echo "Setting environment variables"

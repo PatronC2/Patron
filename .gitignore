@@ -5,6 +5,7 @@
 /certs/server.key
 /certs/server.pem
 /agents
+/payloads
 .env
 /logs/server.log
 /nginx/.htpasswd
