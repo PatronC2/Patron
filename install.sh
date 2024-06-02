@@ -24,7 +24,7 @@ function set_global_default_variable {
     c2serverport="9000"
     dockerinternal="172.18.0"
     nginxip=""
-    nginxport="8082"
+    nginxport="8443"
     bottoken=""
     dbhost="172.18.0.9"
     dbuser="patron"
