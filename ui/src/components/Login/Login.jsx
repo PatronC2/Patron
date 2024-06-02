@@ -2,8 +2,8 @@ import { useRef, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../../context/AuthProvider';
 import './Login.css';
-
 import axios from '../../api/axios';
+
 const LOGIN_URL = '/login';
 
 const Login = ({ onSuccessfulLogin }) => {
@@ -29,7 +29,7 @@ const Login = ({ onSuccessfulLogin }) => {
         e.preventDefault();
         try {
             const response = await axios.post(LOGIN_URL, 
-                JSON.stringify({ "username": user, "password": pwd }),
+                JSON.stringify({ username: user, password: pwd }),
                 {
                     headers: {
                         'Content-Type': 'application/json'
@@ -37,7 +37,7 @@ const Login = ({ onSuccessfulLogin }) => {
                 }
             );
             const accessToken = response?.data?.token;
-            setAuth({ user, accessToken });
+            setAuth({ user, token: accessToken });
             setUser('');
             setPwd('');
             onSuccessfulLogin();

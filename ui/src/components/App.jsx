@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import SideMenu from './Menu/Menu';
 import Header from './Header/Header';
@@ -13,14 +13,20 @@ import AuthContext from '../context/AuthProvider';
 function App() {
   const { auth } = useContext(AuthContext);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setIsLoggedIn(!!auth.token);
+    setLoading(false);
   }, [auth]);
 
   const handleSuccessfulLogin = () => {
     setIsLoggedIn(true);
   };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <AuthProvider>

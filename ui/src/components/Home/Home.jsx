@@ -10,12 +10,7 @@ const Home = () => {
 
   const fetchData = async () => {
     try {
-      const response = await axios.get('/api/agents', {
-        headers: {
-          'Authorization': `${auth.accessToken}`
-        }
-      });
-
+      const response = await axios.get('/api/agents');
       const responseData = response.data.data;
       if (Array.isArray(responseData)) {
         setData(responseData);
@@ -34,7 +29,7 @@ const Home = () => {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [auth.accessToken]);
+  }, []);
 
   const onlineCount = data.filter(item => item.status === 'Online').length;
   const offlineCount = data.filter(item => item.status === 'Offline').length;
