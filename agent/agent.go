@@ -50,6 +50,7 @@ func main() {
         dec := gob.NewDecoder(beacon)
         encoder := gob.NewEncoder(beacon)
         instruct := &types.GiveAgentCommand{}
+		logger.Logf(logger.Debug, "Struct formed\n")
         err = dec.Decode(instruct)
         if err != nil {
             logger.Logf(logger.Error, "Error Occurred: \n", err)
@@ -66,7 +67,7 @@ func main() {
         if err != nil {
             logger.Logf(logger.Error, "Error Occurred: \n", err)
         }
-
+		logger.Logf(logger.Debug, "Sent encoded struct\n")
         beacon.Close()
 
         if instruct.CommandType == "kill" {
