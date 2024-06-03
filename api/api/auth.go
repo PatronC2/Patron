@@ -46,7 +46,7 @@ func contains(s []string, e string) bool {
 }
 
 func GenerateJWT(username string, role string) (tokenString string, err error) {
-	expirationTime := time.Now().Add(1 * time.Hour)
+	expirationTime := time.Now().Add(24 * time.Hour)
 	claims:= &types.JWTClaim{
 		Username: username,
 		Role: role,
@@ -83,7 +83,6 @@ func ValidateToken(signedToken string, validRoles []string) (err error) {
 		return
 	}
 
-	// Check if the role is in the list of valid roles
 	if !contains(validRoles, claims.Role) {
 		err = errors.New("Insufficient Privileges")
 		return
