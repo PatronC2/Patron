@@ -165,6 +165,7 @@ func main() {
 	c2serverport := goDotEnvVariable("C2SERVER_PORT")
 
 	data.OpenDatabase()
+	data.InitDatabase()
 
 	cer, err := tls.LoadX509KeyPair("certs/server.pem", "certs/server.key")
 	if err != nil {
