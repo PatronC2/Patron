@@ -14,7 +14,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/qkgo/yin v0.0.0-20190403073632-bff3b50ba6e6 // indirect
 	github.com/s-christian/gollehs v0.0.0-20220316081058-f0fcf0024a48
-	golang.org/x/crypto v0.23.0
+	golang.org/x/crypto v0.28.0
 )
 
 require (
@@ -25,6 +25,7 @@ require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/goccy/go-json v0.10.3 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
-	github.com/jmoiron/sqlx v1.4.0
+	github.com/jmoiron/sqlx v1.4.0 // indirect
 	github.com/newrelic/go-agent v3.15.2+incompatible // indirect
+	golang.org/x/net v0.30.0 // indirect
 )

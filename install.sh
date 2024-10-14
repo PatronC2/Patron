@@ -69,7 +69,6 @@ function pass_prompt {
 function prereq_app_check {
    base64=$(which base64)
    openssl=$(which openssl)
-   npm=$(which npm)
    go=$(which go)
 
    # Prereqs
@@ -86,22 +85,6 @@ function prereq_app_check {
    echo "openssl Check Ok"
    else
    echo "Install openssl"
-   exit
-   fi
-
-   #npm check
-   if [ -x "$npm" ]; then
-   echo "npm Check Ok"
-   else
-   echo "Install npm: sudo apt install npm nodejs"
-   exit
-   fi
-
-   #go check
-   if [ -x "$go" ]; then
-   echo "go Check Ok"
-   else
-   echo "Install go: sudo apt install golang"
    exit
    fi
 }
@@ -226,14 +209,14 @@ echo "PORT=$reactclientport" >> ui/.env
 # make log dir
 mkdir -p logs
 
-#go mod tidy
-echo "Running: Go mod tidy"
-go mod tidy
+# Copy files for go
+cp .env api
+cp .env server
 
-# npm install
-echo "Installing node modules..."
-
-cd ui && npm install && cd ../
+cp go.mod api
+cp go.mod server
+cp go.sum api
+cp go.sum server
 
 echo ""
 echo ""
