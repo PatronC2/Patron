@@ -1,6 +1,6 @@
 module github.com/PatronC2/Patron
 
-go 1.17
+go 1.22.3
 
 require (
 	github.com/MarinX/keylogger v0.0.0-20210528193429-a54d7834cc1a

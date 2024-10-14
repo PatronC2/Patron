@@ -1,14 +1,14 @@
-# Stage 1: Build the Go API
-FROM golang:1.22.3-alpine AS build
+FROM golang:1.22.3 AS build
 
 WORKDIR /app
-COPY ./go.mod ./go.sum ./
-RUN go mod download
-COPY ./api ./
-COPY ./data ./
+COPY . ./
+RUN go mod tidy
 RUN go build -o app ./api/api.go
 
 FROM alpine:latest
+#this seems dumb, but the libc from the build stage is not the same as the alpine libc
+#create a symlink to where it expects it since they are compatable. https://stackoverflow.com/a/35613430/3105368
+RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 WORKDIR /app
 COPY --from=build /app/app ./
 COPY ../.env ./
