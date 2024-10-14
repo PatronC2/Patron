@@ -1,7 +1,4 @@
 FROM nginx:alpine
-
-RUN mkdir -p /etc/nginx/ssl
-COPY ./nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
-COPY ./certs/server.key /etc/nginx/ssl/nginx.key
-COPY ./certs/server.pem /etc/nginx/ssl/nginx.crt
+COPY conf.d/default.conf /etc/nginx/conf.d/default.conf
+COPY ssl /etc/nginx/ssl
 EXPOSE 8443

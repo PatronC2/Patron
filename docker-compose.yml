@@ -72,6 +72,10 @@ services:
       context: .
       dockerfile: Dockerfile.nginx
     restart: always
+    volumes:
+      - ./nginx/conf.d/default.conf.template:/etc/nginx/templates/default.conf.template
+      - ./certs/server.pem:/etc/nginx/ssl/nginx.crt
+      - ./certs/server.key:/etc/nginx/ssl/nginx.key
     environment:
       - REACT_SERVER=${DOCKER_INTERNAL}.7:${REACT_SERVER_PORT}
       - API_SERVER=${DOCKER_INTERNAL}.6:8000
