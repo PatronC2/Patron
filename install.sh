@@ -209,15 +209,6 @@ echo "PORT=$reactclientport" >> ui/.env
 # make log dir
 mkdir -p logs
 
-# Copy files for go
-cp .env api
-cp .env server
-
-cp go.mod api
-cp go.mod server
-cp go.sum api
-cp go.sum server
-
 echo ""
 echo ""
 echo "------------------------------------------Raw Dog Run------------------------------------------"

@@ -24,6 +24,7 @@ services:
       context: .
       dockerfile: Dockerfile.api
     restart: always
+    command: sh '/app/app'
     working_dir: /app
     networks:
       internal_c2_network:
