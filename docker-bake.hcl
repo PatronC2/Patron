@@ -23,33 +23,33 @@ variable "UI" {
 }
 
 target "nginx" {
-    dockerfile = "nginx/Dockerfile"
+    dockerfile = "Dockerfile.nginx"
     context = "."
     output = ["type=registry,output=registry.${REGISTRY}/${NGINX}:${TAG}"]
     tags = ["${REGISTRY}/${NGINX}:${TAG}"]
 }
 
 target "server" {
-    dockerfile = "server/Dockerfile"
+    dockerfile = "Dockerfile.server"
     context = "."
     output = ["type=registry,output=registry.${REGISTRY}/${SERVER}:${TAG}"]
     tags = ["${REGISTRY}/${SERVER}:${TAG}"]
 }
 
 target "api" {
-    dockerfile = "api/Dockerfile"
+    dockerfile = "Dockerfile.api"
     context = "."
     output = ["type=registry,output=registry.${REGISTRY}/${API}:${TAG}"]
     tags = ["${REGISTRY}/${API}:${TAG}"]
 }
 
 target "ui" {
-    dockerfile = "ui/Dockerfile"
+    dockerfile = "Dockerfile.ui"
     context = "."
     output = ["type=registry,output=registry.${REGISTRY}/${UI}:${TAG}"]
     tags = ["${REGISTRY}/${UI}:${TAG}"]
 }
 
 group "default" {
-    targets = ["nginx", "api", "server"]
+    targets = ["nginx", "api", "ui", "server"]
 }

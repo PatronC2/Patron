@@ -5,6 +5,8 @@ services:
       context: .
       dockerfile: Dockerfile.server
     restart: always
+    volumes:
+      - .env:/app/.env
     networks:
       internal_c2_network:
         ipv4_address: "${DOCKER_INTERNAL}.5"
@@ -20,6 +22,8 @@ services:
       context: .
       dockerfile: Dockerfile.api
     restart: always
+    volumes:
+      - .env:/app/.env
     networks:
       internal_c2_network:
         ipv4_address: "${DOCKER_INTERNAL}.6"
