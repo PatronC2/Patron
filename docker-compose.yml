@@ -20,10 +20,8 @@ services:
     image: patron_c2_server
     build: api
     restart: always
-    command: sh -c "go run api/api.go"
+    command: sh -c "go run app"
     working_dir: /app
-    volumes:
-      - ./:/app
     networks:
       internal_c2_network:
         ipv4_address: "${DOCKER_INTERNAL}.6"

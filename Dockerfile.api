@@ -1,0 +1,18 @@
+# Stage 1: Build the Go API
+FROM golang:1.22.3-alpine AS build
+
+WORKDIR /app
+COPY ./go.mod ./go.sum ./
+RUN go mod download
+COPY ./api ./
+COPY ./data ./
+RUN go build -o app ./api/api.go
+
+FROM alpine:latest
+WORKDIR /app
+COPY --from=build /app/app ./
+COPY ../.env ./
+EXPOSE 8080
+
+# Command to run the API
+CMD ["./app"]
