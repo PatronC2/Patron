@@ -8,3 +8,4 @@
 .env
 /logs/server.log
 /nginx/.htpasswd
+data/postgres_data/

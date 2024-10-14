@@ -1,0 +1,36 @@
+.home-container {
+    padding: 1rem;
+}
+
+.status-boxes {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 1rem;
+}
+
+.status-box {
+    flex: 1;
+    padding: 1rem;
+    margin: 0 1rem;
+    border-radius: 5px;
+    text-align: center;
+    color: white;
+}
+
+.status-box.online {
+    background-color: green;
+}
+
+.status-box.offline {
+    background-color: red;
+}
+
+.status-box p {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.status-box h2 {
+    margin: 0;
+    font-size: 2rem;
+}

@@ -24,12 +24,13 @@ function set_global_default_variable {
     c2serverport="9000"
     dockerinternal="172.18.0"
     nginxip=""
-    nginxport="8082"
+    nginxport="8443"
     bottoken=""
     dbhost="172.18.0.9"
     dbuser="patron"
     dbport="5432"
     dbname="patron"
+    patronUsername="patron"
 }
 
 function ask_prompt {
@@ -54,31 +55,15 @@ function ask_prompt {
 
 function wipe_db {
    rm -rf data/postgres_data
-   rm -rf nginx/.htpasswd
    echo "Database Wiped!"
-   echo "htpasswd Wiped!"
    dbpass=`openssl rand -base64 9 | tr -dc 'a-zA-Z0-9' | head -c 12`
-   basicpass=`openssl rand -base64 9 | tr -dc 'a-zA-Z0-9' | head -c 12`
-   set_htpasswd
+   patronPassword=`openssl rand -base64 9 | tr -dc 'a-zA-Z0-9' | head -c 12`
 }
 
 function pass_prompt {
    read -p "Enter Database Password: " dbpass
-   read -p "Enter Basic Auth Password: " basicpass
-   set_htpasswd
-}
-
-function set_htpasswd {
-   # Check if the .htpasswd file exists
-   if [ ! -f "nginx/.htpasswd" ]; then
-      # Create the file for the first time
-      htpasswd -B -b -c "nginx/.htpasswd" "$dbuser" "$basicpass"
-      echo "Password for user $dbuser has been added to nginx/.htpasswd"
-   else
-      # Append the user to the existing file
-      htpasswd -B -b "nginx/.htpasswd" "$dbuser" "$basicpass"
-      echo "Password for user $dbuser has been added to nginx/.htpasswd"
-   fi
+   read -p "Enter UI Username: " patronUsername
+   read -p "Enter UI Password: " patronPassword
 }
 
 function prereq_app_check {
@@ -86,7 +71,6 @@ function prereq_app_check {
    openssl=$(which openssl)
    npm=$(which npm)
    go=$(which go)
-   htpass=$(which htpasswd)
 
    # Prereqs
    #base64 check
@@ -118,14 +102,6 @@ function prereq_app_check {
    echo "go Check Ok"
    else
    echo "Install go: sudo apt install golang"
-   exit
-   fi
-
-   #go check
-   if [ -x "$htpass" ]; then
-   echo "htpasswd Check Ok"
-   else
-   echo "Install htpasswd: sudo apt install htpasswd"
    exit
    fi
 }
@@ -211,9 +187,11 @@ echo "Setting up agents dir"
 # Set Env file
 echo "Setting environment variables"
 rm -rf .env
-rm -rf Web/client/.env
+rm -rf ui/.env
 
 encpubkey=`base64 -w 0 certs/server.pem`
+# Generate JWT key for API auth
+JWT_KEY=$(openssl rand -base64 32)
 
 # server env
 echo "WEBSERVER_IP=$webserverip" >> .env
@@ -232,16 +210,21 @@ echo "REACT_APP_NGINX_PORT=$nginxport" >> .env
 echo "REACT_APP_NGINX_IP=$nginxip" >> .env
 echo "REACT_SERVER_IP=$reactclientip" >> .env
 echo "REACT_SERVER_PORT=$reactclientport" >> .env
-echo "BASIC_AUTH_PASS=$basicpass" >> .env
+echo "ADMIN_AUTH_USER=$patronUsername" >> .env
+echo "ADMIN_AUTH_PASS=$patronPassword" >> .env
+echo "JWT_KEY=$JWT_KEY" >> .env
 
-#webclient env
-echo "REACT_APP_WEBSERVER_IP=$webserverip" >> Web/client/.env
-echo "REACT_APP_WEBSERVER_PORT=$webserverport" >> Web/client/.env
-echo "REACT_APP_NGINX_IP=$nginxip" >> Web/client/.env
-echo "REACT_APP_NGINX_PORT=$nginxport" >> Web/client/.env
-echo "HOST=$reactclientip" >> Web/client/.env
-echo "PORT=$reactclientport" >> Web/client/.env
+# UI V2 env
+echo -n > ui/.env
+echo "REACT_APP_NGINX_IP=$nginxip" >> ui/.env
+echo "REACT_APP_NGINX_PORT=$nginxport" >> ui/.env
+echo "REACT_APP_PATRON_C2_IP=$ipaddress" >> ui/.env
+echo "REACT_APP_PATRON_C2_PORT=$c2serverport" >> ui/.env
+echo "HOST=$reactclientip" >> ui/.env
+echo "PORT=$reactclientport" >> ui/.env
 
+# make log dir
+mkdir -p logs
 
 #go mod tidy
 echo "Running: Go mod tidy"
@@ -250,8 +233,7 @@ go mod tidy
 # npm install
 echo "Installing node modules..."
 
-cd Web/client && npm install && cd ../../
-
+cd ui && npm install && cd ../
 
 echo ""
 echo ""
@@ -259,9 +241,9 @@ echo "------------------------------------------Raw Dog Run---------------------
 echo ""
 echo "Run 'sudo go run server/server.go' to start the C2 server"
 echo ""
-echo "Run 'sudo go run Web/server/webserver.go' to start the api sever"
+echo "Run 'sudo go run api/api.go' to start the api sever"
 echo ""
-echo "Run 'cd Web/client && npm start' to start start the web client"
+echo "Run 'cd ui && npm start' to start start the web client"
 echo ""
 echo "Run 'sudo go run bot/bot.go' to start the Discord Bot if the DISCORD BOT_TOKEN Was provided"
 echo ""
@@ -280,6 +262,6 @@ echo "Visit http://$nginxip:$nginxport for Web"
 echo ""
 echo "C2 Server on $nginxip:$c2serverport"
 echo ""
-echo "See .env and Web/client/.env to tweak enviroment variables (not advised)"
+echo "See .env and ui/.env to tweak enviroment variables (not advised)"
 echo ""
 
