@@ -1,7 +1,9 @@
 services:
   patron_c2_server:
     image: patron_c2_server
-    build: server
+    build:
+      context: .
+      dockerfile: Dockerfile.server
     restart: always
     command: sh -c "go run server/server.go"
     working_dir: /app
@@ -18,7 +20,9 @@ services:
 
   patron_c2_api:
     image: patron_c2_server
-    build: api
+    build:
+      context: .
+      dockerfile: Dockerfile.api
     restart: always
     command: sh -c "go run app"
     working_dir: /app
@@ -64,12 +68,11 @@ services:
       retries: 5
 
   patron_c2_nginx:
-    image: nginx:latest
+    image: nginx_frontend
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
     restart: always
-    volumes:
-      - ./nginx/conf.d/default.conf.template:/etc/nginx/templates/default.conf.template
-      - ./certs/server.pem:/etc/nginx/ssl/nginx.crt
-      - ./certs/server.key:/etc/nginx/ssl/nginx.key
     environment:
       - REACT_SERVER=${DOCKER_INTERNAL}.7:${REACT_SERVER_PORT}
       - API_SERVER=${DOCKER_INTERNAL}.6:8000
