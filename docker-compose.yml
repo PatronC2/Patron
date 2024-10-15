@@ -7,6 +7,8 @@ services:
     restart: always
     volumes:
       - .env:/app/.env
+      - ./logs:/app/logs
+      - ./certs:/app/certs
     networks:
       internal_c2_network:
         ipv4_address: "${DOCKER_INTERNAL}.5"
@@ -17,13 +19,14 @@ services:
         condition: service_healthy
 
   patron_c2_api:
-    image: patron_c2_server
+    image: patron_c2_api
     build:
       context: .
       dockerfile: Dockerfile.api
     restart: always
     volumes:
       - .env:/app/.env
+      - ./logs:/app/logs
     networks:
       internal_c2_network:
         ipv4_address: "${DOCKER_INTERNAL}.6"
@@ -38,6 +41,7 @@ services:
     restart: always
     volumes:
       - ./ui:/app
+      - ./logs:/app/logs
     networks:
       internal_c2_network:
         ipv4_address: "${DOCKER_INTERNAL}.7"
