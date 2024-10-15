@@ -26,7 +26,7 @@ function set_global_default_variable {
     nginxip=""
     nginxport="8443"
     bottoken=""
-    dbhost="172.18.0.9"
+    dbhost="patron_c2_postgres"
     dbuser="patron"
     dbport="5432"
     dbname="patron"
@@ -44,7 +44,6 @@ function ask_prompt {
    read -p "Enter C2SERVER IP: " c2serverip
    read -p "Enter C2SERVER PORT: " c2serverport
    read -p "Enter DOCKER INTERNAL NETWORK e.g 172.18.0 (without last octect): " dockerinternal
-   # read -p "Enter NGINX IP (exposed ip): " nginxip
    read -p "Enter NGINX PORT: " nginxport
    read -p "Enter Database Host: " dbhost
    read -p "Enter Database Port: " dbport

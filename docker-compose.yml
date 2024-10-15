@@ -10,8 +10,7 @@ services:
       - ./logs:/app/logs
       - ./certs:/app/certs
     networks:
-      internal_c2_network:
-        ipv4_address: "${DOCKER_INTERNAL}.5"
+      - internal_c2_network
     ports:
       - "${C2SERVER_PORT}:${C2SERVER_PORT}"
     depends_on:
@@ -30,8 +29,7 @@ services:
       - ./payloads:/app/payloads
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      internal_c2_network:
-        ipv4_address: "${DOCKER_INTERNAL}.6"
+      - internal_c2_network
     depends_on:
       patron_c2_postgres:
         condition: service_healthy
@@ -45,8 +43,7 @@ services:
       - ./ui:/app
       - ./logs:/app/logs
     networks:
-      internal_c2_network:
-        ipv4_address: "${DOCKER_INTERNAL}.7"
+      - internal_c2_network
     depends_on:
       - patron_c2_api
 
@@ -63,8 +60,7 @@ services:
     ports:
       - "${DB_PORT}:${DB_PORT}"
     networks:
-      internal_c2_network:
-        ipv4_address: "${DOCKER_INTERNAL}.9"
+      - internal_c2_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
       interval: 10s
@@ -82,11 +78,10 @@ services:
       - ./certs/server.pem:/etc/nginx/ssl/nginx.crt
       - ./certs/server.key:/etc/nginx/ssl/nginx.key
     environment:
-      - REACT_SERVER=${DOCKER_INTERNAL}.7:${REACT_SERVER_PORT}
-      - API_SERVER=${DOCKER_INTERNAL}.6:8000
+      - REACT_SERVER=patron_c2_frontend:${REACT_SERVER_PORT}
+      - API_SERVER=patron_c2_api:8000
     networks:
-      internal_c2_network:
-        ipv4_address: "${DOCKER_INTERNAL}.8"
+      - internal_c2_network
     ports:
       - "${REACT_APP_NGINX_PORT}:8443"
 

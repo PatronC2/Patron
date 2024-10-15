@@ -25,6 +25,8 @@ func OpenDatabase(){
 	password := GoDotEnvVariable("DB_PASS")
 	dbname := GoDotEnvVariable("DB_NAME")
 
+	logger.Logf(logger.Info, "Connecting to database %s\n", host)
+
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
     "password=%s dbname=%s sslmode=disable",
     host, port, user, password, dbname)
