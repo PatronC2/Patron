@@ -160,10 +160,9 @@ func main() {
 		fmt.Printf("Error setting log file: %v\n", err)
 		return
 	}
-	print("Fetching vars from .env")
+
 	c2serverip := goDotEnvVariable("C2SERVER_IP")
 	c2serverport := goDotEnvVariable("C2SERVER_PORT")
-	print("Opening DB connection")
 
 	data.OpenDatabase()
 	data.InitDatabase()

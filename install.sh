@@ -176,6 +176,9 @@ encpubkey=`base64 -w 0 certs/server.pem`
 # Generate JWT key for API auth
 JWT_KEY=$(openssl rand -base64 32)
 
+# Put the pwd into the .env, this is needed for sharing docker volumes for the API
+REPO_DIR=`pwd`
+
 # server env
 echo "WEBSERVER_IP=$webserverip" >> .env
 echo "WEBSERVER_PORT=$webserverport" >> .env
@@ -196,6 +199,7 @@ echo "REACT_SERVER_PORT=$reactclientport" >> .env
 echo "ADMIN_AUTH_USER=$patronUsername" >> .env
 echo "ADMIN_AUTH_PASS=$patronPassword" >> .env
 echo "JWT_KEY=$JWT_KEY" >> .env
+echo  "REPO_DIR=$REPO_DIR" >> .env
 
 # UI V2 env
 echo -n > ui/.env
