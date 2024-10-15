@@ -205,7 +205,7 @@ func CreatePayloadHandler(c *gin.Context) {
 		if body["type"] == "original" {
 			commandString = fmt.Sprintf(
 				"docker run --rm -v %s:/build -w /build golang:1.22.3 "+
-				"go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o /build/agents/%s /build/client/client.go",
+				"go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o /build/payloads/%s /build/client/client.go",
 				repo_dir,
 				body["serverip"],
 				body["serverport"],
@@ -217,7 +217,7 @@ func CreatePayloadHandler(c *gin.Context) {
 		} else if body["type"] == "wkeys" {
 			commandString = fmt.Sprintf(
 				"docker run --rm -v %s:/build -w /build golang:1.22.3 "+
-				"go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o /build/agents/%s /build/client/kclient/kclient.go",
+				"go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o /build/payloads/%s /build/client/kclient/kclient.go",
 				repo_dir,
 				body["serverip"],
 				body["serverport"],

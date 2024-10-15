@@ -27,7 +27,7 @@ services:
     volumes:
       - .env:/app/.env
       - ./logs:/app/logs
-      - ./agents:/app/agents
+      - ./payloads:/app/payloads
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       internal_c2_network:
