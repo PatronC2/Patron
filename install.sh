@@ -68,23 +68,39 @@ function pass_prompt {
 function prereq_app_check {
    base64=$(which base64)
    openssl=$(which openssl)
-   go=$(which go)
+   docker=$(which docker)
 
    # Prereqs
-   #base64 check
+   # base64 check
    if [ -x "$base64" ]; then
-   echo "base64 Check Ok"
+      echo "base64 Check Ok"
    else
-   echo "Install base64"
-   exit
+      echo "Install base64"
+      exit 1
    fi
 
-   #openssl check
+   # openssl check
    if [ -x "$openssl" ]; then
-   echo "openssl Check Ok"
+      echo "openssl Check Ok"
    else
-   echo "Install openssl"
-   exit
+      echo "Install openssl"
+      exit 1
+   fi
+
+   # docker check
+   if [ -x "$docker" ]; then
+      echo "Docker Check Ok"
+   else
+      echo "Docker is not installed. Please install Docker."
+      exit 1
+   fi
+
+   # Check if Docker is running
+   if ! docker info > /dev/null 2>&1; then
+      echo "Docker daemon is not running. Please start Docker."
+      exit 1
+   else
+      echo "Docker is running"
    fi
 }
 
@@ -144,13 +160,6 @@ fi
 # Shift the processed options
 shift $((OPTIND-1))
 
-# # Validate the number of arguments
-# if [ "$#" -lt 1 ]; then
-#     echo "Error: At least one input file is required."
-#     show_help
-#     exit 1
-# fi
-
 prereq_app_check
 
 
@@ -179,7 +188,6 @@ JWT_KEY=$(openssl rand -base64 32)
 REPO_DIR=`pwd`
 
 # server env
-echo "WEBSERVER_IP=$webserverip" >> .env
 echo "WEBSERVER_PORT=$webserverport" >> .env
 echo "C2SERVER_IP=$c2serverip" >> .env
 echo "C2SERVER_PORT=$c2serverport" >> .env
@@ -194,20 +202,14 @@ echo "DOCKER_INTERNAL=$dockerinternal" >> .env
 echo "REACT_APP_NGINX_PORT=$nginxport" >> .env
 echo "REACT_APP_NGINX_IP=$nginxip" >> .env
 echo "REACT_SERVER_IP=$reactclientip" >> .env
-echo "REACT_SERVER_PORT=$reactclientport" >> .env
 echo "ADMIN_AUTH_USER=$patronUsername" >> .env
 echo "ADMIN_AUTH_PASS=$patronPassword" >> .env
 echo "JWT_KEY=$JWT_KEY" >> .env
+# Need full path to the repo for the API building payloads
 echo  "REPO_DIR=$REPO_DIR" >> .env
-
-# UI V2 env
-echo -n > ui/.env
-echo "REACT_APP_NGINX_IP=$nginxip" >> ui/.env
-echo "REACT_APP_NGINX_PORT=$nginxport" >> ui/.env
-echo "REACT_APP_PATRON_C2_IP=$ipaddress" >> ui/.env
-echo "REACT_APP_PATRON_C2_PORT=$c2serverport" >> ui/.env
-echo "HOST=$reactclientip" >> ui/.env
-echo "PORT=$reactclientport" >> ui/.env
+# We cannot change the name of these, locked in by node
+echo "HOST=$reactclientip" >> .env
+echo "PORT=$reactclientport" >> .env
 
 # make log dir
 mkdir -p logs

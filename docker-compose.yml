@@ -35,12 +35,15 @@ services:
         condition: service_healthy
 
   patron_c2_frontend:
-    image: node:22-alpine
-    command: sh -c "npm install && npm start"
+    image: patron_c2_ui
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
     working_dir: /app
     restart: always
     volumes:
       - ./ui:/app
+      - .env:/app/.env
       - ./logs:/app/logs
     networks:
       - internal_c2_network
@@ -78,7 +81,7 @@ services:
       - ./certs/server.pem:/etc/nginx/ssl/nginx.crt
       - ./certs/server.key:/etc/nginx/ssl/nginx.key
     environment:
-      - REACT_SERVER=patron_c2_frontend:${REACT_SERVER_PORT}
+      - REACT_SERVER=patron_c2_frontend:8081
       - API_SERVER=patron_c2_api:8000
     networks:
       - internal_c2_network
