@@ -20,12 +20,11 @@ type User struct {
 
 func OpenDatabase(){ 
 	var err error
-	var port int
-    host        := os.Getenv("DB_HOST")
-    port        := os.Getenv("DB_PORT")
-    user        := os.Getenv("DB_USER")
-    password    := os.Getenv("DB_PASS")
-    dbname      := os.Getenv("DB_NAME")
+    host := os.Getenv("DB_HOST")
+    port := os.Getenv("DB_PORT")
+    user := os.Getenv("DB_USER")
+    password := os.Getenv("DB_PASS")
+    dbname := os.Getenv("DB_NAME")
 
 
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
