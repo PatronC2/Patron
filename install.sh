@@ -16,11 +16,9 @@ function show_help {
 }
 
 function set_global_default_variable {
-    webserverip="0.0.0.0"
     webserverport="8000"
     reactclientip="0.0.0.0"
     reactclientport="8081"
-    c2serverip=""
     c2serverport="9000"
     dockerinternal="172.18.0"
     nginxip=""
@@ -36,12 +34,10 @@ function set_global_default_variable {
 function ask_prompt {
    
    echo "Note: Webserver, ReactClient, DB and C2 server can't be on the same port and must be an unused port"
-   read -p "Enter APISERVER IP: " webserverip
    read -p "Enter APISERVER PORT: " webserverport
    read -p "Enter REACTCLIENT IP: " reactclientip
    read -p "Enter REACTCLIENT PORT: " reactclientport
    echo "Note: To listen on all inteface, leave C2SERVER IP blank"
-   read -p "Enter C2SERVER IP: " c2serverip
    read -p "Enter C2SERVER PORT: " c2serverport
    read -p "Enter DOCKER INTERNAL NETWORK e.g 172.18.0 (without last octect): " dockerinternal
    read -p "Enter NGINX PORT: " nginxport
