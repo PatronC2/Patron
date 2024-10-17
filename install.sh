@@ -185,7 +185,6 @@ REPO_DIR=`pwd`
 
 # server env
 echo "WEBSERVER_PORT=$webserverport" >> .env
-echo "C2SERVER_IP=$c2serverip" >> .env
 echo "C2SERVER_PORT=$c2serverport" >> .env
 echo "PUBLIC_KEY=$encpubkey" >> .env
 echo "BOT_TOKEN=$bottoken" >> .env

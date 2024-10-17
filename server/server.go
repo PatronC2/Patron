@@ -15,20 +15,7 @@ import (
 	"github.com/PatronC2/Patron/types"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/google/uuid"
-	"github.com/joho/godotenv"
 )
-
-func goDotEnvVariable(key string) string {
-
-	// load .env file
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
-
-	return os.Getenv(key)
-}
 
 //make it central
 func IsValidUUID(u string) bool {
@@ -161,8 +148,8 @@ func main() {
 		return
 	}
 
-	c2serverip := goDotEnvVariable("C2SERVER_IP")
-	c2serverport := goDotEnvVariable("C2SERVER_PORT")
+	c2serverip := os.Getenv("C2SERVER_IP")
+	c2serverport := os.Getenv("C2SERVER_PORT")
 
 	data.OpenDatabase()
 	data.InitDatabase()

@@ -4,9 +4,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.server
+    environment:
+      C2SERVER_IP: patron_c2_server
+      C2SERVER_PORT: ${C2SERVER_PORT}
     restart: always
     volumes:
-      - .env:/app/.env
       - ./logs:/app/logs
       - ./certs:/app/certs
     networks:
@@ -35,7 +37,6 @@ services:
       ADMIN_AUTH_USER: ${ADMIN_AUTH_USER}
     restart: always
     volumes:
-      - .env:/app/.env
       - ./logs:/app/logs
       - ./payloads:/app/payloads
       - /var/run/docker.sock:/var/run/docker.sock
@@ -53,7 +54,6 @@ services:
     working_dir: /app
     restart: always
     volumes:
-      - ./ui:/app
       - .env:/app/.env
       - ./logs:/app/logs
     networks:

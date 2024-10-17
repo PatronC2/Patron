@@ -1,6 +1,9 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 
+COPY ./ui /app/
+RUN npm install
+
 EXPOSE 8081
 
-CMD ["sh", "-c", "npm install && npm start"]
+CMD ["sh", "-c", "npm start"]
