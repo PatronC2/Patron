@@ -65,8 +65,8 @@ func (u *User) CheckPassword(password string) error {
 }
 
 func CreateAdminUser() error {
-    defaultUserName := data.GoDotEnvVariable("ADMIN_AUTH_USER")
-    defaultUserPass := data.GoDotEnvVariable("ADMIN_AUTH_PASS")
+    defaultUserName := os.Getenv("ADMIN_AUTH_USER")
+    defaultUserPass := os.Getenv("ADMIN_AUTH_PASS")
     
     user := &User{
         User: types.User{
