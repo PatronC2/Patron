@@ -26,8 +26,9 @@ func OpenDatabase(){
     password := os.Getenv("DB_PASS")
     dbname := os.Getenv("DB_NAME")
 
+    logger.Logf(logger.Info, "Got environment variables host=%s, port=%s, user=%s, dbname=%s (password not shown)", host, port, user, dbname)
 
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
     "password=%s dbname=%s sslmode=disable",
     host, port, user, password, dbname)
 	for {
