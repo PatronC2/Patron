@@ -9,7 +9,6 @@ import (
     "golang.org/x/crypto/bcrypt"
 	"github.com/PatronC2/Patron/lib/logger"
     "github.com/PatronC2/Patron/types"
-    "github.com/PatronC2/Patron/data"
 )
 
 var db *sql.DB
