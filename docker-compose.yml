@@ -5,6 +5,11 @@ services:
       context: .
       dockerfile: Dockerfile.server
     environment:
+      DB_HOST: patron_c2_postgres
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
       C2SERVER_IP: patron_c2_server
       C2SERVER_PORT: ${C2SERVER_PORT}
     restart: always

@@ -10,7 +10,6 @@ import (
 	"github.com/PatronC2/Patron/helper"
 	"github.com/PatronC2/Patron/types"	
 	"github.com/PatronC2/Patron/lib/logger"	
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
@@ -18,16 +17,16 @@ var db *sql.DB
 
 func OpenDatabase(){ 
 	var err error
-	var port int
-	host := GoDotEnvVariable("DB_HOST")
-	fmt.Sscan(GoDotEnvVariable("DB_PORT"), &port)
-	user := GoDotEnvVariable("DB_USER")
-	password := GoDotEnvVariable("DB_PASS")
-	dbname := GoDotEnvVariable("DB_NAME")
+
+    host := os.Getenv("DB_HOST")
+    port := os.Getenv("DB_PORT")
+    user := os.Getenv("DB_USER")
+    password := os.Getenv("DB_PASS")
+    dbname := os.Getenv("DB_NAME")
 
 	logger.Logf(logger.Info, "Connecting to database %s\n", host)
 
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
     "password=%s dbname=%s sslmode=disable",
     host, port, user, password, dbname)
 	for {
@@ -48,18 +47,6 @@ func OpenDatabase(){
 		logger.Logf(logger.Info, "Postgres DB connected\n")
 		break
 	}
-}
-
-func GoDotEnvVariable(key string) string {
-
-	// load .env file
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
-
-	return os.Getenv(key)
 }
 
 func InitDatabase() {
