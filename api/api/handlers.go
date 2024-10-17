@@ -167,7 +167,9 @@ func DeleteAgentHandler(c *gin.Context) {
 }
 
 func CreatePayloadHandler(c *gin.Context) {
-	publickey := data.GoDotEnvVariable("PUBLIC_KEY")
+	publickey := os.Getenv("PUBLIC_KEY")
+	repo_dir := os.Getenv("REPO_DIR")
+
 	newPayID := uuid.New().String()
 	var body map[string]string
 	if err := c.BindJSON(&body); err != nil {
@@ -182,7 +184,6 @@ func CreatePayloadHandler(c *gin.Context) {
 	vcallbackfrequency := vfrequency.Match([]byte(body["callbackfrequency"]))
 	vjitter := regexp.MustCompile(`^\d{1,2}$`)
 	vcallbackjitter := vjitter.Match([]byte(body["callbackjitter"]))
-	repo_dir := data.GoDotEnvVariable("REPO_DIR")
 
 	if !vserverip {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Server IP"})

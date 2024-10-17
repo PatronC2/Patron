@@ -4,6 +4,7 @@ import (
     "database/sql"
     "fmt"
     "time"
+    "os"
 
     "golang.org/x/crypto/bcrypt"
 	"github.com/PatronC2/Patron/lib/logger"
@@ -20,11 +21,12 @@ type User struct {
 func OpenDatabase(){ 
 	var err error
 	var port int
-	host := data.GoDotEnvVariable("DB_HOST")
-	fmt.Sscan(data.GoDotEnvVariable("DB_PORT"), &port)
-	user := data.GoDotEnvVariable("DB_USER")
-	password := data.GoDotEnvVariable("DB_PASS")
-	dbname := data.GoDotEnvVariable("DB_NAME")
+    host        := os.Getenv("DB_HOST")
+    port        := os.Getenv("DB_PORT")
+    user        := os.Getenv("DB_USER")
+    password    := os.Getenv("DB_PASS")
+    dbname      := os.Getenv("DB_NAME")
+
 
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
     "password=%s dbname=%s sslmode=disable",

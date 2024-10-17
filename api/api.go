@@ -82,7 +82,7 @@ func main() {
     r.DELETE("/api/test/agent", api.Auth(writeRoles), api.DeleteAgentHandler)
 
     // Start server
-    apiPort := data.GoDotEnvVariable("WEBSERVER_PORT")
+    apiPort := os.Getenv("WEBSERVER_PORT")
     if !strings.HasPrefix(apiPort, ":") {
         apiPort = ":" + apiPort
     }
