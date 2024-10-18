@@ -27,6 +27,7 @@ function set_global_default_variable {
    webserverport="8000"
    reactclientip="0.0.0.0"
    reactclientport="8081"
+   c2serverip=""
    c2serverport="9000"
    dockerinternal="172.18.0"
    nginxip=""
@@ -45,6 +46,7 @@ function ask_prompt {
    read -p "Enter REACTCLIENT IP: " reactclientip
    read -p "Enter REACTCLIENT PORT: " reactclientport
    echo "Note: To listen on all interfaces, leave C2SERVER IP blank"
+   read -p "Enter C2SERVER IP: " c2serverip
    read -p "Enter C2SERVER PORT: " c2serverport
    read -p "Enter DOCKER INTERNAL NETWORK e.g. 172.18.0 (without the last octet): " dockerinternal
    read -p "Enter NGINX PORT: " nginxport
@@ -189,6 +191,7 @@ REPO_DIR=$(pwd)
 
 cat <<EOF > .env
 WEBSERVER_PORT=$webserverport
+C2SERVER_IP=$c2serverip
 C2SERVER_PORT=$c2serverport
 PUBLIC_KEY=$encpubkey
 BOT_TOKEN=$bottoken
