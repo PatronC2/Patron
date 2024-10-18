@@ -1,0 +1,8 @@
+FROM postgres:latest
+
+ARG DB_PORT
+
+EXPOSE ${DB_PORT}
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD pg_isready

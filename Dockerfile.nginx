@@ -1,0 +1,8 @@
+FROM nginx:alpine
+
+ARG REACT_APP_NGINX_PORT
+
+EXPOSE ${REACT_APP_NGINX_PORT}
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -k https://localhost:${REACT_APP_NGINX_PORT}/robots.txt || exit 1

@@ -4,17 +4,17 @@ import (
 	"errors"
 	"net/http"
 	"time"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/PatronC2/Patron/types"
-	"github.com/PatronC2/Patron/data"
 )
 
 var jwtKey []byte
 
 func InitAuth() {
-	jwtKeyStr := data.GoDotEnvVariable("JWT_KEY")
+	jwtKeyStr := os.Getenv("JWT_KEY")
 	jwtKey = []byte(jwtKeyStr)
 }
 

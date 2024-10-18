@@ -3,11 +3,11 @@ package api
 import (
     "fmt"
     "net/http"
+    "os"
 
     "github.com/gin-gonic/gin"
 	"github.com/PatronC2/Patron/lib/logger"
     "github.com/PatronC2/Patron/types"
-	"github.com/PatronC2/Patron/data"
 )
 
 type UpdateUserRequest struct {
@@ -15,7 +15,7 @@ type UpdateUserRequest struct {
 }
 
 func DeleteUserByUsernameHandler(c *gin.Context) {
-	defaultUserName := data.GoDotEnvVariable("ADMIN_AUTH_USER")
+    defaultUserName := os.Getenv("ADMIN_AUTH_USER")
     username := c.Param("username")
 	if defaultUserName == username {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("user %s cannot be deleted", username)})
@@ -110,7 +110,7 @@ func UpdateUserHandler(c *gin.Context) {
         return
     }
 
-    defaultUserName := data.GoDotEnvVariable("ADMIN_AUTH_USER")
+    defaultUserName := os.Getenv("ADMIN_AUTH_USER")
     username := c.Param("username")
     if defaultUserName == username {
         c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("User %s cannot be modified", username)})

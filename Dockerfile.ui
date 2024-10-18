@@ -1,0 +1,17 @@
+FROM node:22-alpine AS build
+
+ARG PORT
+
+WORKDIR /app
+
+RUN apk add curl
+
+COPY ./ui /app/
+RUN npm install
+
+EXPOSE ${PORT}
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=5 \
+  CMD curl -fL localhost:${PORT}/robots.txt || exit 1
+
+CMD ["sh", "-c", "npm start"]

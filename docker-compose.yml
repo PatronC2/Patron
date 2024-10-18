@@ -1,15 +1,23 @@
 services:
   patron_c2_server:
-    image: patron_c2_server
-    build: server
+    image: patron-server
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    environment:
+      DB_HOST: patron_c2_postgres
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+      C2SERVER_IP: patron_c2_server
+      C2SERVER_PORT: ${C2SERVER_PORT}
     restart: always
-    command: sh -c "go run server/server.go"
-    working_dir: /app
     volumes:
-      - ./:/app
+      - ./logs:/app/logs
+      - ./certs:/app/certs
     networks:
-      internal_c2_network:
-        ipv4_address: "${DOCKER_INTERNAL}.5"
+      - internal_c2_network
     ports:
       - "${C2SERVER_PORT}:${C2SERVER_PORT}"
     depends_on:
@@ -17,37 +25,57 @@ services:
         condition: service_healthy
 
   patron_c2_api:
-    image: patron_c2_server
-    build: api
+    image: patron-api
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      DB_HOST: patron_c2_postgres
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+      WEBSERVER_PORT: ${WEBSERVER_PORT}
+      PUBLIC_KEY: ${PUBLIC_KEY}
+      REPO_DIR: ${REPO_DIR}
+      JWT_KEY: ${JWT_KEY}
+      ADMIN_AUTH_USER: ${ADMIN_AUTH_USER}
+      ADMIN_AUTH_PASS: ${ADMIN_AUTH_PASS}
     restart: always
-    command: sh -c "go run api/api.go"
-    working_dir: /app
     volumes:
-      - ./:/app
+      - ./logs:/app/logs
+      - ./payloads:/app/payloads
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      internal_c2_network:
-        ipv4_address: "${DOCKER_INTERNAL}.6"
+      - internal_c2_network
     depends_on:
       patron_c2_postgres:
         condition: service_healthy
 
   patron_c2_frontend:
-    image: node:22-alpine
-    command: sh -c "npm install && npm start"
+    image: patron-ui
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
     working_dir: /app
     restart: always
     volumes:
-      - ./ui:/app
+      - .env:/app/.env
+      - ./logs:/app/logs
+    environment:
+      - PORT=${PORT}
     networks:
-      internal_c2_network:
-        ipv4_address: "${DOCKER_INTERNAL}.7"
+      - internal_c2_network
     depends_on:
-      - patron_c2_api
+      patron_c2_api:
+        condition: service_healthy
 
   patron_c2_postgres:
-    image: postgres:latest
+    image: patron-postgres
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
     restart: always
-    container_name: patron_c2_postgres
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASS}
@@ -57,29 +85,28 @@ services:
     ports:
       - "${DB_PORT}:${DB_PORT}"
     networks:
-      internal_c2_network:
-        ipv4_address: "${DOCKER_INTERNAL}.9"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
+      - internal_c2_network
 
   patron_c2_nginx:
-    image: nginx:latest
+    image: patron-nginx
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
     restart: always
     volumes:
       - ./nginx/conf.d/default.conf.template:/etc/nginx/templates/default.conf.template
       - ./certs/server.pem:/etc/nginx/ssl/nginx.crt
       - ./certs/server.key:/etc/nginx/ssl/nginx.key
     environment:
-      - REACT_SERVER=${DOCKER_INTERNAL}.7:${REACT_SERVER_PORT}
-      - API_SERVER=${DOCKER_INTERNAL}.6:8000
+      - REACT_SERVER=patron_c2_frontend:${PORT}
+      - API_SERVER=patron_c2_api:${WEBSERVER_PORT}
     networks:
-      internal_c2_network:
-        ipv4_address: "${DOCKER_INTERNAL}.8"
+      - internal_c2_network
     ports:
-      - "${REACT_APP_NGINX_PORT}:8443"
+      - "${REACT_APP_NGINX_PORT}:${REACT_APP_NGINX_PORT}"
+    depends_on:
+      patron_c2_frontend:
+        condition: service_healthy
 
 networks:
   internal_c2_network:

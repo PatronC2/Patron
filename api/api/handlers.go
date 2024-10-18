@@ -1,6 +1,7 @@
 package api
 
 import (
+	"os"
 	"os/exec"
 	"fmt"
 	"net/http"
@@ -166,7 +167,9 @@ func DeleteAgentHandler(c *gin.Context) {
 }
 
 func CreatePayloadHandler(c *gin.Context) {
-	publickey := data.GoDotEnvVariable("PUBLIC_KEY")
+	publickey := os.Getenv("PUBLIC_KEY")
+	repo_dir := os.Getenv("REPO_DIR")
+
 	newPayID := uuid.New().String()
 	var body map[string]string
 	if err := c.BindJSON(&body); err != nil {
@@ -199,11 +202,12 @@ func CreatePayloadHandler(c *gin.Context) {
 		tag := strings.Split(newPayID, "-")
 		concat := body["name"] + "_" + tag[0]
 		var commandString string
-		// Possible RCE concern
-		if body["type"] == "original" {
-			commandString = fmt.Sprintf( // Borrowed from https://github.com/s-christian/pwnts/blob/master/site/site.go#L175
 
-				"CGO_ENABLED=0 go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o agents/%s client/client.go",
+		if body["type"] == "original" {
+			commandString = fmt.Sprintf(
+				"docker run --rm -v %s:/build -w /build golang:1.22.3 "+
+				"go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o /build/payloads/%s /build/client/client.go",
+				repo_dir,
 				body["serverip"],
 				body["serverport"],
 				body["callbackfrequency"],
@@ -212,9 +216,10 @@ func CreatePayloadHandler(c *gin.Context) {
 				concat,
 			)
 		} else if body["type"] == "wkeys" {
-			commandString = fmt.Sprintf( // Borrowed from https://github.com/s-christian/pwnts/blob/master/site/site.go#L175
-
-				"CGO_ENABLED=0 go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o agents/%s client/kclient/kclient.go",
+			commandString = fmt.Sprintf(
+				"docker run --rm -v %s:/build -w /build golang:1.22.3 "+
+				"go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o /build/payloads/%s /build/client/kclient/kclient.go",
+				repo_dir,
 				body["serverip"],
 				body["serverport"],
 				body["callbackfrequency"],
@@ -223,10 +228,14 @@ func CreatePayloadHandler(c *gin.Context) {
 				concat,
 			)
 		}
-		fmt.Println("body")
-		err := exec.Command("sh", "-c", commandString).Run()
+		fmt.Printf("Body")
+		fmt.Printf("Running command: %s", commandString)
+		cmd := exec.Command("sh", "-c", commandString)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err := cmd.Run()
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error", "details": err.Error()})
 		} else {
 			data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat) // from web
 			c.JSON(http.StatusOK, gin.H{"data": "success"})

@@ -5,16 +5,30 @@ import (
     "path/filepath"
     "os"
     "strings"
-    "time"
     "fmt"
 
     "github.com/PatronC2/Patron/api/api"
+    "github.com/PatronC2/Patron/lib/logger"
     "github.com/PatronC2/Patron/data"
     "github.com/gin-gonic/gin"
 )
 
 func main() {
+
+    enableLogging := true
+	logger.EnableLogging(enableLogging)
+	// Set the log file
+	logFileName := "logs/api.log"
+	err := logger.SetLogFile(logFileName)
+	if err != nil {
+		fmt.Printf("Error setting log file: %v\n", err)
+		return
+	}
+
+    logger.Logf(logger.Info, "Starting API Server\n")
+
     api.InitAuth()
+    
     // For regular patron functions
     data.OpenDatabase()
     // admin api functions
@@ -67,19 +81,8 @@ func main() {
     r.POST("/api/test/agent", api.Auth(writeRoles), api.CreateAgentHandler)
     r.DELETE("/api/test/agent", api.Auth(writeRoles), api.DeleteAgentHandler)
 
-    // Logging
-    r.Use(func(c *gin.Context) {
-        c.Next()
-        status := c.Writer.Status()
-        method := c.Request.Method
-        path := c.Request.URL.Path
-        clientIP := c.ClientIP()
-        c.Writer.Header().Set("X-Server-Timestamp", time.Now().Format(time.RFC3339))
-        fmt.Printf("[%d] %s %s %s\n", status, method, path, clientIP)
-    })
-
     // Start server
-    apiPort := data.GoDotEnvVariable("WEBSERVER_PORT")
+    apiPort := os.Getenv("WEBSERVER_PORT")
     if !strings.HasPrefix(apiPort, ":") {
         apiPort = ":" + apiPort
     }
@@ -87,8 +90,9 @@ func main() {
 }
 
 func FileServer(r *gin.Engine, path string, root http.FileSystem) {
+    logger.Logf(logger.Info, "Starting Fileserver")
     if strings.ContainsAny(path, "{}*") {
-        panic("FileServer does not permit any URL parameters.")
+        logger.Logf(logger.Info, "FileServer does not permit any URL parameters.")
     }
 
     if path != "/" && path[len(path)-1] != '/' {
@@ -101,6 +105,7 @@ func FileServer(r *gin.Engine, path string, root http.FileSystem) {
 }
 
 func CORS() gin.HandlerFunc {
+    logger.Logf(logger.Info, "Applying CORS headers")
     return func(c *gin.Context) {
         c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
         c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
