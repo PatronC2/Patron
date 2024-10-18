@@ -67,9 +67,11 @@ services:
       - patron_c2_api
 
   patron_c2_postgres:
-    image: postgres:latest
+    image: patron-postgres
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
     restart: always
-    container_name: patron_c2_postgres
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASS}

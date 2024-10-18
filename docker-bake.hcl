@@ -10,6 +10,10 @@ variable "NGINX" {
   default = "patron-nginx"
 }
 
+variable "POSTGRES" {
+  default = "patron-postgres"
+}
+
 variable "SERVER" {
   default = "patron-server"
 }
@@ -27,6 +31,13 @@ target "nginx-local" {
     context = "."
     output = ["type=docker"]
     tags = ["${NGINX}:${TAG}"]
+}
+
+target "postgres-local" {
+    dockerfile = "Dockerfile.postgres"
+    context = "."
+    output = ["type=docker"]
+    tags = ["${POSTGRES}:${TAG}"]
 }
 
 target "server-local" {
@@ -53,8 +64,15 @@ target "ui-local" {
 target "nginx-release" {
     dockerfile = "Dockerfile.nginx"
     context = "."
-    output = ["type=docker"]
-    tags = ["${NGINX}:${TAG}"]
+    output = ["type=registry,output=registry.${REGISTRY}/${NGINX}:${TAG}"]
+    tags = ["${REGISTRY}/${NGINX}:${TAG}"]
+}
+
+target "postgres-release" {
+    dockerfile = "Dockerfile.postgres"
+    context = "."
+    output = ["type=registry,output=registry.${REGISTRY}/${POSTGRES}:${TAG}"]
+    tags = ["${REGISTRY}/${POSTGRES}:${TAG}"]
 }
 
 target "server-release" {
@@ -79,9 +97,9 @@ target "ui-release" {
 }
 
 group "local" {
-    targets = ["nginx-local", "api-local", "ui-local", "server-local"]
+    targets = ["nginx-local", "postgres-local", "api-local", "ui-local", "server-local"]
 }
 
 group "default" {
-    targets = ["nginx-release", "api-release", "ui-release", "server-release"]
+    targets = ["nginx-release", "postgres-local", "api-release", "ui-release", "server-release"]
 }
