@@ -40,6 +40,7 @@ services:
       REPO_DIR: ${REPO_DIR}
       JWT_KEY: ${JWT_KEY}
       ADMIN_AUTH_USER: ${ADMIN_AUTH_USER}
+      ADMIN_AUTH_PASS: ${ADMIN_AUTH_PASS}
     restart: always
     volumes:
       - ./logs:/app/logs

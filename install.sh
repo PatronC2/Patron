@@ -185,33 +185,31 @@ rm -rf .env ui/.env
 
 encpubkey=$(base64 -w 0 certs/server.pem)
 JWT_KEY=$(openssl rand -base64 32)
-REPO_DIR=`pwd`
+REPO_DIR=$(pwd)
 
-# server env
-echo "WEBSERVER_PORT=$webserverport" >> .env
-echo "C2SERVER_PORT=$c2serverport" >> .env
-echo "PUBLIC_KEY=$encpubkey" >> .env
-echo "BOT_TOKEN=$bottoken" >> .env
-echo "DB_HOST=$dbhost" >> .env
-echo "DB_PORT=$dbport" >> .env
-echo "DB_USER=$dbuser" >> .env
-echo "DB_PASS=$dbpass" >> .env
-echo "DB_NAME=$dbname" >> .env
-echo "DOCKER_INTERNAL=$dockerinternal" >> .env
-echo "REACT_APP_NGINX_PORT=$nginxport" >> .env
-echo "REACT_APP_NGINX_IP=$nginxip" >> .env
-echo "REACT_SERVER_IP=$reactclientip" >> .env
-echo "ADMIN_AUTH_USER=$patronUsername" >> .env
-echo "ADMIN_AUTH_PASS=$patronPassword" >> .env
-echo "JWT_KEY=$JWT_KEY" >> .env
-echo "REPO_DIR=$REPO_DIR" >> .env
-echo "HOST=$reactclientip" >> .env
-echo "PORT=$reactclientport" >> .env
+cat <<EOF > .env
+WEBSERVER_PORT=$webserverport
+C2SERVER_PORT=$c2serverport
+PUBLIC_KEY=$encpubkey
+BOT_TOKEN=$bottoken
+DB_HOST=$dbhost
+DB_PORT=$dbport
+DB_USER=$dbuser
+DB_PASS=$dbpass
+DB_NAME=$dbname
+DOCKER_INTERNAL=$dockerinternal
+REACT_APP_NGINX_PORT=$nginxport
+REACT_APP_NGINX_IP=$nginxip
+REACT_SERVER_IP=$reactclientip
+ADMIN_AUTH_USER=$patronUsername
+ADMIN_AUTH_PASS=$patronPassword
+JWT_KEY=$JWT_KEY
+REPO_DIR=$REPO_DIR
+HOST=$reactclientip
+PORT=$reactclientport
+EOF
 
-# make log dir
-mkdir -p logs
-
-echo "Cooking the Steak"
+echo "Cooking the Steak..."
 docker buildx bake local
 docker compose up -d
 
