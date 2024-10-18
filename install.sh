@@ -120,32 +120,32 @@ postgres_pass=""
 
 # Parse command line arguments using getopts
 while getopts "dws:ph" opt; do
-    case $opt in
-        d)
-            set_global_default_variable
-            default="y"
-            ;;
-        w)
-            wipe_db
-            clean_db="y"
-            ;;
-        s)
-            ipaddress="$OPTARG"
-            ;;
-        p)
-            pass_prompt
-            postgres_pass="y"
-            ;;
-        h)
-            show_help
-            exit 0
-            ;;
-        \?)
-            echo "Invalid option: -$OPTARG" >&2
-            show_help
-            exit 1
-            ;;
-    esac
+   case $opt in
+      d)
+         set_global_default_variable
+         default="y"
+         ;;
+      w)
+         wipe_db
+         clean_db="y"
+         ;;
+      s)
+         ipaddress="$OPTARG"
+         ;;
+      p)
+         pass_prompt
+         postgres_pass="y"
+         ;;
+      h)
+         show_help
+         exit 0
+         ;;
+      \?)
+         echo "Invalid option: -$OPTARG" >&2
+         show_help
+         exit 1
+         ;;
+   esac
 done
 
 if [ -z "$ipaddress" ]; then
