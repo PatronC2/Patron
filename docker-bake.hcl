@@ -26,11 +26,34 @@ variable "UI" {
   default = "patron-ui"
 }
 
+variable "WEBSERVER_PORT" {
+  default = "8000"
+}
+
+variable "REACT_APP_NGINX_PORT" {
+  default = "8443"
+}
+
+variable "DB_PORT" {
+  default = "5432"
+}
+
+variable "C2SERVER_PORT" {
+  default = "9000"
+}
+
+variable "PORT" {
+  default = "8081"
+}
+
 target "nginx-local" {
     dockerfile = "Dockerfile.nginx"
     context = "."
     output = ["type=docker"]
     tags = ["${NGINX}:${TAG}"]
+    args = {
+      REACT_APP_NGINX_PORT = "${REACT_APP_NGINX_PORT}"
+    }
 }
 
 target "postgres-local" {
@@ -38,6 +61,9 @@ target "postgres-local" {
     context = "."
     output = ["type=docker"]
     tags = ["${POSTGRES}:${TAG}"]
+    args = {
+      DB_PORT = "${DB_PORT}"
+    }
 }
 
 target "server-local" {
@@ -45,6 +71,9 @@ target "server-local" {
     context = "."
     output = ["type=docker"]
     tags = ["${SERVER}:${TAG}"]
+    args = {
+      C2SERVER_PORT = "${C2SERVER_PORT}"
+    }
 }
 
 target "api-local" {
@@ -52,6 +81,9 @@ target "api-local" {
     context = "."
     output = ["type=docker"]
     tags = ["${API}:${TAG}"]
+    args = {
+      WEBSERVER_PORT = "${WEBSERVER_PORT}"
+    }
 }
 
 target "ui-local" {
@@ -59,6 +91,9 @@ target "ui-local" {
     context = "."
     output = ["type=docker"]
     tags = ["${UI}:${TAG}"]
+    args = {
+      PORT = "${PORT}"
+    }
 }
 
 target "nginx-release" {
@@ -66,6 +101,9 @@ target "nginx-release" {
     context = "."
     output = ["type=registry,output=registry.${REGISTRY}/${NGINX}:${TAG}"]
     tags = ["${REGISTRY}/${NGINX}:${TAG}"]
+    args = {
+      REACT_APP_NGINX_PORT = "${REACT_APP_NGINX_PORT}"
+    }
 }
 
 target "postgres-release" {
@@ -73,6 +111,9 @@ target "postgres-release" {
     context = "."
     output = ["type=registry,output=registry.${REGISTRY}/${POSTGRES}:${TAG}"]
     tags = ["${REGISTRY}/${POSTGRES}:${TAG}"]
+    args = {
+      DB_PORT = "${DB_PORT}"
+    }
 }
 
 target "server-release" {
@@ -80,6 +121,9 @@ target "server-release" {
     context = "."
     output = ["type=registry,output=registry.${REGISTRY}/${SERVER}:${TAG}"]
     tags = ["${REGISTRY}/${SERVER}:${TAG}"]
+    args = {
+      C2SERVER_PORT = "${C2SERVER_PORT}"
+    }
 }
 
 target "api-release" {
@@ -87,6 +131,9 @@ target "api-release" {
     context = "."
     output = ["type=registry,output=registry.${REGISTRY}/${API}:${TAG}"]
     tags = ["${REGISTRY}/${API}:${TAG}"]
+    args = {
+      WEBSERVER_PORT = "${WEBSERVER_PORT}"
+    }
 }
 
 target "ui-release" {
@@ -94,6 +141,9 @@ target "ui-release" {
     context = "."
     output = ["type=registry,output=registry.${REGISTRY}/${UI}:${TAG}"]
     tags = ["${REGISTRY}/${UI}:${TAG}"]
+    args = {
+      PORT = "${PORT}"
+    }
 }
 
 group "local" {

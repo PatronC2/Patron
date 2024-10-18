@@ -62,6 +62,8 @@ services:
     volumes:
       - .env:/app/.env
       - ./logs:/app/logs
+    environment:
+      - PORT=${PORT}
     networks:
       - internal_c2_network
     depends_on:
@@ -96,12 +98,12 @@ services:
       - ./certs/server.pem:/etc/nginx/ssl/nginx.crt
       - ./certs/server.key:/etc/nginx/ssl/nginx.key
     environment:
-      - REACT_SERVER=patron_c2_frontend:8081
-      - API_SERVER=patron_c2_api:8000
+      - REACT_SERVER=patron_c2_frontend:${PORT}
+      - API_SERVER=patron_c2_api:${WEBSERVER_PORT}
     networks:
       - internal_c2_network
     ports:
-      - "${REACT_APP_NGINX_PORT}:8443"
+      - "${REACT_APP_NGINX_PORT}:${REACT_APP_NGINX_PORT}"
     depends_on:
       patron_c2_frontend:
         condition: service_healthy

@@ -1,5 +1,7 @@
 FROM golang:1.22.3 AS build
 
+ARG WEBSERVER_PORT
+
 WORKDIR /app
 COPY . ./
 RUN go mod tidy
@@ -13,10 +15,10 @@ WORKDIR /app
 COPY --from=build /app/app ./
 RUN apk add docker-cli curl
 
-EXPOSE 8080
+EXPOSE ${WEBSERVER_PORT}
 
 HEALTHCHECK --interval=15s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -fL http://localhost:8000/files || exit 1
+  CMD curl -fL http://localhost:${WEBSERVER_PORT}/files || exit 1
 
 # Command to run the API
 CMD ["./app"]

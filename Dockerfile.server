@@ -1,5 +1,7 @@
 FROM golang:1.22.3 AS build
 
+ARG C2SERVER_PORT
+
 WORKDIR /app
 COPY . ./
 RUN go mod tidy
@@ -11,7 +13,7 @@ FROM alpine:latest
 RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 WORKDIR /app
 COPY --from=build /app/app ./
-EXPOSE 8080
+EXPOSE ${C2SERVER_PORT}
 
 # Command to run the API
 CMD ["./app"]

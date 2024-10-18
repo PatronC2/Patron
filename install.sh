@@ -10,9 +10,6 @@ fi
 
 mkdir -p logs
 
-# Redirect all output to a log file for debugging if needed
-exec > >(tee -i logs/install.log) 2>&1
-
 function show_help {
    echo "Usage: $0 [-d ] [-w ] [ -s <your_ip_address> ]"
    echo "Options:"
@@ -213,6 +210,7 @@ PORT=$reactclientport
 EOF
 
 echo "Cooking the Steak..."
+export $(grep -v '^#' .env | xargs)
 docker buildx bake local
 docker compose up -d
 
