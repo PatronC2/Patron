@@ -1,45 +1,52 @@
 #!/bin/bash
 
+set -euo pipefail
+trap 'echo "Error occurred on line $LINENO. Exiting."; exit 1' ERR
+
 if [[ $EUID -ne 0 ]]; then
-   echo "This script must be run as root" 
+   echo "This script must be run as root"
    exit 1
 fi
 
+mkdir -p logs
+
+# Redirect all output to a log file for debugging if needed
+exec > >(tee -i logs/install.log) 2>&1
+
 function show_help {
-    echo "Usage: $0 [-d ] [-w ] [ -s <your_ip_address> ]"
-    echo "Options:"
-    echo "  -d    Use default options"
-    echo "  -w    Wipe Database"
-    echo "  -s    <your_ip_address>   Server Ip address"
-    echo "  -p    Prompts you to enter passwords"
-    echo "  -h    Show this help message"
+   echo "Usage: $0 [-d ] [-w ] [ -s <your_ip_address> ]"
+   echo "Options:"
+   echo "  -d    Use default options"
+   echo "  -w    Wipe Database"
+   echo "  -s    <your_ip_address>   Server IP address"
+   echo "  -p    Prompts you to enter passwords"
+   echo "  -h    Show this help message"
 }
 
 function set_global_default_variable {
-    webserverport="8000"
-    reactclientip="0.0.0.0"
-    reactclientport="8081"
-    c2serverport="9000"
-    dockerinternal="172.18.0"
-    nginxip=""
-    nginxport="8443"
-    bottoken=""
-    dbhost="patron_c2_postgres"
-    dbuser="patron"
-    dbport="5432"
-    dbname="patron"
-    patronUsername="patron"
+   webserverport="8000"
+   reactclientip="0.0.0.0"
+   reactclientport="8081"
+   c2serverport="9000"
+   dockerinternal="172.18.0"
+   nginxip=""
+   nginxport="8443"
+   bottoken=""
+   dbhost="patron_c2_postgres"
+   dbuser="patron"
+   dbport="5432"
+   dbname="patron"
+   patronUsername="patron"
 }
 
 function ask_prompt {
-   
-   echo "Note: Webserver, ReactClient, DB and C2 server can't be on the same port and must be an unused port"
+   echo "Note: Webserver, ReactClient, DB, and C2 server can't be on the same port and must be an unused port"
    read -p "Enter APISERVER PORT: " webserverport
    read -p "Enter REACTCLIENT IP: " reactclientip
    read -p "Enter REACTCLIENT PORT: " reactclientport
-   echo "Note: To listen on all inteface, leave C2SERVER IP blank"
+   echo "Note: To listen on all interfaces, leave C2SERVER IP blank"
    read -p "Enter C2SERVER PORT: " c2serverport
-   read -p "Enter DOCKER INTERNAL NETWORK e.g 172.18.0 (without last octect): " dockerinternal
+   read -p "Enter DOCKER INTERNAL NETWORK e.g. 172.18.0 (without the last octet): " dockerinternal
    read -p "Enter NGINX PORT: " nginxport
    read -p "Enter Database Host: " dbhost
    read -p "Enter Database Port: " dbport
@@ -51,8 +58,8 @@ function ask_prompt {
 function wipe_db {
    rm -rf data/postgres_data
    echo "Database Wiped!"
-   dbpass=`openssl rand -base64 9 | tr -dc 'a-zA-Z0-9' | head -c 12`
-   patronPassword=`openssl rand -base64 9 | tr -dc 'a-zA-Z0-9' | head -c 12`
+   dbpass=$(openssl rand -base64 9 | tr -dc 'a-zA-Z0-9' | head -c 12)
+   patronPassword=$(openssl rand -base64 9 | tr -dc 'a-zA-Z0-9' | head -c 12)
 }
 
 function pass_prompt {
@@ -62,41 +69,47 @@ function pass_prompt {
 }
 
 function prereq_app_check {
-   base64=$(which base64)
-   openssl=$(which openssl)
-   docker=$(which docker)
+   base64=$(which base64 || echo "not found")
+   openssl=$(which openssl || echo "not found")
+   docker=$(which docker || echo "not found")
 
-   # Prereqs
-   # base64 check
+   # Check base64
    if [ -x "$base64" ]; then
-      echo "base64 Check Ok"
+      echo "base64 Check OK"
    else
-      echo "Install base64"
+      echo "Error: base64 is not installed"
       exit 1
    fi
 
-   # openssl check
+   # Check openssl
    if [ -x "$openssl" ]; then
-      echo "openssl Check Ok"
+      echo "openssl Check OK"
    else
-      echo "Install openssl"
+      echo "Error: openssl is not installed"
       exit 1
    fi
 
-   # docker check
+   # Check docker
    if [ -x "$docker" ]; then
-      echo "Docker Check Ok"
+      echo "Docker Check OK"
    else
-      echo "Docker is not installed. Please install Docker."
-      exit 1
+      echo "Docker is not installed. Checking if I can install it for you."
+      if which apt-get &>/dev/null; then
+         sudo ./install-docker-ubuntu.sh || { echo "Failed to install Docker on Ubuntu."; exit 1; }
+      elif which yum &>/dev/null; then
+         sudo ./install-docker-rh.sh || { echo "Failed to install Docker on Red Hat."; exit 1; }
+      else
+         echo "Error: Can't install Docker for you. Please install it manually."
+         exit 1
+      fi
    fi
 
    # Check if Docker is running
    if ! docker info > /dev/null 2>&1; then
-      echo "Docker daemon is not running. Please start Docker."
+      echo "Error: Docker daemon is not running. Please start Docker."
       exit 1
    else
-      echo "Docker is running"
+      echo "Docker is running."
    fi
 }
 
@@ -104,6 +117,7 @@ default=""
 clean_db=""
 ipaddress=""
 postgres_pass=""
+
 # Parse command line arguments using getopts
 while getopts "dws:ph" opt; do
     case $opt in
@@ -135,7 +149,7 @@ while getopts "dws:ph" opt; do
 done
 
 if [ -z "$ipaddress" ]; then
-   echo "Error: Set your ip with -s"
+   echo "Error: Set your IP with -s"
    show_help
    exit 1
 else
@@ -146,11 +160,11 @@ if [ -z "$default" ]; then
    ask_prompt
 fi
 
-# Check if both -w and -p flags are provided together
+# Check for mutually exclusive -w and -p flags
 if [[ -n "$postgres_pass" && -n "$clean_db" ]] || [[ -z "$postgres_pass" && -z "$clean_db" ]]; then
-    echo "Error: Both -w and -p flags must be used separately. Or at least one must be used"
-    show_help
-    exit 1
+   echo "Error: Both -w and -p flags must be used separately, or at least one must be used."
+   show_help
+   exit 1
 fi
 
 # Shift the processed options
@@ -158,63 +172,54 @@ shift $((OPTIND-1))
 
 prereq_app_check
 
-
-#install certs
-echo "Generating certs"
+# Generate certs
+echo "Generating certs..."
 [ ! -d "$PWD/certs" ] && mkdir certs
-rm -rf certs/server.key
-rm -rf certs/server.pem
+rm -rf certs/server.key certs/server.pem
 openssl ecparam -genkey -name prime256v1 -out certs/server.key
 openssl req -new -x509 -key certs/server.key -out certs/server.pem -days 3650 -subj "/C=US/ST=Maryland/L=Towson/O=Case Studies/OU=Offensive Op/CN=example.com"
 
-# Set Env file
-echo "Setting environment variables"
-rm -rf .env
-rm -rf ui/.env
+# Set environment variables
+echo "Setting environment variables..."
+rm -rf .env ui/.env
 
-encpubkey=`base64 -w 0 certs/server.pem`
-# Generate JWT key for API auth
+encpubkey=$(base64 -w 0 certs/server.pem)
 JWT_KEY=$(openssl rand -base64 32)
+REPO_DIR=$(pwd)
 
-# Put the pwd into the .env, this is needed for sharing docker volumes for the API
-REPO_DIR=`pwd`
+cat <<EOF > .env
+WEBSERVER_PORT=$webserverport
+C2SERVER_PORT=$c2serverport
+PUBLIC_KEY=$encpubkey
+BOT_TOKEN=$bottoken
+DB_HOST=$dbhost
+DB_PORT=$dbport
+DB_USER=$dbuser
+DB_PASS=$dbpass
+DB_NAME=$dbname
+DOCKER_INTERNAL=$dockerinternal
+REACT_APP_NGINX_PORT=$nginxport
+REACT_APP_NGINX_IP=$nginxip
+REACT_SERVER_IP=$reactclientip
+ADMIN_AUTH_USER=$patronUsername
+ADMIN_AUTH_PASS=$patronPassword
+JWT_KEY=$JWT_KEY
+REPO_DIR=$REPO_DIR
+HOST=$reactclientip
+PORT=$reactclientport
+EOF
 
-# server env
-echo "WEBSERVER_PORT=$webserverport" >> .env
-echo "C2SERVER_PORT=$c2serverport" >> .env
-echo "PUBLIC_KEY=$encpubkey" >> .env
-echo "BOT_TOKEN=$bottoken" >> .env
-echo "DB_HOST=$dbhost" >> .env
-echo "DB_PORT=$dbport" >> .env
-echo "DB_USER=$dbuser" >> .env
-echo "DB_PASS=$dbpass" >> .env
-echo "DB_NAME=$dbname" >> .env
-echo "DOCKER_INTERNAL=$dockerinternal" >> .env
-echo "REACT_APP_NGINX_PORT=$nginxport" >> .env
-echo "REACT_APP_NGINX_IP=$nginxip" >> .env
-echo "REACT_SERVER_IP=$reactclientip" >> .env
-echo "ADMIN_AUTH_USER=$patronUsername" >> .env
-echo "ADMIN_AUTH_PASS=$patronPassword" >> .env
-echo "JWT_KEY=$JWT_KEY" >> .env
-# Need full path to the repo for the API building payloads
-echo  "REPO_DIR=$REPO_DIR" >> .env
-# We cannot change the name of these, locked in by node
-echo "HOST=$reactclientip" >> .env
-echo "PORT=$reactclientport" >> .env
-
-# make log dir
-mkdir -p logs
-
-echo "Cooking the Steak"
+echo "Cooking the Steak..."
 docker buildx bake local
 docker compose up -d
 
 echo "------------------------------------------ Informational --------------------------------------"
 echo ""
-echo "Visit http://$nginxip:$nginxport for Web"
+echo "Visit https://$nginxip:$nginxport for Web"
 echo ""
 echo "C2 Server on $nginxip:$c2serverport"
 echo ""
-echo "See .env and ui/.env to tweak enviroment variables (not advised)"
+echo "See .env and ui/.env to tweak environment variables (not advised and restart required)"
+echo "Run `docker compose down --rmi all -v --remove-orphans` to stop"
+echo "Run `docker compose up -d` ro restart"
 echo ""
-
