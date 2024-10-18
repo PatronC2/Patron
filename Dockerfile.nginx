@@ -1,2 +1,5 @@
 FROM nginx:alpine
 EXPOSE 8443
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -k https://localhost:8443/robots.txt || exit 1

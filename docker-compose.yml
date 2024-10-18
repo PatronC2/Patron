@@ -65,7 +65,8 @@ services:
     networks:
       - internal_c2_network
     depends_on:
-      - patron_c2_api
+      patron_c2_api:
+        condition: service_healthy
 
   patron_c2_postgres:
     image: patron-postgres
@@ -83,11 +84,6 @@ services:
       - "${DB_PORT}:${DB_PORT}"
     networks:
       - internal_c2_network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
 
   patron_c2_nginx:
     image: patron-nginx
@@ -106,6 +102,9 @@ services:
       - internal_c2_network
     ports:
       - "${REACT_APP_NGINX_PORT}:8443"
+    depends_on:
+      patron_c2_frontend:
+        condition: service_healthy
 
 networks:
   internal_c2_network:
