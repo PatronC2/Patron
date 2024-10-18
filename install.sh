@@ -205,27 +205,10 @@ echo "PORT=$reactclientport" >> .env
 # make log dir
 mkdir -p logs
 
-echo ""
-echo ""
-echo "------------------------------------------Raw Dog Run------------------------------------------"
-echo ""
-echo "Run 'sudo go run server/server.go' to start the C2 server"
-echo ""
-echo "Run 'sudo go run api/api.go' to start the api sever"
-echo ""
-echo "Run 'cd ui && npm start' to start start the web client"
-echo ""
-echo "Run 'sudo go run bot/bot.go' to start the Discord Bot if the DISCORD BOT_TOKEN Was provided"
-echo ""
-echo ""
-echo ""
-echo "------------------------------------------ Docker ------------------------------------------"
-echo ""
-echo "Spin up: Run 'docker compose up --remove-orphans'"
-echo ""
-echo "Tear down: Run 'docker compose down'"
-echo ""
-echo ""
+echo "Cooking the Steak"
+docker buildx bake local
+docker compose up -d
+
 echo "------------------------------------------ Informational --------------------------------------"
 echo ""
 echo "Visit http://$nginxip:$nginxport for Web"
