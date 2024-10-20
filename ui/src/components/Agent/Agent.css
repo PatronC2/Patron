@@ -13,7 +13,7 @@
 
 .agent-tabs {
     flex: 2;
-    background-color: #f44336;
+    background-color: red;
     padding: 20px;
     border-radius: 5px;
     width: 600px;
@@ -29,6 +29,7 @@
 .tabs button {
     padding: 10px 20px;
     background-color: #333;
+    color: #fff;
     border: none;
     cursor: pointer;
 }
@@ -40,6 +41,7 @@
 
 .tabs button:hover {
     background-color: #575757;
+    color: #fff;
 }
 
 .tab-content {

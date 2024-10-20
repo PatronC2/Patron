@@ -85,7 +85,6 @@ const Agent = () => {
 
   const renderCommandsTab = () => (
     <div className="commands-list" ref={commandListRef}>
-      <h3>Commands</h3>
       {commands.length === 0 ? (
         <p>No commands available.</p>
       ) : (
@@ -112,7 +111,12 @@ const Agent = () => {
 
   const renderKeylogsTab = () => (
     <div>
-      <h3>Keylogs</h3>
+      <p>TODO.</p>
+    </div>
+  );
+
+  const renderConfigurationTab = () => (
+    <div>
       <p>TODO.</p>
     </div>
   );
@@ -149,11 +153,18 @@ const Agent = () => {
           >
             Keylogs
           </button>
+          <button
+            className={activeTab === 'configuration' ? 'active' : ''}
+            onClick={() => setActiveTab('configuration')}
+          >
+            Configuration
+          </button>
         </div>
 
         <div className="tab-content">
           {activeTab === 'commands' && renderCommandsTab()}
           {activeTab === 'keys' && renderKeylogsTab()}
+          {activeTab === 'configuration' && renderConfigurationTab()}
         </div>
       </div>
     </div>
