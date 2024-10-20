@@ -7,6 +7,8 @@ import './Agent.css';
 const Agent = () => {
   const { auth } = useContext(AuthContext);
   const [data, setData] = useState(null);
+  const [commands, setCommands] = useState([]);
+  const [activeTab, setActiveTab] = useState('commands');
   const [error, setError] = useState(null);
 
   const location = useLocation();
@@ -27,6 +29,12 @@ const Agent = () => {
         setData(responseData);
       } else {
         setError('No data found');
+      }
+      
+      if (commandsResponse.data.data) {
+        setCommands(commandsResponse.data.data);
+      } else {
+        setCommands([]);
       }
     } catch (err) {
       setError(err.message);
@@ -50,10 +58,37 @@ const Agent = () => {
     return <p>No data available</p>;
   }
 
+  const renderCommandsTab = () => (
+    <div className="commands-list">
+      <h3>Commands</h3>
+      {commands.length === 0 ? (
+        <p>No commands available.</p>
+      ) : (
+        <ul>
+          {commands.map((cmd) => (
+            <li key={cmd.commanduuid}>
+              <strong>Command:</strong> {cmd.command} <br />
+              <strong>Output:</strong> {cmd.output !== "" ? cmd.output : "(No output)"} <br /> {}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+  
+
+  const renderKeylogsTab = () => (
+    <div>
+      <h3>Keylogs</h3>
+      <p>TODO.</p>
+    </div>
+  );
+
   return (
     <div className="agent-container">
-      <h1>Agent Details</h1>
+      {/* Agent Details */}
       <div className="agent-details">
+        <h1>Agent Details</h1>
         <ul>
           <li><strong>UUID:</strong> {data.uuid}</li>
           <li><strong>Callback to:</strong> {data.callbackto}</li>
@@ -65,8 +100,28 @@ const Agent = () => {
           <li><strong>Status:</strong> {data.status || 'Unknown'}</li>
         </ul>
       </div>
-      <div className="agent-commands">
-        <strong>Commands: {commandsResponse}</strong>
+
+      {/* Commands & Tabs */}
+      <div className="agent-tabs">
+        <div className="tabs">
+          <button
+            className={activeTab === 'commands' ? 'active' : ''}
+            onClick={() => setActiveTab('commands')}
+          >
+            Command History
+          </button>
+          <button
+            className={activeTab === 'keys' ? 'active' : ''}
+            onClick={() => setActiveTab('keys')}
+          >
+            Keylogs
+          </button>
+        </div>
+
+        <div className="tab-content">
+          {activeTab === 'commands' && renderCommandsTab()}
+          {activeTab === 'keys' && renderKeylogsTab()}
+        </div>
       </div>
     </div>
   );
