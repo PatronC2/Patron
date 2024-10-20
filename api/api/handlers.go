@@ -109,6 +109,21 @@ func UpdateAgentHandler(c *gin.Context) {
 	}
 }
 
+func SendCommandHandler(c *gin.Context) {
+	agentParam := c.Param("agt")
+	newCmdID := uuid.New().String()
+
+	var body map[string]string
+	if err := c.BindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	command := body["command"]
+	data.SendAgentCommand(agentParam, "0", "shell", command, newCmdID)
+	c.JSON(http.StatusOK, gin.H{"message": "Success"})
+}
+
 func KillAgentHandler(c *gin.Context) {
 	agentParam := c.Param("agt")
 	newCmdID := uuid.New().String()

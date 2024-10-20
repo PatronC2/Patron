@@ -2,41 +2,42 @@
     display: flex;
     gap: 20px;
 }
-  
+
 .agent-details {
     flex: 1;
     background-color: #66a4b0;
     padding: 20px;
     border-radius: 5px;
-    width: 800px;
+    width: 600px;
 }
-  
+
 .agent-tabs {
     flex: 2;
-    background-color: #333;
+    background-color: #f44336;
     padding: 20px;
     border-radius: 5px;
-    width: 800px;
+    width: 600px;
+    height: 600px;
 }
-  
+
 .tabs {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
 }
-  
+
 .tabs button {
     padding: 10px 20px;
-    background-color: #e0e0e0;
+    background-color: #333;
     border: none;
     cursor: pointer;
 }
-  
+
 .tabs button.active {
     background-color: #141414;
     color: #fff;
 }
-  
+
 .tabs button:hover {
     background-color: #575757;
 }
@@ -46,6 +47,11 @@
     padding: 20px;
     border-radius: 5px;
     color: #000;
+}
+
+.commands-list {
+    height: 400px;
+    overflow-y: auto; 
 }
 
 .commands-list ul {
@@ -61,4 +67,26 @@
 .commands-list p {
     color: #000;
 }
-  
+
+.command-input {
+    margin-top: 20px;
+}
+
+.command-input input {
+    padding: 10px;
+    margin-right: 10px;
+    width: 300px;
+}
+
+.command-input button {
+    padding: 10px 20px;
+    background-color: #66a4b0;
+    border: none;
+    cursor: pointer;
+    color: white;
+    font-weight: bold;
+}
+
+.command-input button:hover {
+    background-color: #575757;
+}
