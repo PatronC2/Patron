@@ -4,7 +4,7 @@ import AuthContext from '../../context/AuthProvider';
 import './NewPayloadForm.css';
 
 const PATRON_C2_IP = `${process.env.REACT_APP_NGINX_IP}`
-const PATRON_C2_PORT = `${process.env.C2SERVER_PORT}`
+const PATRON_C2_PORT = `${process.env.REACT_APP_C2SERVER_PORT}`
 
 const NewPayloadForm = ({ fetchData, setActiveTab }) => {
     const { auth } = useContext(AuthContext);
