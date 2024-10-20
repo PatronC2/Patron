@@ -19,7 +19,7 @@ const Agent = () => {
   const fetchData = async () => {
     try {
       const queryParam = getQueryParam('agt');
-      const response = await axios.get(`/api/agent?=${queryParam}`);
+      const response = await axios.get(`/api/oneagent/${queryParam}`);
       const responseData = response.data.data;
 
       if (Array.isArray(responseData)) {
@@ -46,14 +46,23 @@ const Agent = () => {
   }
 
   return (
-    <div className="home-container">
-      <h1>Agent</h1>
+    <div className="agent-container">
+      <h1>Agent Details</h1>
       <div>
         {data && data.length > 0 ? (
           data.map((item, index) => (
-            <div key={index}>
-              {/* Render your data here */}
-              {JSON.stringify(item)}
+            <div key={index} className="agent-details">
+              <h3>Agent Info</h3>
+              <ul>
+                <li><strong>UUID:</strong> {item.uuid}</li>
+                <li><strong>Callback to:</strong> {item.callbackto}</li>
+                <li><strong>Callback Frequency:</strong> {item.callbackfrequency} seconds</li>
+                <li><strong>Callback Jitter:</strong> {item.callbackjitter}%</li>
+                <li><strong>Agent IP:</strong> {item.agentip || 'N/A'}</li>
+                <li><strong>Username:</strong> {item.username || 'N/A'}</li>
+                <li><strong>Hostname:</strong> {item.hostname || 'N/A'}</li>
+                <li><strong>Status:</strong> {item.status || 'Unknown'}</li>
+              </ul>
             </div>
           ))
         ) : (
