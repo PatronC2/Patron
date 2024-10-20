@@ -8,6 +8,7 @@ const Agent = () => {
   const { auth } = useContext(AuthContext);
   const [data, setData] = useState(null);
   const [commands, setCommands] = useState([]);
+  const [keylogs, setKeylogs] = useState([]);
   const [activeTab, setActiveTab] = useState('commands');
   const [newCommand, setNewCommand] = useState('');
   const [error, setError] = useState(null);
@@ -25,6 +26,7 @@ const Agent = () => {
       const queryParam = getQueryParam('agt');
       const agentResponse = await axios.get(`/api/agent/${queryParam}`);
       const commandsResponse = await axios.get(`/api/commands/${queryParam}`);
+      const keylogsResonse = await axios.get(`/api/keylog/${queryParam}`);
       const responseData = agentResponse.data.data;
 
       if (responseData) {
@@ -37,6 +39,11 @@ const Agent = () => {
         setCommands(commandsResponse.data.data);
       } else {
         setCommands([]);
+      }
+      if (keylogsResonse.data.data) {
+        setKeylogs(keylogsResonse.data.data);
+      } else {
+        setKeylogs([]);
       }
     } catch (err) {
       setError(err.message);
@@ -110,10 +117,20 @@ const Agent = () => {
   );
 
   const renderKeylogsTab = () => (
-    <div>
-      <p>TODO.</p>
+    <div className="keylogs-list">
+      {keylogs.length === 0 ? (
+        <p>No keylogs available.</p>
+      ) : (
+        <ul>
+          {keylogs.map((keylog) => (
+            <li key={keylog.uuid}>
+              {keylog.keys || 'No keys recorded'}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
-  );
+  );  
 
   const renderConfigurationTab = () => (
     <div>

@@ -585,6 +585,7 @@ func Keylog(uuid string) []types.KeyReceive {
 		"Keys"
 	FROM "Keylog"
 	WHERE "UUID"= $1
+	ORDER BY "KeylogID" asc;
 	`
 	row, err := db.Query(FetchSQL, uuid)
 	if err != nil {

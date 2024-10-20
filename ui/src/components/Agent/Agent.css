@@ -92,3 +92,22 @@
 .command-input button:hover {
     background-color: #575757;
 }
+
+.keylogs-list {
+    height: 400px;
+    overflow-y: auto; 
+}
+
+.keylogs-list ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.keylogs-list li {
+    margin-bottom: 10px;
+    color: #000;
+}
+  
+.keylogs-list p {
+    color: #000;
+}
