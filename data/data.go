@@ -545,7 +545,7 @@ func Payloads() []types.Payload {
 	return payloadAppend
 }
 
-func Agent(uuid string) (infoAppend []types.Agent, err error) {
+func GetAgentCommands(uuid string) (infoAppend []types.Agent, err error) {
 	var info types.Agent
 	FetchSQL := `
 	SELECT 
@@ -556,6 +556,7 @@ func Agent(uuid string) (infoAppend []types.Agent, err error) {
 		"Output"
 	FROM "Commands"
 	WHERE "UUID"= $1 AND "CommandType" = 'shell'
+	ORDER BY "CommandID" asc;
 	`
 	row, err := db.Query(FetchSQL, uuid)
 	if err != nil {

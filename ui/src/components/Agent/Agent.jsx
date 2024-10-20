@@ -19,8 +19,9 @@ const Agent = () => {
   const fetchData = async () => {
     try {
       const queryParam = getQueryParam('agt');
-      const response = await axios.get(`/api/oneagent/${queryParam}`);
-      const responseData = response.data.data;
+      const agentResponse = await axios.get(`/api/agent/${queryParam}`);
+      const commandsResponse = await axios.get(`/api/commands/${queryParam}`);
+      const responseData = agentResponse.data.data;
 
       if (responseData) {
         setData(responseData);
@@ -53,7 +54,6 @@ const Agent = () => {
     <div className="agent-container">
       <h1>Agent Details</h1>
       <div className="agent-details">
-        <h3>Agent Info</h3>
         <ul>
           <li><strong>UUID:</strong> {data.uuid}</li>
           <li><strong>Callback to:</strong> {data.callbackto}</li>
@@ -64,6 +64,9 @@ const Agent = () => {
           <li><strong>Hostname:</strong> {data.hostname || 'N/A'}</li>
           <li><strong>Status:</strong> {data.status || 'Unknown'}</li>
         </ul>
+      </div>
+      <div className="agent-commands">
+        <strong>Commands: {commandsResponse}</strong>
       </div>
     </div>
   );
