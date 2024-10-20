@@ -601,3 +601,28 @@ func Keylog(uuid string) []types.KeyReceive {
 	}
 	return infoAppend
 }
+
+func FetchOne(uuid string) (infoAppend []types.ConfigAgent, err error) {
+	var info types.ConfigAgent
+	FetchSQL := `
+	SELECT 
+		"UUID","CallBackToIP","CallBackFeq","CallBackJitter"
+	FROM "Agents" WHERE "UUID"=$1
+	`
+	row, err := db.Query(FetchSQL, uuid)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer row.Close()
+	for row.Next() {
+		row.Scan(
+			&info.Uuid,
+			&info.CallbackTo,
+			&info.CallbackFrequency,
+			&info.CallbackJitter,
+		)
+	}
+	infoAppend = append(infoAppend, info)
+	logger.Logf(logger.Info, "%v\n", info)
+	return infoAppend, err
+}

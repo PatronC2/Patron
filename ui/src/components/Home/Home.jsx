@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import axios from '../../api/axios';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import AuthContext from '../../context/AuthProvider';
 import './Home.css';
 
@@ -10,6 +11,8 @@ const Home = () => {
   const [hostnameFilter, setHostnameFilter] = useState('');
   const [ipFilter, setIpFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('Online');
+
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const fetchData = async () => {
     try {
@@ -42,6 +45,10 @@ const Home = () => {
     (ipFilter === '' || item.agentip.includes(ipFilter)) &&
     (statusFilter === 'All' || item.status === statusFilter)
   );
+
+  const handleRowClick = (uuid) => {
+    navigate(`/agent?agt=${uuid}`);
+  };
 
   if (error) {
     return <div>Error: {error}</div>;
@@ -97,7 +104,11 @@ const Home = () => {
           </thead>
           <tbody>
             {filteredData.map(item => (
-              <tr key={item.uuid}>
+              <tr
+                key={item.uuid}
+                onClick={() => handleRowClick(item.uuid)}
+                className="go-to-agent"
+              >
                 <td>{item.uuid.substring(0, 6)}</td>
                 <td>{item.hostname}</td>
                 <td>{item.agentip}</td>

@@ -1,5 +1,30 @@
-.home-container {
-    padding: 1rem;
-}
-
-
+.agent-container {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+  }
+  
+  .agent-details {
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 5px;
+  }
+  
+  .agent-details h3 {
+    margin-top: 0;
+  }
+  
+  .agent-details ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .agent-details ul li {
+    margin: 8px 0;
+  }
+  
+  .agent-details ul li strong {
+    display: inline-block;
+    width: 150px;
+  }
+  
