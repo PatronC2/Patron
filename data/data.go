@@ -80,7 +80,7 @@ func InitDatabase() {
 		"CommandType" TEXT,
 		"Command" TEXT,
 		"CommandUUID" TEXT,
-		"Output" TEXT DEFAULT 'Unknown',
+		"Output" TEXT DEFAULT 'Pending',
 		FOREIGN KEY ("UUID") REFERENCES "Agents" ("UUID")
 	);
 	`

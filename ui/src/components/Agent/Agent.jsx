@@ -92,7 +92,7 @@ const Agent = () => {
           {commands.map((cmd) => (
             <li key={cmd.commanduuid}>
               <strong>Command:</strong> {cmd.command} <br />
-              <strong>Output:</strong> {cmd.output !== '' ? cmd.output : '(No output)'} <br />
+              <strong>Output:</strong> {cmd.output !== '' ? cmd.output : 'Success (No output)'} <br />
             </li>
           ))}
         </ul>
