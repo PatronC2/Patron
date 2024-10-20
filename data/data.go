@@ -200,7 +200,15 @@ func CreatePayload(uuid string, name string, description string, ServerIP string
 func FetchOneAgent(uuid string) (info types.ConfigAgent, err error ) {
 	FetchSQL := `
 	SELECT 
-		"UUID","CallBackToIP","CallBackFeq","CallBackJitter"
+		"UUID",
+		"CallBackToIP",
+		"CallBackFeq",
+		"CallBackJitter",
+		"Status",
+		"Ip",
+		"User",
+		"Hostname",
+		"LastCallBack"
 	FROM "Agents" WHERE "UUID"=$1
 	`
 	row, err := db.Query(FetchSQL, uuid)
@@ -214,6 +222,10 @@ func FetchOneAgent(uuid string) (info types.ConfigAgent, err error ) {
 			&info.CallbackTo,
 			&info.CallbackFrequency,
 			&info.CallbackJitter,
+			&info.Status,
+			&info.AgentIP,
+			&info.Username,
+			&info.Hostname,
 		)
 		switch err {
 		case sql.ErrNoRows:
