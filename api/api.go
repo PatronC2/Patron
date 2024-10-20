@@ -69,7 +69,7 @@ func main() {
     r.GET("/api/groupagents", api.Auth(readRoles), api.GetGroupAgents)
     r.GET("/api/groupagents/:ip", api.Auth(readRoles), api.GetGroupAgentsByIP)
     r.GET("/api/agent/:agt", api.Auth(readRoles), api.GetOneAgentByUUID)
-    r.GET("/api/commands/:agt", api.Auth(readRoles), api.GetAgentByUUID)
+    r.GET("/api/commands/:agt", api.Auth(readRoles), api.GetAgentCommandsByUUID)
     r.GET("/api/keylog/:agt", api.Auth(readRoles), api.GetKeylogHandler)
     r.GET("/api/payloads", api.Auth(readRoles), api.GetPayloadsHandler)
 
