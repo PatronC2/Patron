@@ -111,3 +111,10 @@
 .keylogs-list p {
     color: #000;
 }
+
+input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+}

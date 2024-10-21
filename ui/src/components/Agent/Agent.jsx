@@ -14,7 +14,15 @@ const Agent = () => {
   const [error, setError] = useState(null);
   const commandListRef = useRef(null);
 
+  // States related to Configuration tab
+  const [callbackTo, setCallbackTo] = useState('');
+  const [callbackFreq, setCallbackFreq] = useState('');
+  const [callbackJitter, setCallbackJitter] = useState('');
+  const [saveError, setSaveError] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+
   const location = useLocation();
+  const lockedTabs = ['configuration', 'notes'];
 
   const getQueryParam = (param) => {
     const searchParams = new URLSearchParams(location.search);
@@ -22,6 +30,10 @@ const Agent = () => {
   };
 
   const fetchData = async () => {
+    if (lockedTabs.includes(activeTab)) {
+      return;
+    }
+
     try {
       const queryParam = getQueryParam('agt');
       const agentResponse = await axios.get(`/api/agent/${queryParam}`);
@@ -31,6 +43,9 @@ const Agent = () => {
 
       if (responseData) {
         setData(responseData);
+        setCallbackTo(responseData.callbackto || '');
+        setCallbackFreq(responseData.callbackfrequency || '');
+        setCallbackJitter(responseData.callbackjitter || '');
       } else {
         setError('No data found');
       }
@@ -50,6 +65,21 @@ const Agent = () => {
     }
   };
 
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(() => {
+      fetchData();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [location.search, activeTab]);
+
+  useEffect(() => {
+    if (commandListRef.current) {
+      commandListRef.current.scrollTop = commandListRef.current.scrollHeight;
+    }
+  }, [commands]);
+
   const handleSendCommand = async () => {
     try {
       const queryParam = getQueryParam('agt');
@@ -68,19 +98,36 @@ const Agent = () => {
   };
 
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(() => {
-      fetchData();
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [location.search]);
-
-  useEffect(() => {
     if (commandListRef.current) {
       commandListRef.current.scrollTop = commandListRef.current.scrollHeight;
     }
   }, [commands]);
+
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      setSaveError(null);
+
+      const queryParam = getQueryParam('agt');
+      const updateBody = {
+        callbackserver: callbackTo,
+        callbackfreq: callbackFreq,
+        callbackjitter: callbackJitter,
+      };
+
+      await axios.post(`/api/updateagent/${queryParam}`, updateBody, {
+        headers: {
+          Authorization: `Bearer ${auth.token}`,
+        },
+      });
+
+      setIsSaving(false);
+      fetchData();
+    } catch (err) {
+      setSaveError('Failed to save configuration');
+      setIsSaving(false);
+    }
+  };
 
   if (error) {
     return <div>Error: {error}</div>;
@@ -134,7 +181,43 @@ const Agent = () => {
 
   const renderConfigurationTab = () => (
     <div>
-      <p>TODO.</p>
+      <h3>Configuration</h3>
+      <form>
+        <div className="form-group">
+          <label htmlFor="callbackTo">Callback to</label>
+          <input
+            type="text"
+            id="callbackTo"
+            value={callbackTo}
+            onChange={(e) => setCallbackTo(e.target.value)}
+            disabled={isSaving}
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="callbackFreq">Callback Frequency (seconds)</label>
+          <input
+            type="number"
+            id="callbackFreq"
+            value={callbackFreq}
+            onChange={(e) => setCallbackFreq(e.target.value)}
+            disabled={isSaving}
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="callbackJitter">Callback Jitter (%)</label>
+          <input
+            type="number"
+            id="callbackJitter"
+            value={callbackJitter}
+            onChange={(e) => setCallbackJitter(e.target.value)}
+            disabled={isSaving}
+          />
+        </div>
+        <button type="button" onClick={handleSave} disabled={isSaving}>
+          {isSaving ? 'Saving...' : 'Save'}
+        </button>
+      </form>
+      {saveError && <p className="error">{saveError}</p>}
     </div>
   );
 
