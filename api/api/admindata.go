@@ -4,11 +4,11 @@ import (
     "database/sql"
     "fmt"
     "time"
+    "os"
 
     "golang.org/x/crypto/bcrypt"
 	"github.com/PatronC2/Patron/lib/logger"
     "github.com/PatronC2/Patron/types"
-    "github.com/PatronC2/Patron/data"
 )
 
 var db *sql.DB
@@ -19,14 +19,15 @@ type User struct {
 
 func OpenDatabase(){ 
 	var err error
-	var port int
-	host := data.GoDotEnvVariable("DB_HOST")
-	fmt.Sscan(data.GoDotEnvVariable("DB_PORT"), &port)
-	user := data.GoDotEnvVariable("DB_USER")
-	password := data.GoDotEnvVariable("DB_PASS")
-	dbname := data.GoDotEnvVariable("DB_NAME")
+    host := os.Getenv("DB_HOST")
+    port := os.Getenv("DB_PORT")
+    user := os.Getenv("DB_USER")
+    password := os.Getenv("DB_PASS")
+    dbname := os.Getenv("DB_NAME")
 
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+    logger.Logf(logger.Info, "Got environment variables host=%s, port=%s, user=%s, dbname=%s (password not shown)", host, port, user, dbname)
+
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
     "password=%s dbname=%s sslmode=disable",
     host, port, user, password, dbname)
 	for {
@@ -63,8 +64,8 @@ func (u *User) CheckPassword(password string) error {
 }
 
 func CreateAdminUser() error {
-    defaultUserName := data.GoDotEnvVariable("ADMIN_AUTH_USER")
-    defaultUserPass := data.GoDotEnvVariable("ADMIN_AUTH_PASS")
+    defaultUserName := os.Getenv("ADMIN_AUTH_USER")
+    defaultUserPass := os.Getenv("ADMIN_AUTH_PASS")
     
     user := &User{
         User: types.User{
@@ -148,9 +149,9 @@ func createUser(user *User) error {
     CreateUserSQL := `
 	INSERT INTO users (username, password_hash, role)
 	VALUES ($1, $2, $3)
-	ON CONFLICT (username) DO NOTHING;
+	ON CONFLICT (username) 
+	DO UPDATE SET password_hash = EXCLUDED.password_hash, role = EXCLUDED.role;
 	`
-
     logger.Logf(logger.Info, "Username %v\n", user.Username)
     logger.Logf(logger.Info, "User password hash %v\n", user.PasswordHash)
     logger.Logf(logger.Info, "User role %v\n", user.Role)
@@ -158,9 +159,8 @@ func createUser(user *User) error {
     if err != nil {
         logger.Logf(logger.Error, "Failed to create user: %v\n", err)
     }
-    logger.Logf(logger.Info, "User %v created\n", user.Username)
+    logger.Logf(logger.Info, "User %v created or updated\n", user.Username)
 	return err
-
 }
 
 func GetUsers() ([]User, error) {

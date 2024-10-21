@@ -1,0 +1,24 @@
+FROM golang:1.22.3 AS build
+
+ARG WEBSERVER_PORT
+
+WORKDIR /app
+COPY . ./
+RUN go mod tidy
+RUN go build -o app ./api/api.go
+
+FROM alpine:latest
+#this seems dumb, but the libc from the build stage is not the same as the alpine libc
+#create a symlink to where it expects it since they are compatible. https://stackoverflow.com/a/35613430/3105368
+RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
+WORKDIR /app
+COPY --from=build /app/app ./
+RUN apk add docker-cli curl
+
+EXPOSE ${WEBSERVER_PORT}
+
+HEALTHCHECK --interval=15s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -fL http://localhost:${WEBSERVER_PORT}/files || exit 1
+
+# Command to run the API
+CMD ["./app"]

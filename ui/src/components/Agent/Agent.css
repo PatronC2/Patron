@@ -1,0 +1,120 @@
+.agent-container {
+    display: flex;
+    gap: 20px;
+}
+
+.agent-details {
+    flex: 1;
+    background-color: #66a4b0;
+    padding: 20px;
+    border-radius: 5px;
+    width: 600px;
+}
+
+.agent-tabs {
+    flex: 2;
+    background-color: red;
+    padding: 20px;
+    border-radius: 5px;
+    width: 600px;
+    height: 600px;
+}
+
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tabs button {
+    padding: 10px 20px;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+.tabs button.active {
+    background-color: #141414;
+    color: #fff;
+}
+
+.tabs button:hover {
+    background-color: #575757;
+    color: #fff;
+}
+
+.tab-content {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 5px;
+    color: #000;
+}
+
+.commands-list {
+    height: 400px;
+    overflow-y: auto; 
+}
+
+.commands-list ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.commands-list li {
+    margin-bottom: 10px;
+    color: #000;
+}
+  
+.commands-list p {
+    color: #000;
+}
+
+.command-input {
+    margin-top: 20px;
+}
+
+.command-input input {
+    padding: 10px;
+    margin-right: 10px;
+    width: 300px;
+}
+
+.command-input button {
+    padding: 10px 20px;
+    background-color: #66a4b0;
+    border: none;
+    cursor: pointer;
+    color: white;
+    font-weight: bold;
+}
+
+.command-input button:hover {
+    background-color: #575757;
+}
+
+.keylogs-list {
+    height: 400px;
+    overflow-y: auto; 
+}
+
+.keylogs-list ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.keylogs-list li {
+    margin-bottom: 10px;
+    color: #000;
+}
+  
+.keylogs-list p {
+    color: #000;
+}
+
+input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+}

