@@ -99,6 +99,7 @@ services:
       - ./certs/server.key:/etc/nginx/ssl/nginx.key
     environment:
       - REACT_SERVER=patron_c2_frontend:${PORT}
+      - REACT_APP_NGINX_PORT=${REACT_APP_NGINX_PORT}
       - API_SERVER=patron_c2_api:${WEBSERVER_PORT}
     networks:
       - internal_c2_network
