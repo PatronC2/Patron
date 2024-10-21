@@ -7,6 +7,7 @@ import Home from './Home/Home';
 import Payloads from './Payloads/Payloads';
 import Profile from './Profile/Profile';
 import Users from './Users/Users';
+import Agent from './Agent/Agent';
 import { AuthProvider } from '../context/AuthProvider';
 import AuthContext from '../context/AuthProvider';
 
@@ -54,6 +55,7 @@ const MainContent = ({ isLoggedIn, onSuccessfulLogin }) => {
         <Route path="/payloads" element={isLoggedIn ? <Payloads /> : <Navigate to="/login" />} />
         <Route path="/profile" element={isLoggedIn ? <Profile /> : <Navigate to="/profile" />} />
         <Route path="/users" element={isLoggedIn ? <Users /> : <Navigate to="/login" />} />
+        <Route path="/agent" element={isLoggedIn ? <Agent /> : <Navigate to="/agent" />} />
       </Routes>
     </div>
   );

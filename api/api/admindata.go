@@ -149,9 +149,9 @@ func createUser(user *User) error {
     CreateUserSQL := `
 	INSERT INTO users (username, password_hash, role)
 	VALUES ($1, $2, $3)
-	ON CONFLICT (username) DO NOTHING;
+	ON CONFLICT (username) 
+	DO UPDATE SET password_hash = EXCLUDED.password_hash, role = EXCLUDED.role;
 	`
-
     logger.Logf(logger.Info, "Username %v\n", user.Username)
     logger.Logf(logger.Info, "User password hash %v\n", user.PasswordHash)
     logger.Logf(logger.Info, "User role %v\n", user.Role)
@@ -159,9 +159,8 @@ func createUser(user *User) error {
     if err != nil {
         logger.Logf(logger.Error, "Failed to create user: %v\n", err)
     }
-    logger.Logf(logger.Info, "User %v created\n", user.Username)
+    logger.Logf(logger.Info, "User %v created or updated\n", user.Username)
 	return err
-
 }
 
 func GetUsers() ([]User, error) {

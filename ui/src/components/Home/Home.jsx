@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import axios from '../../api/axios';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import AuthContext from '../../context/AuthProvider';
 import './Home.css';
 
@@ -7,6 +8,11 @@ const Home = () => {
   const { auth } = useContext(AuthContext);
   const [data, setData] = useState([]);
   const [error, setError] = useState(null);
+  const [hostnameFilter, setHostnameFilter] = useState('');
+  const [ipFilter, setIpFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Online');
+
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const fetchData = async () => {
     try {
@@ -15,7 +21,7 @@ const Home = () => {
       if (Array.isArray(responseData)) {
         setData(responseData);
       } else {
-        setError('Data format is not as expected');
+        setError('No Agents, yet...');
       }
     } catch (err) {
       setError(err.message);
@@ -34,6 +40,16 @@ const Home = () => {
   const onlineCount = data.filter(item => item.status === 'Online').length;
   const offlineCount = data.filter(item => item.status === 'Offline').length;
 
+  const filteredData = data.filter(item =>
+    (hostnameFilter === '' || item.hostname.includes(hostnameFilter)) &&
+    (ipFilter === '' || item.agentip.includes(ipFilter)) &&
+    (statusFilter === 'All' || item.status === statusFilter)
+  );
+
+  const handleRowClick = (uuid) => {
+    navigate(`/agent?agt=${uuid}`);
+  };
+
   if (error) {
     return <div>Error: {error}</div>;
   }
@@ -51,7 +67,32 @@ const Home = () => {
           <h2>{offlineCount}</h2>
         </div>
       </div>
-      {data.length > 0 ? (
+
+      {/* Filters */}
+      <div className="filters">
+        <input
+          type="text"
+          placeholder="Filter by Hostname"
+          value={hostnameFilter}
+          onChange={e => setHostnameFilter(e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="Filter by Agent IP"
+          value={ipFilter}
+          onChange={e => setIpFilter(e.target.value)}
+        />
+        <select
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+        >
+          <option value="All">All</option>
+          <option value="Online">Online</option>
+          <option value="Offline">Offline</option>
+        </select>
+      </div>
+
+      {filteredData.length > 0 ? (
         <table>
           <thead>
             <tr>
@@ -62,8 +103,12 @@ const Home = () => {
             </tr>
           </thead>
           <tbody>
-            {data.map(item => (
-              <tr key={item.uuid}>
+            {filteredData.map(item => (
+              <tr
+                key={item.uuid}
+                onClick={() => handleRowClick(item.uuid)}
+                className="go-to-agent"
+              >
                 <td>{item.uuid.substring(0, 6)}</td>
                 <td>{item.hostname}</td>
                 <td>{item.agentip}</td>

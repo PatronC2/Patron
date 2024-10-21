@@ -198,13 +198,14 @@ DB_USER=$dbuser
 DB_PASS=$dbpass
 DB_NAME=$dbname
 DOCKER_INTERNAL=$dockerinternal
-REACT_APP_NGINX_PORT=$nginxport
-REACT_APP_NGINX_IP=$nginxip
-REACT_SERVER_IP=$reactclientip
 ADMIN_AUTH_USER=$patronUsername
 ADMIN_AUTH_PASS=$patronPassword
 JWT_KEY=$JWT_KEY
 REPO_DIR=$REPO_DIR
+REACT_APP_C2SERVER_PORT=$c2serverport
+REACT_APP_NGINX_PORT=$nginxport
+REACT_APP_NGINX_IP=$nginxip
+REACT_SERVER_IP=$reactclientip
 HOST=$reactclientip
 PORT=$reactclientport
 EOF
@@ -220,7 +221,7 @@ echo "Visit https://$nginxip:$nginxport for Web"
 echo ""
 echo "C2 Server on $nginxip:$c2serverport"
 echo ""
-echo "See .env and ui/.env to tweak environment variables (not advised and restart required)"
+echo "See .env to tweak environment variables (not advised and restart required)"
 echo "Run 'docker compose down --rmi all -v --remove-orphans' to stop"
 echo "Run 'docker compose up -d' to restart"
 echo ""

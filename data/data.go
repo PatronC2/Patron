@@ -80,7 +80,7 @@ func InitDatabase() {
 		"CommandType" TEXT,
 		"Command" TEXT,
 		"CommandUUID" TEXT,
-		"Output" TEXT DEFAULT 'Unknown',
+		"Output" TEXT DEFAULT 'Pending',
 		FOREIGN KEY ("UUID") REFERENCES "Agents" ("UUID")
 	);
 	`
@@ -136,7 +136,22 @@ func InitDatabase() {
     if err != nil {
         log.Fatal(err.Error())
     }
-    log.Println("Users table initialized")
+    logger.Logf(logger.Info, "Users table initialized")
+
+	NotesSQL := `
+	CREATE TABLE IF NOT EXISTS "notes" (
+		"NoteID" SERIAL PRIMARY KEY,
+		"UUID" TEXT NOT NULL,
+		"Note" TEXT,
+		FOREIGN KEY ("UUID") REFERENCES "Agents" ("UUID"),
+		UNIQUE ("UUID")
+	);
+	`
+	_, err = db.Exec(NotesSQL)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	logger.Logf(logger.Info, "Commands table initialized\n")
 
 }
 
@@ -200,7 +215,14 @@ func CreatePayload(uuid string, name string, description string, ServerIP string
 func FetchOneAgent(uuid string) (info types.ConfigAgent, err error ) {
 	FetchSQL := `
 	SELECT 
-		"UUID","CallBackToIP","CallBackFeq","CallBackJitter"
+		"UUID",
+		"CallBackToIP",
+		"CallBackFeq",
+		"CallBackJitter",
+		"Status",
+		"Ip",
+		"User",
+		"Hostname"
 	FROM "Agents" WHERE "UUID"=$1
 	`
 	row, err := db.Query(FetchSQL, uuid)
@@ -214,6 +236,10 @@ func FetchOneAgent(uuid string) (info types.ConfigAgent, err error ) {
 			&info.CallbackTo,
 			&info.CallbackFrequency,
 			&info.CallbackJitter,
+			&info.Status,
+			&info.AgentIP,
+			&info.Username,
+			&info.Hostname,
 		)
 		switch err {
 		case sql.ErrNoRows:
@@ -534,7 +560,7 @@ func Payloads() []types.Payload {
 	return payloadAppend
 }
 
-func Agent(uuid string) (infoAppend []types.Agent, err error) {
+func GetAgentCommands(uuid string) (infoAppend []types.Agent, err error) {
 	var info types.Agent
 	FetchSQL := `
 	SELECT 
@@ -545,6 +571,7 @@ func Agent(uuid string) (infoAppend []types.Agent, err error) {
 		"Output"
 	FROM "Commands"
 	WHERE "UUID"= $1 AND "CommandType" = 'shell'
+	ORDER BY "CommandID" asc;
 	`
 	row, err := db.Query(FetchSQL, uuid)
 	if err != nil {
@@ -573,6 +600,7 @@ func Keylog(uuid string) []types.KeyReceive {
 		"Keys"
 	FROM "Keylog"
 	WHERE "UUID"= $1
+	ORDER BY "KeylogID" asc;
 	`
 	row, err := db.Query(FetchSQL, uuid)
 	if err != nil {
@@ -615,3 +643,44 @@ func FetchOne(uuid string) (infoAppend []types.ConfigAgent, err error) {
 	logger.Logf(logger.Info, "%v\n", info)
 	return infoAppend, err
 }
+
+func GetAgentNotes(uuid string) (infoAppend []types.Note, err error) {
+	var info types.Note
+	FetchSQL := `
+	SELECT 
+		"NoteID",
+		"Note"
+	FROM "notes" WHERE "UUID"=$1
+	`
+	row, err := db.Query(FetchSQL, uuid)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer row.Close()
+	for row.Next() {
+		row.Scan(
+			&info.NoteID,
+			&info.Note,
+		)
+	}
+	infoAppend = append(infoAppend, info)
+	logger.Logf(logger.Info, "%v\n", info)
+	return infoAppend, err
+}
+
+func PutAgentNotes(uuid string, note string) error {
+    UpsertSQL := `
+    INSERT INTO "notes" ("UUID", "Note")
+    VALUES ($1, $2)
+    ON CONFLICT ("UUID")
+    DO UPDATE SET "Note" = $2;
+    `
+    _, err := db.Exec(UpsertSQL, uuid, note)
+    if err != nil {
+        log.Fatalln(err)
+        return err
+    }
+    logger.Logf(logger.Info, "Notes for UUID %v have been updated in DB\n", uuid)
+    return nil
+}
+

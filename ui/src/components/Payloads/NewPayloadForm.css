@@ -40,3 +40,10 @@ select {
 .notification.error {
     background-color: red;
 }
+
+.loading-indicator {
+    font-size: 1.2em;
+    color: #555;
+    text-align: center;
+    margin: 20px 0;
+}
