@@ -26,3 +26,8 @@ type UpdateUserRequest struct {
     NewPassword *string `json:"newPassword,omitempty"`
     NewRole     *string `json:"newRole,omitempty"`
 }
+
+type Note struct {
+    NoteID int `json:"noteid"`
+    Note string `json:"note"`
+}

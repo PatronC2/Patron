@@ -64,6 +64,7 @@ func main() {
     r.GET("/api/deleteagent/:agt", api.Auth(writeRoles), api.KillAgentHandler)
     r.POST("/api/payload", api.Auth(writeRoles), api.CreatePayloadHandler)
     r.POST("/api/command/:agt", api.Auth(writeRoles), api.SendCommandHandler)
+    r.PUT("/api/notes/:agt", api.Auth(writeRoles), api.PutNoteHandler)
 
     // GET requests to non-admin areas use Auth(readRoles)
     r.GET("/api/agents", api.Auth(readRoles), api.GetAgentsHandler)
@@ -73,6 +74,7 @@ func main() {
     r.GET("/api/commands/:agt", api.Auth(readRoles), api.GetAgentCommandsByUUID)
     r.GET("/api/keylog/:agt", api.Auth(readRoles), api.GetKeylogHandler)
     r.GET("/api/payloads", api.Auth(readRoles), api.GetPayloadsHandler)
+    r.GET("/api/notes/:agt", api.Auth(readRoles), api.GetNoteHandler)
 
     // Functions which can only modify / view their own user
     r.PUT("/api/profile/password", api.Auth(readRoles), api.UpdatePasswordHandler)

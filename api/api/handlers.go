@@ -257,3 +257,29 @@ func CreatePayloadHandler(c *gin.Context) {
 		}
 	}
 }
+
+func GetNoteHandler (c *gin.Context) {
+	agentParam := c.Param("agt")
+	notes, err := data.GetAgentNotes(agentParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error", "details": err.Error()})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"data": notes})
+	}
+}
+
+func PutNoteHandler (c *gin.Context) {
+	agentParam := c.Param("agt")
+	var body map[string]string
+	if err := c.BindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+	notes := body["notes"]
+	err := data.PutAgentNotes(agentParam, notes)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error", "details": err.Error()})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"message": "Success"})
+	}
+}

