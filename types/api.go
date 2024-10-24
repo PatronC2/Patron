@@ -31,3 +31,9 @@ type Note struct {
     NoteID int `json:"noteid"`
     Note string `json:"note"`
 }
+
+type Tag struct {
+    TagID int `json:"tagid"`
+    Key string `json:"key"`
+    Value string `json:"value"`
+}

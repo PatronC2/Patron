@@ -151,7 +151,22 @@ func InitDatabase() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	logger.Logf(logger.Info, "Commands table initialized\n")
+	logger.Logf(logger.Info, "Notes table initialized\n")
+
+	TagsSQL := `
+	CREATE TABLE IF NOT EXISTS "tags" (
+		"TagID" SERIAL PRIMARY KEY,
+		"UUID" TEXT NOT NULL,
+		"Key" TEXT NOT NULL,
+		"Value" TEXT,
+		FOREIGN KEY ("UUID") REFERENCES "Agents" ("UUID")
+	);
+	`
+	_, err = db.Exec(TagsSQL)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	logger.Logf(logger.Info, "tags table initialized\n")
 
 }
 
@@ -684,3 +699,55 @@ func PutAgentNotes(uuid string, note string) error {
     return nil
 }
 
+func GetAgentTags(uuid string) (infoAppend []types.Tag, err error) {
+	var info types.Tag
+	FetchSQL := `
+	SELECT
+		"TagID",
+		"Key",
+		"Value"
+	FROM "tags" WHERE "UUID"=$1
+	`
+	rows, err := db.Query(FetchSQL, uuid)
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err := rows.Scan(
+			&info.TagID,
+			&info.Key,
+			&info.Value,
+		)
+		if err != nil {
+			log.Println("Error scanning row:", err)
+			return nil, err
+		}
+		infoAppend = append(infoAppend, info)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Println("Error iterating over rows:", err)
+		return nil, err
+	}
+
+	logger.Logf(logger.Info, "Tags for %v: %+v\n", uuid, infoAppend)
+	return infoAppend, nil
+}
+
+
+func PutAgentTags(uuid string, key string, value string) error {
+    PutTagsSQL := `
+    INSERT INTO "tags" ("UUID", "Key", "Value")
+    VALUES ($1, $2, $3)
+    `
+    _, err := db.Exec(PutTagsSQL, uuid, key, value)
+    if err != nil {
+        log.Fatalln(err)
+        return err
+    }
+    logger.Logf(logger.Info, "Tags for %v have been updated in DB\n", uuid)
+    return nil
+}
