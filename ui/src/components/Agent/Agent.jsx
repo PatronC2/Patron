@@ -296,53 +296,70 @@ const Agent = () => {
     }
   };
 
+  const handleDeleteTag = async (tagId) => {
+    try {
+      const response = await axios.delete(`/api/tag/${tagId}`);
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      setTags(tags.filter(tag => tag.tagid !== tagId));
+    } catch (error) {
+      console.error('Error deleting tag:', error);
+    }
+  };
+  
+
   const renderTagsTab = () => {
     return (
       <div>
-        <h3>Current Tags</h3>
+      <div style={{ maxHeight: '300px', overflowY: 'auto' }}> {/* Set your desired height */}
         <table>
           <thead>
             <tr>
-              <th>Tag ID</th>
               <th>Key</th>
               <th>Value</th>
+              <th>Action</th> {/* Added a header for actions */}
             </tr>
           </thead>
           <tbody>
             {tags.map(tag => (
               <tr key={tag.tagid}>
-                <td>{tag.tagid}</td>
                 <td>{tag.key}</td>
                 <td>{tag.value || 'N/A'}</td>
+                <td>
+                  <button onClick={() => handleDeleteTag(tag.tagid)}>Delete</button> {/* Delete button */}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
-  
-        <h3>Add a New Tag</h3>
-        <form onSubmit={handleAddTag}>
-          <div>
-            <label>Key: </label>
-            <input
-              type="text"
-              value={newKey}
-              onChange={(e) => setNewKey(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label>Value: </label>
-            <input
-              type="text"
-              value={newValue}
-              onChange={(e) => setNewValue(e.target.value)}
-            />
-          </div>
-          <button type="submit">Add Tag</button>
-        </form>
       </div>
-    );
-  };
+
+      <h3>Add / Modify Tags</h3>
+      <form onSubmit={handleAddTag}>
+        <div>
+          <label>Key: </label>
+          <input
+            type="text"
+            value={newKey}
+            onChange={(e) => setNewKey(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label>Value: </label>
+          <input
+            type="text"
+            value={newValue}
+            onChange={(e) => setNewValue(e.target.value)}
+          />
+        </div>
+        <button type="submit">Add Tag</button>
+      </form>
+    </div>
+  );
+};
   
   return (
     <div className="agent-container">

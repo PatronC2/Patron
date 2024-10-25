@@ -52,7 +52,7 @@
 }
 
 .commands-list {
-    height: 400px;
+    height: 600px;
     overflow-y: auto; 
 }
 
@@ -94,7 +94,7 @@
 }
 
 .keylogs-list {
-    height: 400px;
+    height: 600px;
     overflow-y: auto; 
 }
 

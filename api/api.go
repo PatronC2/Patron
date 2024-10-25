@@ -66,7 +66,7 @@ func main() {
     r.POST("/api/command/:agt", api.Auth(writeRoles), api.SendCommandHandler)
     r.PUT("/api/notes/:agt", api.Auth(writeRoles), api.PutNoteHandler)
     r.PUT("/api/tag", api.Auth(writeRoles), api.PutTagsHandler)
-    r.DELETE("/api/tag", api.Auth(writeRoles), api.DeleteTagHandler)
+    r.DELETE("/api/tag/:tagid", api.Auth(writeRoles), api.DeleteTagHandler)
 
     // GET requests to non-admin areas use Auth(readRoles)
     r.GET("/api/agents", api.Auth(readRoles), api.GetAgentsHandler)
