@@ -29,6 +29,11 @@ const Agent = () => {
   const location = useLocation();
   const lockedTabs = ['configuration', 'notes'];
 
+  // States related to Tags tab
+  const [tags, setTags] = useState([]);
+  const [newKey, setNewKey] = useState('');
+  const [newValue, setNewValue] = useState('');
+
   const getQueryParam = (param) => {
     const searchParams = new URLSearchParams(location.search);
     return searchParams.get(param);
@@ -45,6 +50,8 @@ const Agent = () => {
       const commandsResponse = await axios.get(`/api/commands/${queryParam}`);
       const keylogsResponse = await axios.get(`/api/keylog/${queryParam}`);
       const notesResponse = await axios.get(`/api/notes/${queryParam}`);
+      const tagsResponse = await axios.get(`/api/tags/${queryParam}`);
+      const tagsData = tagsResponse.data.tags;
       const responseData = agentResponse.data.data;
 
       if (responseData) {
@@ -70,6 +77,11 @@ const Agent = () => {
         setNotes(notesResponse.data.data[0].note || '');
       } else {
         setNotes('');
+      }
+      if (Array.isArray(tagsData)) {
+        setTags(tagsData);
+      } else {
+        setTags([]);
       }
     } catch (err) {
       setError(err.message);
@@ -265,6 +277,90 @@ const Agent = () => {
     </div>
   );
 
+  const handleAddTag = async (e) => {
+    e.preventDefault();
+    const queryParam = getQueryParam('agt');
+    try {
+      const newTag = {
+        agents: [queryParam],
+        key: newKey,
+        value: newValue
+      };
+
+      const response = await axios.put('/api/tag', newTag);
+      setTags([...tags, { tagid: response.data.tagid, key: newKey, value: newValue }]);
+      setNewKey('');
+      setNewValue('');
+    } catch (error) {
+      console.error("Error adding new tag:", error);
+    }
+  };
+
+  const handleDeleteTag = async (tagId) => {
+    try {
+      const response = await axios.delete(`/api/tag/${tagId}`);
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      setTags(tags.filter(tag => tag.tagid !== tagId));
+    } catch (error) {
+      console.error('Error deleting tag:', error);
+    }
+  };
+  
+
+  const renderTagsTab = () => {
+    return (
+      <div>
+      <div style={{ maxHeight: '300px', overflowY: 'auto' }}> {/* Set your desired height */}
+        <table>
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Value</th>
+              <th>Action</th> {/* Added a header for actions */}
+            </tr>
+          </thead>
+          <tbody>
+            {tags.map(tag => (
+              <tr key={tag.tagid}>
+                <td>{tag.key}</td>
+                <td>{tag.value || 'N/A'}</td>
+                <td>
+                  <button onClick={() => handleDeleteTag(tag.tagid)}>Delete</button> {/* Delete button */}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Add / Modify Tags</h3>
+      <form onSubmit={handleAddTag}>
+        <div>
+          <label>Key: </label>
+          <input
+            type="text"
+            value={newKey}
+            onChange={(e) => setNewKey(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label>Value: </label>
+          <input
+            type="text"
+            value={newValue}
+            onChange={(e) => setNewValue(e.target.value)}
+          />
+        </div>
+        <button type="submit">Add Tag</button>
+      </form>
+    </div>
+  );
+};
+  
   return (
     <div className="agent-container">
       {/* Agent Details */}
@@ -309,13 +405,20 @@ const Agent = () => {
           >
             Notes
           </button>
+          <button 
+            className={activeTab === 'tags' ? 'active' : ''}
+            onClick={() => setActiveTab('tags')}>
+            Tags
+          </button>
         </div>
 
+        {/* Tab content */}
         <div className="tab-content">
           {activeTab === 'commands' && renderCommandsTab()}
           {activeTab === 'keys' && renderKeylogsTab()}
           {activeTab === 'configuration' && renderConfigurationTab()}
           {activeTab === 'notes' && renderNotesTab()}
+          {activeTab === 'tags' && renderTagsTab()}
         </div>
       </div>
     </div>

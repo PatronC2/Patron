@@ -159,7 +159,8 @@ func InitDatabase() {
 		"UUID" TEXT NOT NULL,
 		"Key" TEXT NOT NULL,
 		"Value" TEXT,
-		FOREIGN KEY ("UUID") REFERENCES "Agents" ("UUID")
+		FOREIGN KEY ("UUID") REFERENCES "Agents" ("UUID"),
+		UNIQUE ("UUID", "Key")
 	);
 	`
 	_, err = db.Exec(TagsSQL)
@@ -742,6 +743,8 @@ func PutAgentTags(uuid string, key string, value string) error {
     PutTagsSQL := `
     INSERT INTO "tags" ("UUID", "Key", "Value")
     VALUES ($1, $2, $3)
+    ON CONFLICT ("UUID", "Key") DO UPDATE 
+    SET "Value" = EXCLUDED."Value"
     `
     _, err := db.Exec(PutTagsSQL, uuid, key, value)
     if err != nil {
@@ -749,5 +752,19 @@ func PutAgentTags(uuid string, key string, value string) error {
         return err
     }
     logger.Logf(logger.Info, "Tags for %v have been updated in DB\n", uuid)
+    return nil
+}
+
+func DeleteTag(tagid string) error {
+    DeleteTagsSQL := `
+    DELETE FROM "tags"
+	WHERE "TagID" = $1
+    `
+    _, err := db.Exec(DeleteTagsSQL, tagid)
+    if err != nil {
+        log.Fatalln(err)
+        return err
+    }
+    logger.Logf(logger.Info, "Tag %d has been deleted\n", tagid)
     return nil
 }

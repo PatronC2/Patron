@@ -321,3 +321,12 @@ func PutTagsHandler(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{"message": "Tags updated successfully for all agents"})
 }
 
+func DeleteTagHandler (c *gin.Context) {
+	tagid := c.Param("tagid")
+	err := data.DeleteTag(tagid)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error"})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"message": "deleted tag successfully"})
+	}
+}

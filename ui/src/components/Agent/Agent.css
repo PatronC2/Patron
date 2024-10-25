@@ -17,7 +17,7 @@
     padding: 20px;
     border-radius: 5px;
     width: 600px;
-    height: 600px;
+    height: 800px;
 }
 
 .tabs {
@@ -52,7 +52,7 @@
 }
 
 .commands-list {
-    height: 400px;
+    height: 600px;
     overflow-y: auto; 
 }
 
@@ -94,7 +94,7 @@
 }
 
 .keylogs-list {
-    height: 400px;
+    height: 600px;
     overflow-y: auto; 
 }
 
