@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/gob"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -25,8 +26,15 @@ func IsValidUUID(u string) bool {
 
 func handleconn(connection net.Conn) {
 	for {
-
-		text, _ := bufio.NewReader(connection).ReadString('\n')
+		text, err := bufio.NewReader(connection).ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				logger.Logf(logger.Info, "Connection closed by client\n")
+			} else {
+				logger.Logf(logger.Error, "Error reading from connection: %v\n", err)
+			}
+			break
+		}
 		message := strings.Split(text, "\n")
 		// fmt.Println(message[0])
 		if message[0] != "" {

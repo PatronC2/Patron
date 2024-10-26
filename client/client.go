@@ -91,8 +91,12 @@ func main() {
 		logger.Logf(logger.Debug, "Struct formed\n")
 		err = dec.Decode(instruct)
 		if err != nil {
-			logger.Logf(logger.Error, "Error Occured: \n", err)
+			logger.Logf(logger.Error, "Error decoding from server: %v", err)
+			beacon.Close()
+			time.Sleep(time.Second * 2)
+			goto RETRY
 		}
+		
 
 		logger.Logf(logger.Debug, "%s\n", instruct.UpdateAgentConfig.CallbackTo)
 		// Update agent config when possible
