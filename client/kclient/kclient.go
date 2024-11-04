@@ -271,7 +271,6 @@ func receiveKeyInstructions(beacon net.Conn) *types.KeySend {
 }
 
 func sendCachedKeys(beacon net.Conn, keyinstruct *types.KeySend) {
-	logger.Logf(logger.Debug, "Currently sending cache: %v", cache)
 	keyResponse := types.KeyReceive{
 		Uuid: keyinstruct.Uuid,
 		Keys: cache,
