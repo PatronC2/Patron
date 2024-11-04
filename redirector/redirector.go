@@ -25,97 +25,157 @@ var (
 	keyFile        = "certs/server.key"
 )
 
-// Buffer to store client data by UUID
+// Map to buffer data by UUID for each client
 var buffer sync.Map
 
 func main() {
-	initializeLogging()
-	cert, err := loadTLSCertificate(certFile, keyFile)
+	enableLogging := true
+	logger.EnableLogging(enableLogging)
+
+	// Set the log file
+	logFileName := "logs/forwarder.log"
+	err := logger.SetLogFile(logFileName)
 	if err != nil {
-		logger.Logf(logger.Warning, "Failed to load certificate: %v", err)
+		fmt.Printf("Error setting log file: %v\n", err)
 		return
 	}
 
-	tlsConfig := &tls.Config{Certificates: []tls.Certificate{cert}}
-	listener, err := startListener(forwarderIP, forwarderPort, tlsConfig)
+	// Load TLS certificate for the listener
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		logger.Logf(logger.Warning, "Failed to start listener: %v", err)
+		logger.Logf(logger.Warning, "Failed to load certificate: %v", err)
+	}
+
+	// TLS configuration for incoming connections
+	tlsConfig := &tls.Config{Certificates: []tls.Certificate{cert}}
+
+	// Start listening on forwarder IP and port
+	listener, err := tls.Listen("tcp", forwarderIP+":"+forwarderPort, tlsConfig)
+	if err != nil {
+		logger.Logf(logger.Warning, "Failed to start listener: %v\n", err)
 		return
 	}
 	defer listener.Close()
+	logger.Logf(logger.Info, "Forwarder listening on %s:%s", forwarderIP, forwarderPort)
 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			logger.Logf(logger.Warning, "Failed to accept connection: %v", err)
+			logger.Logf(logger.Warning, "Failed to accept connection: %v\n", err)
 			continue
 		}
 		go handleClientConnection(conn)
 	}
 }
 
-func initializeLogging() {
-	logger.EnableLogging(true)
-	if err := logger.SetLogFile("logs/forwarder.log"); err != nil {
-		fmt.Printf("Error setting log file: %v\n", err)
-	}
-}
-
-func loadTLSCertificate(certFile, keyFile string) (tls.Certificate, error) {
-	return tls.LoadX509KeyPair(certFile, keyFile)
-}
-
-func startListener(ip, port string, tlsConfig *tls.Config) (net.Listener, error) {
-	addr := ip + ":" + port
-	listener, err := tls.Listen("tcp", addr, tlsConfig)
-	if err == nil {
-		logger.Logf(logger.Info, "Forwarder listening on %s", addr)
-	}
-	return listener, err
-}
-
 func handleClientConnection(clientConn net.Conn) {
-	defer clientConn.Close()
+    for {
+        mainConn, err := connectToMainServer()
+        if err != nil {
+            logger.Logf(logger.Warning, "Main server unavailable, retrying in 5 seconds: %v\n", err)
+            time.Sleep(5 * time.Second)
+            continue
+        }
+        defer clientConn.Close()
+        defer mainConn.Close()
+        clientAddr := clientConn.RemoteAddr().String()
+        logger.Logf(logger.Info, "Accepted connection from %s\n", clientAddr)
 
-	for {
-		mainConn, err := connectToMainServer()
-		if err != nil {
-			logger.Logf(logger.Warning, "Main server unavailable, retrying in 5 seconds: %v", err)
-			time.Sleep(5 * time.Second)
-			continue
-		}
-		defer mainConn.Close()
+        // Read data from client
+        data := make([]byte, 4096)
+        n, err := clientConn.Read(data)
+        if err != nil {
+            logger.Logf(logger.Warning, "Read error from client %s: %v\n", clientAddr, err)
+            return
+        }
+        clientData := string(data[:n])
 
-		clientAddr := clientConn.RemoteAddr().String()
-		logger.Logf(logger.Info, "Accepted connection from %s", clientAddr)
+        // Parse UUID directly from clientData
+        messageParts := strings.SplitN(clientData, ":", 3)
+        if len(messageParts) < 3 {
+            logger.Logf(logger.Warning, "Invalid data format from client %s", clientAddr)
+            return
+        }
 
-		clientData, clientUUID, err := readInitialCallback(clientConn, clientAddr)
-		if err != nil {
-			return
-		}
-		buffer.Store(clientUUID, clientData)
+        clientUUID := messageParts[0]
+        if clientUUID == "" {
+            logger.Logf(logger.Warning, "No UUID provided in client data from %s", clientAddr)
+            return
+        }
+        buffer.Store(clientUUID, clientData)
 
-		if err := forwardCallbackToMainServer(clientUUID, clientData, mainConn); err != nil {
-			logger.Logf(logger.Warning, "Failed to forward to main server for client %s: %v", clientUUID, err)
-			return
-		}
+        // Forward raw string data to main server
+        err = forwardToMainServer(clientUUID, clientData, mainConn)
+        if err != nil {
+            logger.Logf(logger.Warning, "Failed to forward to main server for client %s: %v\n", clientUUID, err)
+            return
+        }
 
-		if err := sendCommandToClient(clientConn, clientUUID); err != nil {
-			logger.Logf(logger.Warning, "Failed to send response to client %s: %v", clientUUID, err)
-			return
-		}
+        // Retrieve response data from buffer
+        response, ok := buffer.Load(clientUUID)
+        if !ok {
+            logger.Logf(logger.Info, "No data available, sending empty response")
+            gob.NewEncoder(clientConn).Encode([]byte{}) // Send empty response
+        } else {
+            logger.Logf(logger.Info, "Sending data to client: %v", response)
+            gob.NewEncoder(clientConn).Encode(response)
+            buffer.Delete(clientUUID) // Clear buffer after successful send
+        }
 
-		if result, err := decodeClientResult(clientConn); err == nil {
-			processCommandResult(clientUUID, result, mainConn)
-		} else {
-			logger.Logf(logger.Warning, "Failed to decode GiveServerResult from client %s: %v", clientAddr, err)
-		}
-		break
-	}
+        // Decode the result from the client
+        result := types.GiveServerResult{}
+        dec := gob.NewDecoder(clientConn)
+        if err := dec.Decode(&result); err != nil {
+            logger.Logf(logger.Warning, "Failed to decode GiveServerResult from client %s: %v\n", clientAddr, err)
+            return
+        }
+        logger.Logf(logger.Info, "Received GiveServerResult from client %s: %v\n", clientAddr, result)
+        
+        // Handle the result as needed
+        processCommandResult(clientUUID, result, mainConn)
+        break
+    }
 }
 
+// forwardToMainServer forwards client data to the main server and buffers the server's response
+func forwardToMainServer(clientUUID string, clientData string, mainConn *tls.Conn) error {
+
+    // Send raw client data as a string to the main server
+    _, err := mainConn.Write([]byte(clientData))
+    if err != nil {
+        logger.Logf(logger.Warning, "Failed to send data to main server: %v\n", err)
+        return err
+    }
+
+    // Decode the server's response into a byte array or a string if expected
+    dec := gob.NewDecoder(mainConn)
+    var serverResponse types.GiveAgentCommand
+    if err := dec.Decode(&serverResponse); err != nil {
+        logger.Logf(logger.Warning, "Failed to decode response from main server: %v\n", err)
+        return err
+    }
+
+    logger.Logf(logger.Info, "Received server response: %v", serverResponse)
+    buffer.Store(clientUUID, serverResponse)
+    return nil
+}
+
+// processCommandResult processes and forwards the command result to the main server
+func processCommandResult(clientUUID string, result types.GiveServerResult, mainConn *tls.Conn) {
+    logger.Logf(logger.Debug, "Sending command response: %v", result)
+
+    // Use gob Encoder to send result directly over the connection
+    encoder := gob.NewEncoder(mainConn)
+    err := encoder.Encode(result)
+    if err != nil {
+        logger.Logf(logger.Error, "Error sending response: %v", err)
+    }
+    logger.Logf(logger.Debug, "Sent encoded response")
+}
+
+// connectToMainServer establishes a TLS connection to the main server
 func connectToMainServer() (*tls.Conn, error) {
-	cert, err := loadTLSCertificate(certFile, keyFile)
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load certificate: %w", err)
 	}
@@ -123,71 +183,14 @@ func connectToMainServer() (*tls.Conn, error) {
 	return tls.Dial("tcp", mainServerIP+":"+mainServerPort, tlsConfig)
 }
 
-func readInitialCallback(clientConn net.Conn, clientAddr string) (string, string, error) {
-	data := make([]byte, 4096)
-	n, err := clientConn.Read(data)
-	if err != nil {
-		logger.Logf(logger.Warning, "Read error from client %s: %v", clientAddr, err)
-		return "", "", err
+// extractUUIDFromData extracts the UUID from the data message for use as the client identifier
+func extractUUIDFromData(data []byte) string {
+	// Split the data based on delimiter and validate
+	parts := strings.Split(string(data), ":")
+	if len(parts) > 0 && IsValidUUID(parts[0]) {
+		return parts[0]
 	}
-
-	clientData := string(data[:n])
-	messageParts := strings.SplitN(clientData, ":", 3)
-	if len(messageParts) < 3 {
-		logger.Logf(logger.Warning, "Invalid data format from client %s", clientAddr)
-		return "", "", fmt.Errorf("invalid data format")
-	}
-
-	clientUUID := messageParts[0]
-	if clientUUID == "" {
-		logger.Logf(logger.Warning, "No UUID provided in client data from %s", clientAddr)
-		return "", "", fmt.Errorf("no UUID provided")
-	}
-
-	return clientData, clientUUID, nil
-}
-
-func forwardCallbackToMainServer(clientUUID, clientData string, mainConn *tls.Conn) error {
-	if _, err := mainConn.Write([]byte(clientData)); err != nil {
-		logger.Logf(logger.Warning, "Failed to send data to main server: %v", err)
-		return err
-	}
-
-	var serverResponse types.GiveAgentCommand
-	if err := gob.NewDecoder(mainConn).Decode(&serverResponse); err != nil {
-		logger.Logf(logger.Warning, "Failed to decode response from main server: %v", err)
-		return err
-	}
-
-	buffer.Store(clientUUID, serverResponse)
-	return nil
-}
-
-func sendCommandToClient(clientConn net.Conn, clientUUID string) error {
-	response, ok := buffer.Load(clientUUID)
-	if !ok {
-		logger.Logf(logger.Info, "No data available, sending empty response")
-		return gob.NewEncoder(clientConn).Encode([]byte{})
-	}
-
-	logger.Logf(logger.Info, "Sending data to client: %v", response)
-	if err := gob.NewEncoder(clientConn).Encode(response); err == nil {
-		buffer.Delete(clientUUID)
-	}
-	return nil
-}
-
-func decodeClientResult(clientConn net.Conn) (types.GiveServerResult, error) {
-	var result types.GiveServerResult
-	err := gob.NewDecoder(clientConn).Decode(&result)
-	return result, err
-}
-
-func processCommandResult(clientUUID string, result types.GiveServerResult, mainConn *tls.Conn) {
-	logger.Logf(logger.Debug, "Sending command response: %v", result)
-	if err := gob.NewEncoder(mainConn).Encode(result); err != nil {
-		logger.Logf(logger.Error, "Error sending response: %v", err)
-	}
+	return ""
 }
 
 func IsValidUUID(u string) bool {
