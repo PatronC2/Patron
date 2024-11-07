@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
-    "slices"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -18,12 +21,15 @@ import (
 
 // Forwarder settings
 var (
-	mainServerIP   = os.Getenv("MAIN_SERVER_IP")
-	mainServerPort = os.Getenv("MAIN_SERVER_PORT")
-	forwarderIP    = os.Getenv("FORWARDER_IP")
-	forwarderPort  = os.Getenv("FORWARDER_PORT")
-	certFile       = "certs/server.pem"
-	keyFile        = "certs/server.key"
+	mainServerIP    = os.Getenv("MAIN_SERVER_IP")
+	mainServerPort  = os.Getenv("MAIN_SERVER_PORT")
+	forwarderIP     = os.Getenv("FORWARDER_IP")
+	forwarderPort   = os.Getenv("FORWARDER_PORT")
+	apiIP           = os.Getenv("API_IP")
+	apiPort         = os.Getenv("API_PORT")
+	linkingKey      = os.Getenv("LINKING_KEY")
+	certFile        = "certs/server.pem"
+	keyFile         = "certs/server.key"
 )
 
 // Map to buffer data by UUID for each client
@@ -60,6 +66,16 @@ func main() {
 	defer listener.Close()
 	logger.Logf(logger.Info, "Forwarder listening on %s:%s", forwarderIP, forwarderPort)
 
+	go func() {
+		for {
+			err := sendStatusUpdate()
+			if err != nil {
+				logger.Logf(logger.Warning, "Error sending status update: %v", err)
+			}
+			time.Sleep(5 * time.Minute)
+		}
+	}()
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -68,6 +84,41 @@ func main() {
 		}
 		go handleClientConnection(conn)
 	}
+}
+
+func sendStatusUpdate() error {
+    // Lets the teamserver know this redirector is still online
+	url := fmt.Sprintf("https://%s:%s/api/redirector/status", apiIP, apiPort)
+	data := map[string]string{
+		"linking_key": linkingKey,
+	}
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("failed to marshal JSON: %w", err)
+	}
+
+	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("received non-OK response: %s", resp.Status)
+	}
+
+	return nil
 }
 
 func handleClientConnection(clientConn net.Conn) {

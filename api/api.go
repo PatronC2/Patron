@@ -89,6 +89,9 @@ func main() {
     r.POST("/api/test/agent", api.Auth(writeRoles), api.CreateAgentHandler)
     r.DELETE("/api/test/agent", api.Auth(writeRoles), api.DeleteAgentHandler)
 
+    // Redirector callbacks
+    r.PUT("/api/redirector/status", api.RedirectorStatusHandler)
+
     // Start server
     apiPort := os.Getenv("WEBSERVER_PORT")
     if !strings.HasPrefix(apiPort, ":") {

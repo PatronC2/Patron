@@ -54,6 +54,8 @@ func CreateRedirectorHandler(c *gin.Context) {
 #!/bin/bash -xe
 
 linking_key="%s"
+api_ip="%s"
+api_port="%s"
 tar_file="redirector.tar"
 
 rm -f $tar_file
@@ -96,7 +98,7 @@ fi
 
 docker image rm patron-redirector
 
-wget --no-check-certificate https://%s:%s/files/$tar_file
+wget --no-check-certificate https://$api_ip:$api_port/files/$tar_file
 docker load -i $tar_file
 docker run -d \
 	-p %s:%s \
@@ -104,6 +106,9 @@ docker run -d \
 	-e MAIN_SERVER_PORT="%s" \
 	-e FORWARDER_IP="%s" \
 	-e FORWARDER_PORT="%s" \
+	-e LINKING_KEY="$linking_key" \
+	-e API_IP="$api_ip" \
+	-e API_PORT="$api_port" \
 	-v ./logs:/app/logs \
 	patron-redirector`, newRedirectorID, api_ip, api_port, redirector_port, body["ListenPort"], body["ForwardIP"], body["ForwardPort"], body["ListenIP"], body["ListenPort"])
 
@@ -115,9 +120,24 @@ docker run -d \
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error", "details": err.Error()})
 		} else {
-			data.CreateRedirector(newRedirectorID, body["name"], body["description"], body["ForwardIP"], body["ForwardPort"], body["ListenIP"], body["ListenPort"])
+			data.CreateRedirector(newRedirectorID, body["Name"], body["Description"], body["ForwardIP"], body["ForwardPort"], body["ListenIP"], body["ListenPort"])
 			c.Header("Content-Disposition", "attachment; filename=redirector_script.sh")
 			c.Data(http.StatusOK, "application/x-sh", []byte(script))
 		}
 	}
+}
+
+func RedirectorStatusHandler(c *gin.Context) {
+	var body map[string]string
+	if err := c.BindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+	linkingKey := body["linking_key"]
+	err := data.SetRedirectorStatus(linkingKey)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error"})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"message": "Success"})
+	}	
 }

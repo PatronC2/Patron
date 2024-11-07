@@ -178,8 +178,19 @@ func InitDatabase() {
 		"ForwardPort" TEXT,
 		"ListenIP" TEXT NOT NULL DEFAULT '0.0.0.0',
 		"ListenPort" TEXT NOT NULL,
-		"Status" TEXT NOT NULL DEFAULT 'Unlinked'
+		"LastReport" TIMESTAMP
 	);
+	CREATE OR REPLACE VIEW redirector_status AS
+	SELECT 
+		"RedirectorID",
+		"Name",
+		"LastReport",
+		CASE 
+			WHEN "LastReport" IS NULL OR "LastReport" < NOW() - INTERVAL '10 minutes' THEN 'Offline'
+			ELSE 'Online'
+		END AS "Status"
+	FROM 
+		"redirectors";
 	`
 	_, err = db.Exec(RedirectorsSQL)
 	if err != nil {
@@ -845,6 +856,21 @@ func CreateRedirector(RedirectorID string, Name string, Description string, Forw
         log.Fatalln(err)
         return err
     }
-    logger.Logf(logger.Info, "Error submitting agent to db\n")
+    logger.Logf(logger.Info, "Successfully submitted redirector to db\n")
+    return nil
+}
+
+func SetRedirectorStatus(RedirectorID string) (err error) {
+	UpdateSQL := `
+	UPDATE "redirectors"
+	SET "LastReport" = NOW()
+	WHERE "RedirectorID" = $1;
+	`
+	_, err = db.Query(UpdateSQL, RedirectorID)
+    if err != nil {
+        log.Fatalln(err)
+        return err
+    }
+    logger.Logf(logger.Info, "Updated redirector status in the db: %s")
     return nil
 }
