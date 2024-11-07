@@ -19,7 +19,7 @@ func GetRedirectorsHandler(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error"})
 	} else {
-		c.JSON(http.StatusOK, gin.H{"redirectors": redirectors})
+		c.JSON(http.StatusOK, gin.H{"data": redirectors})
 	}
 }
 
@@ -121,7 +121,7 @@ docker run -d \
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error", "details": err.Error()})
 		} else {
 			data.CreateRedirector(newRedirectorID, body["Name"], body["Description"], body["ForwardIP"], body["ForwardPort"], body["ListenIP"], body["ListenPort"])
-			c.Header("Content-Disposition", "attachment; filename=redirector_script.sh")
+			c.Header("Content-Disposition", "attachment; filename=redirector_install.sh")
 			c.Data(http.StatusOK, "application/x-sh", []byte(script))
 		}
 	}
