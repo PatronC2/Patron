@@ -95,8 +95,6 @@ else
 	sudo apt install -y wget
 fi
 
-docker image rm patron-redirector
-
 wget --no-check-certificate https://$api_ip:$api_port/files/$tar_file
 docker load -i $tar_file
 docker run -d \
