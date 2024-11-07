@@ -169,6 +169,24 @@ func InitDatabase() {
 	}
 	logger.Logf(logger.Info, "tags table initialized\n")
 
+	RedirectorsSQL := `
+	CREATE TABLE IF NOT EXISTS "redirectors" (
+		"RedirectorID" TEXT PRIMARY KEY,
+		"Name" TEXT NOT NULL,
+		"Description" TEXT,
+		"ForwardIP" TEXT,
+		"ForwardPort" TEXT,
+		"ListenIP" TEXT NOT NULL DEFAULT '0.0.0.0',
+		"ListenPort" TEXT NOT NULL,
+		"Status" TEXT NOT NULL DEFAULT 'Unlinked'
+	);
+	`
+	_, err = db.Exec(RedirectorsSQL)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	logger.Logf(logger.Info, "Redirectors table initialized\n")
+
 }
 
 func CreateAgent(uuid string, CallBackToIP string, CallBackFeq string, CallBackJitter string, Ip string, User string, Hostname string) {
@@ -766,5 +784,67 @@ func DeleteTag(tagid string) error {
         return err
     }
     logger.Logf(logger.Info, "Tag %d has been deleted\n", tagid)
+    return nil
+}
+
+func GetRedirectors() (redirectors []types.Redirector, err error) {
+	var data types.Redirector
+	FetchSQL := `
+	SELECT
+		"RedirectorID",
+		"Name",
+		"Description",
+		"ForwardIP",
+		"ForwardPort",
+		"ListenIP",
+		"ListenPort",
+		"Status"
+	FROM "redirectors"
+	`
+	rows, err := db.Query(FetchSQL)
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err := rows.Scan(
+			&data.RedirectorID,
+			&data.Name,
+			&data.Description,
+			&data.ForwardIP,
+			&data.ForwardPort,
+			&data.ListenIP,
+			&data.ListenPort,
+			&data.Status,
+		)
+		if err != nil {
+			log.Println("Error scanning row:", err)
+			return nil, err
+		}
+		redirectors = append(redirectors, data)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Println("Error iterating over rows:", err)
+		return nil, err
+	}
+
+	logger.Logf(logger.Info, "Current redirectors: %+v\n", redirectors)
+	return redirectors, nil
+}
+
+func CreateRedirector(RedirectorID string, Name string, Description string, ForwardIP string, ForwardPort string, ListenIP string, ListenPort string) (err error) {
+	FetchSQL := `
+    INSERT INTO redirectors ("RedirectorID", "Name", "Description", "ForwardIP", "ForwardPort", "ListenIP", "ListenPort")
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`
+	_, err = db.Query(FetchSQL, RedirectorID, Name, Description, ForwardIP, ForwardPort, ListenIP, ListenPort)
+    if err != nil {
+        log.Fatalln(err)
+        return err
+    }
+    logger.Logf(logger.Info, "Error submitting agent to db\n")
     return nil
 }
