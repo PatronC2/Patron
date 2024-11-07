@@ -184,6 +184,11 @@ func InitDatabase() {
 	SELECT 
 		"RedirectorID",
 		"Name",
+		"Description",
+		"ForwardIP",
+		"ForwardPort",
+		"ListenIP",
+		"ListenPort",
 		"LastReport",
 		CASE 
 			WHEN "LastReport" IS NULL OR "LastReport" < NOW() - INTERVAL '10 minutes' THEN 'Offline'
@@ -810,7 +815,7 @@ func GetRedirectors() (redirectors []types.Redirector, err error) {
 		"ListenIP",
 		"ListenPort",
 		"Status"
-	FROM "redirectors"
+	FROM "redirector_status"
 	`
 	rows, err := db.Query(FetchSQL)
 	if err != nil {
@@ -871,6 +876,6 @@ func SetRedirectorStatus(RedirectorID string) (err error) {
         log.Fatalln(err)
         return err
     }
-    logger.Logf(logger.Info, "Updated redirector status in the db: %s")
+    logger.Logf(logger.Info, "Updated redirector status in the db\n")
     return nil
 }
