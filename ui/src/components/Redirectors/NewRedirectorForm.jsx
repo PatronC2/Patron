@@ -111,7 +111,7 @@ const NewRedirectorForm = ({ fetchData, setActiveTab }) => {
                     <input type="text" id="ListenIP" name="ListenIP" value={formData.ListenIP} onChange={handleChange} />
                 </div>
                 <div>
-                    <label htmlFor="ListenPort">Forward Port:</label>
+                    <label htmlFor="ListenPort">Listen Port:</label>
                     <input type="text" id="ListenPort" name="ListenPort" value={formData.ListenPort} onChange={handleChange} />
                 </div>
                 <button type="submit">Create Redirector</button>
