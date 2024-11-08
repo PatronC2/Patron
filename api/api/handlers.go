@@ -1,12 +1,9 @@
 package api
 
 import (
-	"os"
-	"os/exec"
 	"fmt"
 	"net/http"
 	"regexp"
-	"strings"
 
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/types"
@@ -179,83 +176,6 @@ func DeleteAgentHandler(c *gin.Context) {
 	data.DeleteAgent(body.UUID)
 
 	c.JSON(http.StatusOK, gin.H{"data": "success"})
-}
-
-func CreatePayloadHandler(c *gin.Context) {
-	publickey := os.Getenv("PUBLIC_KEY")
-	repo_dir := os.Getenv("REPO_DIR")
-
-	newPayID := uuid.New().String()
-	var body map[string]string
-	if err := c.BindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
-		return
-	}
-	vnm := regexp.MustCompile(`^[a-zA-Z0-9]{1,9}$`)
-	vname := vnm.Match([]byte(body["name"]))
-	vserverip, _ := regexp.MatchString(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`, body["serverip"])
-	vserverport, _ := regexp.MatchString(`^(6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`, body["serverport"])
-	vfrequency := regexp.MustCompile(`^\d{1,5}$`)
-	vcallbackfrequency := vfrequency.Match([]byte(body["callbackfrequency"]))
-	vjitter := regexp.MustCompile(`^\d{1,2}$`)
-	vcallbackjitter := vjitter.Match([]byte(body["callbackjitter"]))
-
-	if !vserverip {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Server IP"})
-	} else if !vserverport {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Server Port"})
-	} else if !vcallbackfrequency {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Callback Frequency, Max 99999"})
-	} else if !vcallbackjitter {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Callback Jitter, Max 99"})
-	} else if !vname {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Name, [a-zA-Z]{1,9}"})
-	} else { // else if body["type"] != "original" || body["type"] != "wkeys" {
-		// 	res.SendString("Invalid type")
-		// }
-
-		tag := strings.Split(newPayID, "-")
-		concat := body["name"] + "_" + tag[0]
-		var commandString string
-
-		if body["type"] == "original" {
-			commandString = fmt.Sprintf(
-				"docker run --rm -v %s:/build -w /build golang:1.22.3 "+
-				"go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o /build/payloads/%s /build/client/client.go",
-				repo_dir,
-				body["serverip"],
-				body["serverport"],
-				body["callbackfrequency"],
-				body["callbackjitter"],
-				publickey,
-				concat,
-			)
-		} else if body["type"] == "wkeys" {
-			commandString = fmt.Sprintf(
-				"docker run --rm -v %s:/build -w /build golang:1.22.3 "+
-				"go build -trimpath -ldflags \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" -o /build/payloads/%s /build/client/kclient/kclient.go",
-				repo_dir,
-				body["serverip"],
-				body["serverport"],
-				body["callbackfrequency"],
-				body["callbackjitter"],
-				publickey,
-				concat,
-			)
-		}
-		fmt.Printf("Body")
-		fmt.Printf("Running command: %s", commandString)
-		cmd := exec.Command("sh", "-c", commandString)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		err := cmd.Run()
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error", "details": err.Error()})
-		} else {
-			data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat) // from web
-			c.JSON(http.StatusOK, gin.H{"data": "success"})
-		}
-	}
 }
 
 func GetNoteHandler (c *gin.Context) {
