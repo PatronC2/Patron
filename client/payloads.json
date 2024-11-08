@@ -1,6 +1,6 @@
 {
     "linux/privileged": {
-        "type": "Linux Keys",
+        "type": "Linux With Keylogger",
         "description": "requires root",
         "code_path": "linux/privileged/client.go",
         "flags": "-trimpath -ldflags",

@@ -77,6 +77,7 @@ func main() {
     r.GET("/api/commands/:agt", api.Auth(readRoles), api.GetAgentCommandsByUUID)
     r.GET("/api/keylog/:agt", api.Auth(readRoles), api.GetKeylogHandler)
     r.GET("/api/payloads", api.Auth(readRoles), api.GetPayloadsHandler)
+    r.GET("/api/payloadconfs", api.Auth(readRoles), api.GetConfigurationsHandler)
     r.GET("/api/notes/:agt", api.Auth(readRoles), api.GetNoteHandler)
     r.GET("/api/tags/:agt", api.Auth(readRoles), api.GetTagsHandler)
     r.GET("/api/redirectors", api.Auth(readRoles), api.GetRedirectorsHandler)

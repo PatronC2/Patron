@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from '../../api/axios';
 import AuthContext from '../../context/AuthProvider';
 import './NewPayloadForm.css';
@@ -13,13 +13,43 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        type: 'original',
+        type: '',
         serverip: `${PATRON_C2_IP}`,
         serverport: `${PATRON_C2_PORT}`,
         callbackfrequency: '300',
         callbackjitter: '80',
     });
+    const [availableTypes, setAvailableTypes] = useState([]);
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const fetchTypes = async () => {
+            try {
+                const response = await axios.get('/api/payloadconfs', {
+                    headers: {
+                        'Authorization': `${auth.accessToken}`
+                    }
+                });
+                
+                const types = Object.entries(response.data).map(([key, value]) => ({
+                    value: key,
+                    label: value.type
+                }));
+                
+                setAvailableTypes(types);
+                setFormData(prevData => ({
+                    ...prevData,
+                    type: types[0]?.value || ''
+                }));
+            } catch (error) {
+                console.error('Error fetching payload types:', error);
+                setNotification('Error fetching payload types.');
+                setNotificationType('error');
+            }
+        };
+
+        fetchTypes();
+    }, [auth.accessToken]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -89,8 +119,11 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
                 <div>
                     <label htmlFor="type">Type:</label>
                     <select id="type" name="type" value={formData.type} onChange={handleChange}>
-                        <option value="wkeys">Keylogger (requires root)</option>
-                        <option value="original">No Keylogger</option>
+                        {availableTypes.map((type) => (
+                            <option key={type.value} value={type.value}>
+                                {type.label}
+                            </option>
+                        ))}
                     </select>
                 </div>
                 <div>
