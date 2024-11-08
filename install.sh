@@ -26,6 +26,7 @@ function set_global_default_variable {
    reactclientport="8081"
    c2serverip=""
    c2serverport="9000"
+   redirectorport="9000"
    dockerinternal="172.18.0"
    nginxip=""
    nginxport="8443"
@@ -208,6 +209,7 @@ REACT_APP_NGINX_IP=$nginxip
 REACT_SERVER_IP=$reactclientip
 HOST=$reactclientip
 PORT=$reactclientport
+REDIRECTOR_PORT=$redirectorport
 EOF
 
 echo "Cooking the Steak..."

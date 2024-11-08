@@ -26,8 +26,16 @@ variable "UI" {
   default = "patron-ui"
 }
 
+variable "REDIRECTOR" {
+  default = "patron-redirector"
+}
+
 variable "WEBSERVER_PORT" {
   default = "8000"
+}
+
+variable "REDIRECTOR_PORT" {
+  default = "9000"
 }
 
 variable "REACT_APP_NGINX_PORT" {
@@ -96,6 +104,16 @@ target "ui-local" {
     }
 }
 
+target "redirector-local" {
+    dockerfile = "Dockerfile.redirector"
+    context = "."
+    output = ["type=docker"]
+    tags = ["${REDIRECTOR}:${TAG}"]
+    args = {
+      REDIRECTOR_PORT = "${REDIRECTOR_PORT}"
+    }
+}
+
 target "nginx-release" {
     dockerfile = "Dockerfile.nginx"
     context = "."
@@ -146,10 +164,20 @@ target "ui-release" {
     }
 }
 
+target "redirector-release" {
+    dockerfile = "Dockerfile.redirector"
+    context = "."
+    output = ["type=registry,output=registry.${REGISTRY}/${REDIRECTOR}:${TAG}"]
+    tags = ["${REGISTRY}/${REDIRECTOR}:${TAG}"]
+    args = {
+      REDIRECTOR_PORT = "${REDIRECTOR_PORT}"
+    }
+}
+
 group "local" {
-    targets = ["nginx-local", "postgres-local", "api-local", "ui-local", "server-local"]
+    targets = ["nginx-local", "postgres-local", "api-local", "ui-local", "server-local", "redirector-local"]
 }
 
 group "default" {
-    targets = ["nginx-release", "postgres-local", "api-release", "ui-release", "server-release"]
+    targets = ["nginx-release", "postgres-local", "api-release", "ui-release", "server-release", "redirector-release"]
 }

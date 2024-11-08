@@ -67,6 +67,7 @@ func main() {
     r.PUT("/api/notes/:agt", api.Auth(writeRoles), api.PutNoteHandler)
     r.PUT("/api/tag", api.Auth(writeRoles), api.PutTagsHandler)
     r.DELETE("/api/tag/:tagid", api.Auth(writeRoles), api.DeleteTagHandler)
+    r.POST("/api/redirector", api.Auth(writeRoles), api.CreateRedirectorHandler)
 
     // GET requests to non-admin areas use Auth(readRoles)
     r.GET("/api/agents", api.Auth(readRoles), api.GetAgentsHandler)
@@ -78,6 +79,7 @@ func main() {
     r.GET("/api/payloads", api.Auth(readRoles), api.GetPayloadsHandler)
     r.GET("/api/notes/:agt", api.Auth(readRoles), api.GetNoteHandler)
     r.GET("/api/tags/:agt", api.Auth(readRoles), api.GetTagsHandler)
+    r.GET("/api/redirectors", api.Auth(readRoles), api.GetRedirectorsHandler)
 
     // Functions which can only modify / view their own user
     r.PUT("/api/profile/password", api.Auth(readRoles), api.UpdatePasswordHandler)
@@ -86,6 +88,9 @@ func main() {
     // functions strictly meant for testing
     r.POST("/api/test/agent", api.Auth(writeRoles), api.CreateAgentHandler)
     r.DELETE("/api/test/agent", api.Auth(writeRoles), api.DeleteAgentHandler)
+
+    // Redirector callbacks
+    r.PUT("/api/redirector/status", api.RedirectorStatusHandler)
 
     // Start server
     apiPort := os.Getenv("WEBSERVER_PORT")

@@ -18,7 +18,7 @@ func DeleteUserByUsernameHandler(c *gin.Context) {
     defaultUserName := os.Getenv("ADMIN_AUTH_USER")
     username := c.Param("username")
 	if defaultUserName == username {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("user %s cannot be deleted", username)})
+		c.JSON(http.StatusForbidden, gin.H{"error": fmt.Sprintf("user %s cannot be deleted", username)})
 		return
 	}
     userID, err := GetUserIDByUsername(username)
