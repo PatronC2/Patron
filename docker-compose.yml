@@ -49,6 +49,7 @@ services:
       - ./logs:/app/logs
       - ./payloads:/app/payloads
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./client/payloads.json:/app/payloads.json
     networks:
       - internal_c2_network
     depends_on:
