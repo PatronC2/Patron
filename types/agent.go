@@ -83,6 +83,7 @@ type BuildConfig struct {
 	CodePath    string `json:"code_path"`
 	Flags       string `json:"flags"`
 	Environment string `json:"environment"`
+	FileSuffix	string `json:"file_suffix"`
 }
 
 type PayloadConfigurations map[string]BuildConfig
