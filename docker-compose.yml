@@ -41,6 +41,9 @@ services:
       JWT_KEY: ${JWT_KEY}
       ADMIN_AUTH_USER: ${ADMIN_AUTH_USER}
       ADMIN_AUTH_PASS: ${ADMIN_AUTH_PASS}
+      REDIRECTOR_PORT: ${REDIRECTOR_PORT}
+      REACT_APP_NGINX_IP: ${REACT_APP_NGINX_IP}
+      REACT_APP_NGINX_PORT: ${REACT_APP_NGINX_PORT}
     restart: always
     volumes:
       - ./logs:/app/logs
