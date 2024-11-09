@@ -283,4 +283,3 @@ func sendCachedKeys(beacon net.Conn, keyinstruct *types.KeySend) {
 	}
 	logger.Logf(logger.Debug, "Sent cached keys: %v", keyResponse)
 }
-
