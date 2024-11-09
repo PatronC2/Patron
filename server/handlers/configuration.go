@@ -17,7 +17,11 @@ func validateOrCreateAgent(c types.ConfigurationRequest) (types.ConfigurationRes
 		return types.ConfigurationResponse{}, false
 	}
 
+	logger.Logf(logger.Debug, "Beacon ID: %v, Callback IP: %v, Callback Port: %v, Callback Freq: %v, Callback Jitter: %v, Agent IP: %v, Username: %v, Hostname: %v", 
+		c.AgentID, c.ServerIP, c.ServerPort, c.CallbackFrequency, c.CallbackJitter, c.AgentIP, c.Username, c.Hostname)
+
 	if fetch.AgentID == "" && c.MasterKey == "MASTERKEY" {
+		logger.Logf(logger.Info, "Registering new agent: %v", c.AgentID)
 		data.CreateAgent(c.AgentID, c.ServerIP, c.ServerPort, c.CallbackFrequency, c.CallbackJitter, c.AgentIP, c.Username, c.Hostname)
 		data.CreateKeys(c.AgentID)
 		fetch, err = data.FetchOneAgent(c.AgentID)
