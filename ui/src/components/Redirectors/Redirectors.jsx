@@ -9,6 +9,7 @@ const Redirectors = () => {
     const [data, setData] = useState([]);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('current_redirectors');
+    const [statusFilter, setStatusFilter] = useState('Online');
 
     useEffect(() => {
         document.body.classList.add('redirectors-page');
@@ -42,6 +43,13 @@ const Redirectors = () => {
         }
     };
 
+    const activeCount = data.filter(item => item.status === 'Online').length;
+    const inactiveCount = data.filter(item => item.status === 'Offline').length;
+
+    const filteredData = data.filter(item =>
+        (statusFilter === 'All' || item.status === statusFilter)
+    );
+
     const handleTabChange = (tab) => {
         setActiveTab(tab);
     };
@@ -51,7 +59,7 @@ const Redirectors = () => {
     }
 
     return (
-        <div className="main-content">
+        <div className="redirector-container">
             <div className="header">
                 <h1>Redirectors</h1>
                 <button
@@ -67,37 +75,63 @@ const Redirectors = () => {
                     Create New Redirector
                 </button>
             </div>
+
             {activeTab === 'current_redirectors' ? (
-                data.length > 0 ? (
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Description</th>
-                                <th>Forward IP</th>
-                                <th>Forward Port</th>
-                                <th>Listener IP</th>
-                                <th>Listener Port</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                          {data.map(item => (
-                              <tr key={item.id}>
-                                  <td>{item.name}</td>
-                                  <td>{item.description}</td>
-                                  <td>{item.forwardip}</td>
-                                  <td>{item.forwardport}</td>
-                                  <td>{item.listenip}</td>
-                                  <td>{item.listenport}</td>
-                                  <td>{item.status}</td>
-                              </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                ) : (
-                    <p>No Redirectors</p>
-                )
+                <div className="redirector-container">
+                    <h1>Redirectors</h1>
+                    <div className="status-boxes">
+                        <div className="status-box online">
+                        <p>Online</p>
+                        <h2>{activeCount}</h2>
+                        </div>
+                        <div className="status-box offline">
+                        <p>Offline</p>
+                        <h2>{inactiveCount}</h2>
+                        </div>
+                    </div>
+
+                    <div className="filters">
+                        <select
+                            value={statusFilter}
+                            onChange={e => setStatusFilter(e.target.value)}
+                        >
+                            <option value="All">All</option>
+                            <option value="Online">Online</option>
+                            <option value="Offline">Offline</option>
+                        </select>
+                    </div>
+
+                    {filteredData.length > 0 ? (
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Description</th>
+                                    <th>Forward IP</th>
+                                    <th>Forward Port</th>
+                                    <th>Listener IP</th>
+                                    <th>Listener Port</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredData.map(item => (
+                                    <tr key={item.id}>
+                                        <td>{item.name}</td>
+                                        <td>{item.description}</td>
+                                        <td>{item.forwardip}</td>
+                                        <td>{item.forwardport}</td>
+                                        <td>{item.listenip}</td>
+                                        <td>{item.listenport}</td>
+                                        <td>{item.status}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <p>No Redirectors</p>
+                    )}
+                </div>
             ) : (
                 <div>
                     <NewRedirectorForm fetchData={fetchData} setActiveTab={setActiveTab} />
@@ -108,4 +142,3 @@ const Redirectors = () => {
 };
 
 export default Redirectors;
-
