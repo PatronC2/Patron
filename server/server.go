@@ -66,12 +66,21 @@ func (s *Server) Start() {
 
 // When new functionalities are added, add the new types and handlers to the lists in here
 func NewServer() *Server {
+	// Generic request. All requests require this. Do not remove
 	gob.Register(types.Request{})
+	// Request/Response for agent sending and updating configs
     gob.Register(types.ConfigurationRequest{})
     gob.Register(types.ConfigurationResponse{})
+	// Request/Responses for making agents run commands
+	gob.Register(types.CommandRequest{})
+	gob.Register(types.CommandResponse{})
+	gob.Register(types.CommandStatusRequest{})
+
     return &Server{
         handlers: map[types.RequestType]Handler{
-            types.ConfigurationRequestType: &handlers.ConfigurationHandler{},
+            types.ConfigurationRequestType:		&handlers.ConfigurationHandler{},
+			types.CommandRequestType:			&handlers.CommandHandler{},
+			types.CommandStatusRequestType:		&handlers.CommandStatusHandler{},
         },
     }
 }
@@ -88,6 +97,7 @@ func Init() {
 	data.InitDatabase()
 }
 
+// Unique types required in the main. Do not move to types package, it won't work.
 type Handler interface {
 	Handle(request types.Request, conn net.Conn) types.Response
 }

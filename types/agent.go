@@ -57,9 +57,10 @@ type CommandRequest struct {
 
 // CommandResponse is sent back to the agent after a CommandRequest
 type CommandResponse struct {
-	AgentID    string `json:"uuid"`
-	CommandID  string `json:"commandid"`
-	Command    string `json:"command"`
+	AgentID    	string `json:"uuid"`
+	CommandType	string `json:"commandtype"`
+	CommandID  	string `json:"commandid"`
+	Command    	string `json:"command"`
 }
 
 // CommandStatusRequest is sent by agent to tell the server the command outcome

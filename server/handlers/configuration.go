@@ -10,6 +10,8 @@ import (
 
 // All agents use this handler on their first request
 
+type ConfigurationHandler struct{}
+
 func validateOrCreateAgent(c types.ConfigurationRequest) (types.ConfigurationResponse, bool) {
 	fetch, err := data.FetchOneAgent(c.AgentID)
 	if err != nil {
@@ -40,8 +42,6 @@ func validateOrCreateAgent(c types.ConfigurationRequest) (types.ConfigurationRes
 
 	return response, fetch.AgentID == c.AgentID
 }
-
-type ConfigurationHandler struct{}
 
 func (h *ConfigurationHandler) Handle(request types.Request, conn net.Conn) types.Response {
     configReq, ok := request.Payload.(types.ConfigurationRequest)
