@@ -135,8 +135,8 @@ const Agent = () => {
 
       const queryParam = getQueryParam('agt');
       const updateBody = {
-        callbackIP: callbackIP,
-        callbackPort: callbackPort,
+        serverip : callbackIP,
+        serverport: callbackPort,
         callbackfreq: callbackFreq,
         callbackjitter: callbackJitter,
       };
