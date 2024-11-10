@@ -14,7 +14,6 @@ import (
 	"github.com/PatronC2/Patron/lib/common"
 )
 
-
 func (s *Server) handleConnection(conn net.Conn) {
 	defer conn.Close()
 	decoder := gob.NewDecoder(conn)
@@ -22,7 +21,12 @@ func (s *Server) handleConnection(conn net.Conn) {
 
 	for {
 		var request types.Request
-		if err := decoder.Decode(&request); err != nil {
+		err := decoder.Decode(&request)
+		if err != nil {
+			if err.Error() == "EOF" {
+				logger.Logf(logger.Info, "Client disconnected")
+				return
+			}
 			logger.Logf(logger.Error, "Failed to decode request: %v", err)
 			return
 		}
@@ -88,9 +92,6 @@ func Init() {
 	if err != nil {
 		log.Fatalf("Error setting log file: %v\n", err)
 	}
-
-	data.OpenDatabase()
-	data.InitDatabase()
 }
 
 // Unique types required in the main. Do not move to types package, it won't work.
@@ -104,6 +105,8 @@ type Server struct {
 
 func main() {
 	Init()
+	data.OpenDatabase()
+	data.InitDatabase()
 	server := NewServer()
 	server.Start()
 }
