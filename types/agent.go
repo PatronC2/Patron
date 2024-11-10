@@ -30,15 +30,16 @@ type Response struct {
 
 // ConfigurationRequest is sent by agent to start a callback
 type ConfigurationRequest struct {
-	AgentID           string `json:"uuid"`
-	Username          string `json:"username"`
-	Hostname          string `json:"hostname"`
-	AgentIP           string `json:"agentip"`
-	ServerIP          string `json:"serverip"`
-	ServerPort        string `json:"serverport"`
-	CallbackFrequency string `json:"callbackfrequency"`
-	CallbackJitter    string `json:"callbackjitter"`
-	MasterKey         string `json:"masterkey"`
+	AgentID           	string `json:"uuid"`
+	Username          	string `json:"username"`
+	Hostname          	string `json:"hostname"`
+	AgentIP           	string `json:"agentip"`
+	ServerIP          	string `json:"serverip"`
+	ServerPort        	string `json:"serverport"`
+	CallbackFrequency 	string `json:"callbackfrequency"`
+	CallbackJitter    	string `json:"callbackjitter"`
+	MasterKey         	string `json:"masterkey"`
+	Status				string `json:"status"`
 }
 
 // ConfigurationResponse is sent back to agent after a ConfigurationRequest
@@ -71,7 +72,12 @@ type CommandStatusRequest struct {
 	CommandOutput string `json:"output"`
 }
 
-type Agent struct {
+type KeyReceive struct {
+	AgentID	string `json:"uuid"`
+	Keys	string `json:"keys"`
+}
+
+type AgentCommands struct {
 	Uuid        string `json:"uuid"`
 	CommandType string `json:"commandtype"`
 	Command     string `json:"command"`

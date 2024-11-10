@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/PatronC2/Patron/helper"
 	"github.com/PatronC2/Patron/types"	
 	"github.com/PatronC2/Patron/lib/logger"	
 	_ "github.com/lib/pq"
@@ -219,26 +220,6 @@ func InitDatabase() {
 	}
 	logger.Logf(logger.Info, "Redirectors table initialized\n")
 
-}
-
-func CreateAgent(uuid string, ServerIP string, ServerPort string, CallBackFreq string, CallBackJitter string, Ip string, User string, Hostname string) {
-	CreateAgentSQL := `
-	INSERT INTO "agents" ("UUID", "ServerIP", "ServerPort", "CallBackFreq", "CallBackJitter", "Ip", "User", "Hostname")
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
-
-	statement, err := db.Prepare(CreateAgentSQL)
-	if err != nil {
-
-		log.Fatalln(err)
-		logger.Logf(logger.Info, "Error in DB\n")
-	}
-
-	_, err = statement.Exec(uuid, ServerIP, ServerPort, CallBackFreq, CallBackJitter, Ip, User, Hostname)
-	if err != nil {
-
-		log.Fatalln(err)
-	}
-	logger.Logf(logger.Info, "New Agent created in DB\n")
 }
 
 func CreateKeys(uuid string) {
@@ -507,20 +488,20 @@ func Agents() (agentAppend []types.AgentStatus, err error) {
 	return agentAppend, err
 }
 
-/*
-func AgentsByIp(Ip string) (agentAppend []types.ConfigAgent, err error) {
-	var agents types.ConfigAgent
+func AgentsByIp(Ip string) (agentAppend []types.ConfigurationRequest, err error) {
+	var agents types.ConfigurationRequest
 	FetchSQL := `
 	SELECT 
 		"UUID", 
-		"CallBackToIP", 
+		"ServerIP",
+		"ServerPort",
 		"CallBackFreq", 
 		"CallBackJitter", 
 		"Ip", 
 		"User", 
 		"Hostname",
 		"Status"
-	FROM "Agents"
+	FROM "agents_status"
 	WHERE "isDeleted"='0'
 	AND "Ip" = $1
 	`
@@ -531,8 +512,9 @@ func AgentsByIp(Ip string) (agentAppend []types.ConfigAgent, err error) {
 	defer row.Close()
 	for row.Next() {
 		row.Scan(
-			&agents.Uuid,
-			&agents.CallbackTo,
+			&agents.AgentID,
+			&agents.ServerIP,
+			&agents.ServerPort,
 			&agents.CallbackFrequency,
 			&agents.CallbackJitter,
 			&agents.AgentIP,
@@ -544,7 +526,6 @@ func AgentsByIp(Ip string) (agentAppend []types.ConfigAgent, err error) {
 	}
 	return agentAppend, err
 }
-	*/
 
 func Payloads() []types.Payload {
 	var payloads types.Payload
@@ -583,8 +564,8 @@ func Payloads() []types.Payload {
 	return payloadAppend
 }
 
-func GetAgentCommands(uuid string) (infoAppend []types.Agent, err error) {
-	var info types.Agent
+func GetAgentCommands(uuid string) (infoAppend []types.AgentCommands, err error) {
+	var info types.AgentCommands
 	FetchSQL := `
 	SELECT 
 		"UUID", 
@@ -615,7 +596,6 @@ func GetAgentCommands(uuid string) (infoAppend []types.Agent, err error) {
 	return infoAppend, err
 }
 
-/*
 func Keylog(uuid string) []types.KeyReceive {
 	var info types.KeyReceive
 	FetchSQL := `
@@ -634,7 +614,7 @@ func Keylog(uuid string) []types.KeyReceive {
 	var infoAppend []types.KeyReceive
 	for row.Next() {
 		row.Scan(
-			&info.Uuid,
+			&info.AgentID,
 			&info.Keys,
 		)
 		info.Keys = helper.FormatKeyLogs(info.Keys)
@@ -642,7 +622,6 @@ func Keylog(uuid string) []types.KeyReceive {
 	}
 	return infoAppend
 }
-	*/
 
 func FetchOne(uuid string) (infoAppend []types.ConfigurationResponse, err error) {
 	var info types.ConfigurationResponse

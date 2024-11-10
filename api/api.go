@@ -71,7 +71,6 @@ func main() {
 
     // GET requests to non-admin areas use Auth(readRoles)
     r.GET("/api/agents", api.Auth(readRoles), api.GetAgentsHandler)
-    r.GET("/api/groupagents", api.Auth(readRoles), api.GetGroupAgents)
     r.GET("/api/groupagents/:ip", api.Auth(readRoles), api.GetGroupAgentsByIP)
     r.GET("/api/agent/:agt", api.Auth(readRoles), api.GetOneAgentByUUID)
     r.GET("/api/commands/:agt", api.Auth(readRoles), api.GetAgentCommandsByUUID)
@@ -85,10 +84,6 @@ func main() {
     // Functions which can only modify / view their own user
     r.PUT("/api/profile/password", api.Auth(readRoles), api.UpdatePasswordHandler)
     r.GET("/api/profile/user", api.Auth(readRoles), api.GetCurrentUserHandler)
-
-    // functions strictly meant for testing
-    r.POST("/api/test/agent", api.Auth(writeRoles), api.CreateAgentHandler)
-    r.DELETE("/api/test/agent", api.Auth(writeRoles), api.DeleteAgentHandler)
 
     // Redirector callbacks
     r.PUT("/api/redirector/status", api.RedirectorStatusHandler)

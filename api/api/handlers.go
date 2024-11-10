@@ -6,7 +6,6 @@ import (
 	"regexp"
 
 	"github.com/PatronC2/Patron/data"
-	"github.com/PatronC2/Patron/types"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -20,18 +19,6 @@ func GetAgentsHandler(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, gin.H{"data": agents})
-    return
-}
-
-func GetGroupAgents(c *gin.Context) {
-    // Get agent groups
-    agentGroups, err := data.GroupAgentsByIp()
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agents"})
-        return
-    }
-
-    c.JSON(http.StatusOK, gin.H{"data": agentGroups})
     return
 }
 
@@ -138,44 +125,6 @@ func GetKeylogHandler(c *gin.Context) {
 func GetPayloadsHandler(c *gin.Context) {
 	payloads := data.Payloads()
 	c.JSON(http.StatusOK, gin.H{"data": payloads})
-}
-
-func CreateAgentHandler(c *gin.Context) {
-	var body types.CreateAgentRequest
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
-		return
-	}
-
-	serverIPMatch, _ := regexp.MatchString(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`, body.ServerIP)
-	serverPortMatch, _ := regexp.MatchString(`^(6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`, body.ServerPort)
-	agentFrequencyMatch := regexp.MustCompile(`^\d{1,5}$`).MatchString(body.CallbackFrequency)
-	jitterMatch := regexp.MustCompile(`^\d{1,2}$`).MatchString(body.Jitter)
-	agentIPMatch, _ := regexp.MatchString(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`, body.AgentIP)
-
-	if !serverIPMatch || !serverPortMatch || !agentFrequencyMatch || !jitterMatch || !agentIPMatch {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input parameters"})
-		return
-	}
-
-	uid := uuid.New().String()
-	data.CreateAgent(uid, body.AgentIP+":"+body.ServerPort, body.CallbackFrequency, body.Jitter, body.AgentIP, body.Username, body.Hostname)
-	c.JSON(http.StatusOK, gin.H{"data": "success"})
-}
-
-func DeleteAgentHandler(c *gin.Context) {
-	var body struct {
-		UUID string `json:"uuid"`
-	}
-
-	if err := c.ShouldBindJSON(&body); err != nil || body.UUID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "UUID is required"})
-		return
-	}
-
-	data.DeleteAgent(body.UUID)
-
-	c.JSON(http.StatusOK, gin.H{"data": "success"})
 }
 
 func GetNoteHandler (c *gin.Context) {
