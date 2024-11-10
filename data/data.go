@@ -384,8 +384,8 @@ func SendAgentCommand(uuid string, result string, CommandType string, Command st
 	logger.Logf(logger.Info, "Agent %s Reveived New Command \n", uuid)
 }
 
-func UpdateAgentConfig(UUID string, CallbackServer string, CallbackFrequency string, CallbackJitter string) {
-	updateAgentConfigSQL := `UPDATE "Agents" SET "CallBackToIP"= $1, "CallBackFreq"= $2, "CallBackJitter"= $3 WHERE "UUID"= $4`
+func UpdateAgentConfig(UUID string, ServerIP string, ServerPort string, CallbackFrequency string, CallbackJitter string) {
+	updateAgentConfigSQL := `UPDATE "Agents" SET "ServerIP"= $1, "ServerIP"= $2, "CallBackFreq"= $3, "CallBackJitter"= $4 WHERE "UUID"= $5`
 
 	statement, err := db.Prepare(updateAgentConfigSQL)
 	if err != nil {
@@ -394,7 +394,7 @@ func UpdateAgentConfig(UUID string, CallbackServer string, CallbackFrequency str
 		logger.Logf(logger.Info, "Error in DB\n")
 	}
 
-	_, err = statement.Exec(CallbackServer, CallbackFrequency, CallbackJitter, UUID)
+	_, err = statement.Exec(ServerIP, ServerPort, CallbackFrequency, CallbackJitter, UUID)
 	if err != nil {
 
 		log.Fatalln(err)

@@ -65,7 +65,6 @@ func GetAgentCommandsByUUID(c *gin.Context) {
 
 func UpdateAgentHandler(c *gin.Context) {
 	agentParam := c.Param("agt")
-	newCmdID := uuid.New().String()
 
 	var body map[string]string
 	if err := c.BindJSON(&body); err != nil {
@@ -91,8 +90,7 @@ func UpdateAgentHandler(c *gin.Context) {
 	} else if !vcallbackjitter {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Callback Jitter, Max 100"})
 	} else {
-		data.UpdateAgentConfig(agentParam, body["callbackserver"], body["callbackfreq"], body["callbackjitter"])
-		data.SendAgentCommand(agentParam, "0", "update", body["callbackfreq"]+":"+body["callbackjitter"], newCmdID)
+		data.UpdateAgentConfig(agentParam, body["serverip"], body["serverport"], body["callbackfreq"], body["callbackjitter"])
 		c.JSON(http.StatusOK, gin.H{"message": "Success"})
 	}
 }
