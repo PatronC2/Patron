@@ -279,7 +279,7 @@ func CreatePayload(uuid string, name string, description string, ServerIP string
 	logger.Logf(logger.Info, "New Payload created in DB\n")
 }
 
-func FetchOneAgent(uuid string) (info types.CommandConfigurationRequest, err error ) {
+func FetchOneAgent(uuid string) (info types.ConfigurationRequest, err error ) {
 	FetchSQL := `
 	SELECT 
 		"UUID",
@@ -289,8 +289,9 @@ func FetchOneAgent(uuid string) (info types.CommandConfigurationRequest, err err
 		"CallBackJitter",
 		"Ip",
 		"User",
-		"Hostname"
-	FROM "agents" WHERE "UUID"=$1
+		"Hostname",
+		"Status"
+	FROM "agents_status" WHERE "UUID"=$1
 	`
 	row, err := db.Query(FetchSQL, uuid)
 	if err != nil {
@@ -453,8 +454,8 @@ func UpdateAgentKeys(UUID string, Keys string) {
 
 // WEB Functions
 
-func Agents() (agentAppend []types.CommandConfigurationRequest, err error) {
-	var agents types.CommandConfigurationRequest
+func Agents() (agentAppend []types.ConfigurationRequest, err error) {
+	var agents types.ConfigurationRequest
 	FetchSQL := `
 	SELECT 
 		"UUID",
