@@ -70,7 +70,7 @@ func (s *Server) Start() {
 
 // When new functionalities are added, add the new types and handlers to the lists in here
 func NewServer() *Server {
-	common.registerGobTypes()
+	common.RegisterGobTypes()
 
     return &Server{
         handlers: map[types.RequestType]Handler{
