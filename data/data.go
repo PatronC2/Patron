@@ -385,7 +385,7 @@ func SendAgentCommand(uuid string, result string, CommandType string, Command st
 }
 
 func UpdateAgentConfig(UUID string, ServerIP string, ServerPort string, CallbackFrequency string, CallbackJitter string) {
-	updateAgentConfigSQL := `UPDATE "Agents" SET "ServerIP"= $1, "ServerIP"= $2, "CallBackFreq"= $3, "CallBackJitter"= $4 WHERE "UUID"= $5`
+	updateAgentConfigSQL := `UPDATE "agents" SET "ServerIP"= $1, "ServerPort"= $2, "CallBackFreq"= $3, "CallBackJitter"= $4 WHERE "UUID"= $5`
 
 	statement, err := db.Prepare(updateAgentConfigSQL)
 	if err != nil {
