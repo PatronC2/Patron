@@ -36,7 +36,7 @@ const Redirectors = () => {
             if (Array.isArray(responseData)) {
                 setData(responseData);
             } else {
-                setData('');
+                setData([]);
             }
         } catch (err) {
             setError(err.message);
