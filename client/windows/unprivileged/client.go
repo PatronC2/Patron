@@ -64,7 +64,7 @@ func initialize() {
 	if err := logger.SetLogFile("app.log"); err != nil {
 		fmt.Printf("Error setting log file: %v\n", err)
 	}
-	common.registerGobTypes()
+	common.RegisterGobTypes()
 }
 
 func loadCertificate() (*tls.Config, error) {

@@ -6,7 +6,7 @@ import (
     "github.com/PatronC2/Patron/types"
 )
 
-func registerGobTypes() {
+func RegisterGobTypes() {
 	for _, t := range []interface{}{
 		types.Request{},
 		types.ConfigurationRequest{},
@@ -14,7 +14,6 @@ func registerGobTypes() {
 		types.CommandRequest{},
 		types.CommandResponse{},
 		types.CommandStatusRequest{},
-		types.CommandStatusResponse{},
 		types.CommandStatusResponse{},
 	} {
 		gob.Register(t)

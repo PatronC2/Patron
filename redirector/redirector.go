@@ -31,7 +31,7 @@ var (
 func main() {
 	enableLogging := true
 	logger.EnableLogging(enableLogging)
-    common.registerGobTypes()
+    common.RegisterGobTypes()
 
 	// Set the log file
 	logFileName := "logs/forwarder.log"
