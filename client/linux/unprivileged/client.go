@@ -177,6 +177,10 @@ func handleCommandRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.D
 			} else {
 				return fmt.Errorf("unexpected payload type")
 			}
+		} else if response.Type == types.CommandStatusResponseType {
+			if commandStatusResponse, ok := response.Payload.(types.CommandStatusResponse); ok {
+				logger.Logf(logger.Info, "Server received command success message: %v", commandStatusResponse)
+			}
 		} else {
 			return fmt.Errorf("unexpected response type: %v", response.Type)
 		}
