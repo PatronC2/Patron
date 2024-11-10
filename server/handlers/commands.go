@@ -5,22 +5,12 @@ import (
 
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/types"
-	"github.com/PatronC2/Patron/lib/logger"
 )
 
 // Returns the next command to run to an agent. Updates the DB after the command gets run
 
 type CommandHandler struct{}
-
-func getNextCommand(c types.CommandRequest) (types.CommandResponse, error) {
-	fetch, err := data.FetchNextCommand(c.AgentID)
-	if err != nil {
-		logger.Logf(logger.Warning, "Couldn't fetch agent: %v\n", err)
-		return types.CommandResponse{}, false
-	}
-
-	return CommandResponse, nil
-}
+type CommandStatusHandler struct{}
 
 func (h *CommandHandler) Handle(request types.Request, conn net.Conn) types.Response {
     commandReq, ok := request.Payload.(types.CommandRequest)
@@ -30,27 +20,25 @@ func (h *CommandHandler) Handle(request types.Request, conn net.Conn) types.Resp
             Payload: types.CommandResponse{},
         }
     }
-
-    configResponse, success := getNextCommand(commandReq)
-    if !success {
-        return types.Response{
-            Type:    types.CommandResponseType,
-            Payload: types.CommandResponse{},
-        }
-    }
-
+    CommandResponse := data.FetchNextCommand(commandReq.AgentID)
     return types.Response{
         Type:    types.CommandResponseType,
-        Payload: configResponse,
+        Payload: CommandResponse,
     }
 }
 
 func (h *CommandStatusHandler) Handle(request types.Request, conn net.Conn) types.Response {
     c, ok := request.Payload.(types.CommandStatusRequest)
+    if !ok {
+        return types.Response{
+            Type:    types.CommandResponseType,
+            Payload: types.CommandResponse{},
+        }
+    }
 	data.UpdateAgentCommand(c.CommandID, c.CommandOutput, c.AgentID)
 	// This type doesn't actually matter since the client won't read it
 	return types.Response{
-		Type:		types.CommandRequest,
-		Payload:	types.CommandRequest{},
+		Type:    types.CommandResponseType,
+		Payload: types.CommandResponse{},
 	}
 }

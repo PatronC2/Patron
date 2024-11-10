@@ -19,21 +19,24 @@ func (s *Server) handleConnection(conn net.Conn) {
 	decoder := gob.NewDecoder(conn)
 	encoder := gob.NewEncoder(conn)
 
-	var request types.Request
-	if err := decoder.Decode(&request); err != nil {
-		logger.Logf(logger.Error, "Failed to decode request: %v", err)
-		return
-	}
+	for {
+		var request types.Request
+		if err := decoder.Decode(&request); err != nil {
+			logger.Logf(logger.Error, "Failed to decode request: %v", err)
+			return
+		}
 
-	handler, exists := s.handlers[request.Type]
-	if !exists {
-		logger.Logf(logger.Warning, "Unknown request type: %v", request.Type)
-		return
-	}
+		handler, exists := s.handlers[request.Type]
+		if !exists {
+			logger.Logf(logger.Warning, "Unknown request type: %v", request.Type)
+			continue
+		}
 
-	response := handler.Handle(request, conn)
-	if err := encoder.Encode(response); err != nil {
-		logger.Logf(logger.Warning, "Failed to send response: %v", err)
+		response := handler.Handle(request, conn)
+		if err := encoder.Encode(response); err != nil {
+			logger.Logf(logger.Warning, "Failed to send response: %v", err)
+			return
+		}
 	}
 }
 

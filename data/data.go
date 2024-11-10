@@ -344,8 +344,8 @@ func FetchNextCommand(uuid string) types.CommandResponse {
 		err := row.Scan(
 			&info.AgentID,
 			&info.CommandType,
-			&info.CommandID,
 			&info.Command,
+			&info.CommandID,
 		)
 		switch err {
 		case sql.ErrNoRows:
