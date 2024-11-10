@@ -417,8 +417,8 @@ func UpdateAgentCheckIn(uuid string) (err error) {
     return nil
 }
 
-func UpdateAgentCommand(CommandUUID string, Output string, uuid string) {
-	updateAgentCommandSQL := `UPDATE "Commands" SET "Result"='1', "Output"= $1 WHERE "CommandUUID"= $2`
+func UpdateAgentCommand(CommandUUID string, Result string, Output string, uuid string) {
+	updateAgentCommandSQL := `UPDATE "Commands" SET "Result"=$1, "Output"= $2 WHERE "CommandUUID"= $3`
 
 	statement, err := db.Prepare(updateAgentCommandSQL)
 	if err != nil {
@@ -427,7 +427,7 @@ func UpdateAgentCommand(CommandUUID string, Output string, uuid string) {
 		logger.Logf(logger.Info, "Error in DB\n")
 	}
 
-	_, err = statement.Exec(Output, CommandUUID)
+	_, err = statement.Exec(Result, Output, CommandUUID)
 	if err != nil {
 
 		log.Fatalln(err)

@@ -31,14 +31,14 @@ func (h *CommandStatusHandler) Handle(request types.Request, conn net.Conn) type
     c, ok := request.Payload.(types.CommandStatusRequest)
     if !ok {
         return types.Response{
-            Type:    types.CommandResponseType,
-            Payload: types.CommandResponse{},
+            Type:    types.CommandStatusResponseType,
+            Payload: types.CommandStatusResponse{},
         }
     }
-	data.UpdateAgentCommand(c.CommandID, c.CommandOutput, c.AgentID)
+	data.UpdateAgentCommand(c.CommandID, c.CommandResult, c.CommandOutput, c.AgentID)
 	// This type doesn't actually matter since the client won't read it
 	return types.Response{
-		Type:    types.CommandResponseType,
-		Payload: types.CommandResponse{},
+		Type:    types.CommandStatusResponseType,
+		Payload: types.CommandStatusResponse{},
 	}
 }

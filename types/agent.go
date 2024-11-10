@@ -13,6 +13,7 @@ const (
 
 	ConfigurationResponseType  ResponseType = "ConfigurationResponse"
 	CommandResponseType        ResponseType = "CommandResponse"
+	CommandStatusResponseType  ResponseType  = "CommandStatusResponse"
 	FileResponseType           ResponseType = "FileResponse"
 )
 
@@ -70,6 +71,10 @@ type CommandStatusRequest struct {
 	CommandID     string `json:"commandid"`
 	CommandResult string `json:"result"`
 	CommandOutput string `json:"output"`
+}
+
+type CommandStatusResponse struct {
+	AgentID       string `json:"uuid"`
 }
 
 type KeyReceive struct {

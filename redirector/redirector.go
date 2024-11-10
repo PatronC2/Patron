@@ -13,6 +13,7 @@ import (
 
     "github.com/PatronC2/Patron/types"
 	"github.com/PatronC2/Patron/lib/logger"
+    "github.com/PatronC2/Patron/lib/common"
 )
 
 var (
@@ -30,7 +31,7 @@ var (
 func main() {
 	enableLogging := true
 	logger.EnableLogging(enableLogging)
-    registerGobTypes()
+    common.registerGobTypes()
 
 	// Set the log file
 	logFileName := "logs/forwarder.log"
@@ -78,15 +79,6 @@ func main() {
 	}
 }
 
-func registerGobTypes() {
-	for _, t := range []interface{}{
-		types.Request{}, types.ConfigurationRequest{}, types.ConfigurationResponse{},
-		types.CommandRequest{}, types.CommandResponse{}, types.CommandStatusRequest{},
-	} {
-		gob.Register(t)
-	}
-}
-
 func sendStatusUpdate() error {
 	url := fmt.Sprintf("https://%s:%s/api/redirector/status", apiIP, apiPort)
 	data := map[string]string{
@@ -124,40 +116,46 @@ func sendStatusUpdate() error {
 func handleClientConnection(clientConn net.Conn) {
 	defer clientConn.Close()
 
+	// Initialize the decoder and encoder for the client connection
+	clientDecoder := gob.NewDecoder(clientConn)
+	clientEncoder := gob.NewEncoder(clientConn)
+
+	// Reuse the same main connection for the entire session
+	mainConn, err := connectToMainServer()
+	if err != nil {
+		logger.Logf(logger.Warning, "Main server unavailable, retrying in 5 seconds: %v\n", err)
+		return
+	}
+	defer mainConn.Close()
+
+	clientAddr := clientConn.RemoteAddr().String()
+	logger.Logf(logger.Info, "Accepted connection from %s\n", clientAddr)
+
+	mainEncoder := gob.NewEncoder(mainConn)
+	mainDecoder := gob.NewDecoder(mainConn)
+
 	for {
-		mainConn, err := connectToMainServer()
-		if err != nil {
-			logger.Logf(logger.Warning, "Main server unavailable, retrying in 5 seconds: %v\n", err)
-			time.Sleep(5 * time.Second)
-			continue
-		}
-		defer mainConn.Close()
-
-		clientAddr := clientConn.RemoteAddr().String()
-		logger.Logf(logger.Info, "Accepted connection from %s\n", clientAddr)
-
-		data := make([]byte, 4096)
-		n, err := clientConn.Read(data)
-		if err != nil {
-			logger.Logf(logger.Warning, "Read error from client %s: %v\n", clientAddr, err)
-			return
-		}
-		clientData := string(data[:n])
-
-		_, err = mainConn.Write([]byte(clientData))
-		if err != nil {
-			logger.Logf(logger.Warning, "Failed to send data to main server: %v\n", err)
+		var request types.Request
+		if err := clientDecoder.Decode(&request); err != nil {
+			logger.Logf(logger.Warning, "Failed to decode request from client %s: %v\n", clientAddr, err)
 			return
 		}
 
-		var serverResponse string
-		dec := gob.NewDecoder(mainConn)
-		if err := dec.Decode(&serverResponse); err != nil {
+		if err := mainEncoder.Encode(request); err != nil {
+			logger.Logf(logger.Warning, "Failed to send request to main server: %v\n", err)
+			return
+		}
+
+		var serverResponse types.Response
+		if err := mainDecoder.Decode(&serverResponse); err != nil {
 			logger.Logf(logger.Warning, "Failed to decode response from main server: %v\n", err)
 			return
 		}
 
-		gob.NewEncoder(clientConn).Encode(serverResponse)
+		if err := clientEncoder.Encode(serverResponse); err != nil {
+			logger.Logf(logger.Warning, "Failed to send response to client %s: %v\n", clientAddr, err)
+			return
+		}
 	}
 }
 

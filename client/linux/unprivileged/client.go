@@ -17,6 +17,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/PatronC2/Patron/types"
 	"github.com/PatronC2/Patron/lib/logger"
+	"github.com/PatronC2/Patron/lib/common"
 )
 
 var (
@@ -63,16 +64,7 @@ func initialize() {
 	if err := logger.SetLogFile("app.log"); err != nil {
 		fmt.Printf("Error setting log file: %v\n", err)
 	}
-	registerGobTypes()
-}
-
-func registerGobTypes() {
-	for _, t := range []interface{}{
-		types.Request{}, types.ConfigurationRequest{}, types.ConfigurationResponse{},
-		types.CommandRequest{}, types.CommandResponse{}, types.CommandStatusRequest{},
-	} {
-		gob.Register(t)
-	}
+	common.registerGobTypes()
 }
 
 func loadCertificate() (*tls.Config, error) {
