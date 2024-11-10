@@ -110,7 +110,7 @@ func establishConnection(config *tls.Config) (*tls.Conn, *gob.Encoder, *gob.Deco
 }
 
 func getLocalIP(beacon *tls.Conn) string {
-	return beacon.LocalAddr().(*net.TCPAddr).String()
+	return beacon.LocalAddr().(*net.TCPAddr).IP.String()
 }
 
 func handleConfigurationRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID, hostname, username, ip string) error {

@@ -77,7 +77,7 @@ func InitDatabase() {
 		"Hostname",
 		"LastCallBack",
 		CASE 
-			WHEN "LastCallBack" IS NULL OR "LastCallBack" < NOW() - INTERVAL '10 minutes' THEN 'Offline'
+			WHEN "LastCallBack" IS NULL OR "LastCallBack" < NOW() - INTERVAL '1 second' * 2 * CAST("CallBackFreq" AS INTEGER) THEN 'Offline'
 			ELSE 'Online'
 		END AS "Status"
 	FROM 
@@ -222,6 +222,25 @@ func InitDatabase() {
 
 }
 
+func CreateAgent(uuid string, ServerIP string, ServerPort, CallBackFreq string, CallBackJitter string, Ip string, User string, Hostname string) {
+	CreateAgentSQL := `INSERT INTO "agents" ("UUID", "ServerIP", "ServerPort", "CallBackFreq", "CallBackJitter", "Ip", "User", "Hostname")
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+
+	statement, err := db.Prepare(CreateAgentSQL)
+	if err != nil {
+
+		log.Fatalln(err)
+		logger.Logf(logger.Info, "Error in DB\n")
+	}
+
+	_, err = statement.Exec(uuid, ServerIP, ServerPort, CallBackFreq, CallBackJitter, Ip, User, Hostname)
+	if err != nil {
+
+		log.Fatalln(err)
+	}
+	logger.Logf(logger.Info, "New Agent created in DB\n")
+}
+
 func CreateKeys(uuid string) {
 	CreateKeysSQL := `INSERT INTO "Keylog" ("UUID", "Keys")
 	VALUES ($1, $2)`
@@ -260,7 +279,7 @@ func CreatePayload(uuid string, name string, description string, ServerIP string
 	logger.Logf(logger.Info, "New Payload created in DB\n")
 }
 
-func FetchOneAgent(uuid string) (info types.ConfigurationRequest, err error ) {
+func FetchOneAgent(uuid string) (info types.CommandConfigurationRequest, err error ) {
 	FetchSQL := `
 	SELECT 
 		"UUID",
@@ -288,6 +307,7 @@ func FetchOneAgent(uuid string) (info types.ConfigurationRequest, err error ) {
 			&info.AgentIP,
 			&info.Username,
 			&info.Hostname,
+			&info.Status,
 		)
 		switch err {
 		case sql.ErrNoRows:
@@ -431,31 +451,13 @@ func UpdateAgentKeys(UUID string, Keys string) {
 	}
 }
 
-func DeleteAgent(UUID string) {
-	DeleteAgentSQL := `UPDATE "Agents" SET "isDeleted"=1 WHERE "UUID"= $1`
-
-	statement, err := db.Prepare(DeleteAgentSQL)
-	if err != nil {
-
-		log.Fatalln(err)
-		logger.Logf(logger.Info, "Error in DB\n")
-	}
-
-	_, err = statement.Exec(UUID)
-	if err != nil {
-
-		log.Fatalln(err)
-	}
-}
-
 // WEB Functions
 
-func Agents() (agentAppend []types.AgentStatus, err error) {
-	var agents types.AgentStatus
+func Agents() (agentAppend []types.CommandConfigurationRequest, err error) {
+	var agents types.CommandConfigurationRequest
 	FetchSQL := `
 	SELECT 
-		"AgentID", 
-		"UUID", 
+		"UUID",
 		"ServerIP", 
 		"ServerPort", 
 		"CallBackFreq",
@@ -485,6 +487,7 @@ func Agents() (agentAppend []types.AgentStatus, err error) {
 		)
 		agentAppend = append(agentAppend, agents)
 	}
+	logger.Logf(logger.Info, "Agents: %v", agentAppend)
 	return agentAppend, err
 }
 
@@ -502,7 +505,6 @@ func AgentsByIp(Ip string) (agentAppend []types.ConfigurationRequest, err error)
 		"Hostname",
 		"Status"
 	FROM "agents_status"
-	WHERE "isDeleted"='0'
 	AND "Ip" = $1
 	`
 	row, err := db.Query(FetchSQL, Ip)

@@ -48,15 +48,3 @@ type Redirector struct {
 	ListenPort		string `json:"listenport" binding:"required"`
 	Status			string `json:"status" binding:"required"`
 }
-
-type AgentStatus struct {
-	AgentID           string `json:"uuid"`
-	Username          string `json:"username"`
-	Hostname          string `json:"hostname"`
-	AgentIP           string `json:"agentip"`
-	ServerIP          string `json:"serverip"`
-	ServerPort        string `json:"serverport"`
-	CallbackFrequency string `json:"callbackfrequency"`
-	CallbackJitter    string `json:"callbackjitter"`
-	Status            string `json:"status"`
-}

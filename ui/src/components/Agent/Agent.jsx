@@ -15,7 +15,8 @@ const Agent = () => {
   const commandListRef = useRef(null);
 
   // States related to Configuration tab
-  const [callbackTo, setCallbackTo] = useState('');
+  const [callbackIP, setCallbackIP] = useState('');
+  const [callbackPort, setCallbackPort] = useState('');
   const [callbackFreq, setCallbackFreq] = useState('');
   const [callbackJitter, setCallbackJitter] = useState('');
   const [saveError, setSaveError] = useState(null);
@@ -56,7 +57,8 @@ const Agent = () => {
 
       if (responseData) {
         setData(responseData);
-        setCallbackTo(responseData.callbackto || '');
+        setCallbackIP(responseData.serverip || '');
+        setCallbackPort(responseData.serverport || '');
         setCallbackFreq(responseData.callbackfrequency || '');
         setCallbackJitter(responseData.callbackjitter || '');
       } else {
@@ -133,7 +135,8 @@ const Agent = () => {
 
       const queryParam = getQueryParam('agt');
       const updateBody = {
-        callbackserver: callbackTo,
+        callbackIP: callbackIP,
+        callbackPort: callbackPort,
         callbackfreq: callbackFreq,
         callbackjitter: callbackJitter,
       };
@@ -240,12 +243,22 @@ const Agent = () => {
       <h3>Configuration</h3>
       <form>
         <div className="form-group">
-          <label htmlFor="callbackTo">Callback to</label>
+          <label htmlFor="callbackIP">Callback IP</label>
           <input
             type="text"
-            id="callbackTo"
-            value={callbackTo}
-            onChange={(e) => setCallbackTo(e.target.value)}
+            id="callbackIP"
+            value={callbackIP}
+            onChange={(e) => setCallbackIP(e.target.value)}
+            disabled={isSaving}
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="callbackPort">Callback Port</label>
+          <input
+            type="text"
+            id="callbackPort"
+            value={callbackPort}
+            onChange={(e) => setCallbackPort(e.target.value)}
             disabled={isSaving}
           />
         </div>
@@ -368,7 +381,8 @@ const Agent = () => {
         <h1>Agent Details</h1>
         <ul>
           <li><strong>UUID:</strong> {data.uuid}</li>
-          <li><strong>Callback to:</strong> {data.callbackto}</li>
+          <li><strong>Callback IP:</strong> {data.serverip}</li>
+          <li><strong>Callback IP:</strong> {data.serverport}</li>
           <li><strong>Callback Frequency:</strong> {data.callbackfrequency} seconds</li>
           <li><strong>Callback Jitter:</strong> {data.callbackjitter}%</li>
           <li><strong>Agent IP:</strong> {data.agentip || 'N/A'}</li>

@@ -73,15 +73,19 @@ func UpdateAgentHandler(c *gin.Context) {
 		return
 	}
 
-	vsvr := regexp.MustCompile(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}[:](6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`)
-	vserver := vsvr.MatchString(body["callbackserver"])
+	vsvrIP := regexp.MustCompile(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`)
+	vsvrPort := regexp.MustCompile(`^(6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`)
 	vfrequency := regexp.MustCompile(`^\d{1,5}$`)
 	vcallbackfrequency := vfrequency.MatchString(body["callbackfreq"])
 	vjitter := regexp.MustCompile(`^\d{1,5}$`)
 	vcallbackjitter := vjitter.MatchString(body["callbackjitter"])
 
-	if !vserver {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Server IP:Port"})
+	if !vsvrIP.MatchString(body["serverip"]) {
+		fmt.Println("Invalid server IP address")
+		return
+	} else if !vsvrPort.MatchString(body["serverport"]) {
+		fmt.Println("Invalid server port")
+		return
 	} else if !vcallbackfrequency {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Callback Frequency, Max 99999"})
 	} else if !vcallbackjitter {
@@ -112,7 +116,6 @@ func KillAgentHandler(c *gin.Context) {
 	agentParam := c.Param("agt")
 	newCmdID := uuid.New().String()
 	data.SendAgentCommand(agentParam, "0", "kill", "Kill Agent", newCmdID)
-	data.DeleteAgent(agentParam)
 	c.JSON(http.StatusOK, gin.H{"message": "Success"})
 }
 
