@@ -10,11 +10,13 @@ const (
 	CommandRequestType         RequestType  = "CommandRequest"
 	CommandStatusRequestType   RequestType  = "CommandStatusRequest"
 	FileRequestType            RequestType  = "FileRequest"
+	KeysRequestType            RequestType  = "KeysRequest"
 
 	ConfigurationResponseType  ResponseType = "ConfigurationResponse"
 	CommandResponseType        ResponseType = "CommandResponse"
 	CommandStatusResponseType  ResponseType  = "CommandStatusResponse"
 	FileResponseType           ResponseType = "FileResponse"
+	KeysResponseType           ResponseType = "KeysResponse"
 )
 
 // General Request struct with typed payload
@@ -77,9 +79,13 @@ type CommandStatusResponse struct {
 	AgentID       string `json:"uuid"`
 }
 
-type KeyReceive struct {
+type KeysRequest struct {
 	AgentID	string `json:"uuid"`
 	Keys	string `json:"keys"`
+}
+
+type KeysResponse struct {
+	AgentID	string `json:"uuid"`
 }
 
 type AgentCommands struct {

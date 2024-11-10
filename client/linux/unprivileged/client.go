@@ -21,7 +21,11 @@ import (
 )
 
 var (
-	ServerIP, ServerPort, CallbackFrequency, CallbackJitter, RootCert string
+	ServerIP			string
+	ServerPort			string
+	CallbackFrequency	string
+	CallbackJitter		string
+	RootCert			string
 )
 
 func main() {

