@@ -21,7 +21,10 @@
         "code_path": "windows/unprivileged/client.go",
         "flags": "-trimpath -ldflags",
         "environment": "GOOS=windows GOARCH=amd64",
-        "file_suffix": ".exe"
+        "file_suffix": ".exe",
+        "dependencies": [
+            "github.com/TheTitanrain/w32"
+        ]
     },
     "windows/privileged": {
         "type": "Windows Keylogger",
@@ -29,6 +32,10 @@
         "code_path": "windows/privileged/client.go",
         "flags": "-trimpath -ldflags",
         "environment": "GOOS=windows GOARCH=amd64",
-        "file_suffix": ".exe"
+        "file_suffix": ".exe",
+        "dependencies": [
+            "github.com/TheTitanrain/w32",
+            "github.com/kardianos/service"
+        ]
     }
 }

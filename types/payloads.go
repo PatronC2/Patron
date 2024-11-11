@@ -12,12 +12,13 @@ type Payload struct {
 }
 
 type BuildConfig struct {
-	Type        string `json:"type"`
-	Description string `json:"description"`
-	CodePath    string `json:"code_path"`
-	Flags       string `json:"flags"`
-	Environment string `json:"environment"`
-	FileSuffix	string `json:"file_suffix"`
+	Type         string   `json:"type"`
+	Description  string   `json:"description"`
+	CodePath     string   `json:"code_path"`
+	Flags        string   `json:"flags"`
+	Environment  string   `json:"environment"`
+	FileSuffix   string   `json:"file_suffix"`
+	Dependencies []string `json:"dependencies"`
 }
 
 type PayloadConfigurations map[string]BuildConfig
