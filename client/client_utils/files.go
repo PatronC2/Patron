@@ -21,7 +21,7 @@ func HandleFileRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Deco
 		var response types.Response
 		var success = "Error"
 		if err := decoder.Decode(&response); err != nil {
-			return fmt.Errorf("error decoding command response: %v", err)
+			return fmt.Errorf("error decoding file response: %v", err)
 		}
 		if response.Type == types.FileResponseType {
 			if fileResponse, ok := response.Payload.(types.FileResponse); ok {
@@ -37,19 +37,18 @@ func HandleFileRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Deco
 					if err != nil {
 						logger.Logf(logger.Error, "Error sending file transfer success: %v", err)
 					}
-					goto Exit 
 
 				} else if fileResponse.Type == "Upload" {
 					logger.Logf(logger.Info, "Uploading %v to server", fileResponse.Path)
 				} else {
-					logger.Logf(logger.Info, "No file to process, exiting")
+					logger.Logf(logger.Info, "No more files to process")
 					goto Exit
 				}	
 			} else {
-				return fmt.Errorf("unexpected payload type for CommandResponse")
+				return fmt.Errorf("unexpected payload type for FileResponse")
 			}			
 		} else {
-			return fmt.Errorf("unexpected response type: %v, expected CommandResponseType", response.Type)
+			return fmt.Errorf("unexpected response type: %v, expected FileResponseType", response.Type)
 		}
 	}
 Exit:

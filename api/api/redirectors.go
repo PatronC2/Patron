@@ -95,7 +95,7 @@ else
 	sudo apt install -y wget
 fi
 
-wget --no-check-certificate https://$api_ip:$api_port/payloads/$tar_file
+wget --no-check-certificate https://$api_ip:$api_port/fileserver/$tar_file
 docker load -i $tar_file
 docker run -d \
 	-p %s:%s \
