@@ -104,8 +104,8 @@ func InitDatabase() {
 		"FileID" SERIAL PRIMARY KEY,
 		"UUID" TEXT,
 		"Type" TEXT,
-		"Source" TEXT,
-		"Destination" TEXT,
+		"Path" TEXT,
+		"Content" BYTEA,
 		"Status" TEXT DEFAULT 'Pending',
 		FOREIGN KEY ("UUID") REFERENCES "agents" ("UUID")
 	);

@@ -110,8 +110,8 @@ type FileResponse struct {
 	FileID    		string `json:"fileid"`
 	AgentID			string `json:"uuid"`
 	Type			string `json:"type"`
-	SourcePath 		string `json:"sourcepath"`
-	DestinationPath string `json:"destinationpath"`
+	Path 			string `json:"paFileResponseth"`
+	Chunk			[]byte `json:"chunk"`
 }
 
 // Both of these will be sent, but one will be empty
@@ -119,30 +119,12 @@ type FileToServer struct {
 	FileID    		string `json:"fileid"`
 	AgentID			string `json:"uuid"`
 	Type			string `json:"type"`
-	SourcePath 		string `json:"sourcepath"`
-	DestinationPath string `json:"destinationpath"`
-	Chunk			[]byte `json:"chunk`
-}
-
-type FileToClient struct {
-	FileID    		string `json:"fileid"`
-	AgentID			string `json:"uuid"`
-	Type			string `json:"type"`
-	SourcePath 		string `json:"sourcepath"`
-	DestinationPath string `json:"destinationpath"`
+	Path 			string `json:"path"`
 	Chunk			[]byte `json:"chunk"`
 }
 
-// Sent after file transfers are complete
-type FileTransferStatusRequest struct {
-	FileID 			string `json:"fileid`
-	AgentID			string `json:"uuid"`
-	Status			string `json:"status"`
-}
-
 type FileTransferStatusResponse struct {
-	FileID 			string `json:"fileid`
+	FileID    		string `json:"fileid"`
 	AgentID			string `json:"uuid"`
 	Status			string `json:"status"`
 }
-

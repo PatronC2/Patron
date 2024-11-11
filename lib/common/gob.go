@@ -20,9 +20,6 @@ func RegisterGobTypes() {
 		types.FileRequest{},
 		types.FileResponse{},
 		types.FileToServer{},
-		types.FileToClient{},
-		types.FileTransferStatusRequest{},
-		types.FileTransferStatusResponse{},
 	} {
 		gob.Register(t)
 	}

@@ -12,11 +12,11 @@ func FetchNextFileTransfer(uuid string) types.FileResponse {
     var info types.FileResponse
     query := `
         SELECT 
-			"files"."FileID",
+            "files"."FileID",
             "files"."UUID",
             "files"."Type",
-			"files"."Source",
-			"files"."Destination"
+            "files"."Path",
+            "files"."Content"
         FROM "files" 
         INNER JOIN "agents" ON "files"."UUID" = "agents"."UUID" 
         WHERE "files"."UUID" = $1
@@ -25,12 +25,13 @@ func FetchNextFileTransfer(uuid string) types.FileResponse {
     `
 
     row := db.QueryRow(query, uuid)
+    var content []byte
     err := row.Scan(
-		&info.FileID,
+        &info.FileID,
         &info.AgentID,
         &info.Type,
-        &info.SourcePath,
-        &info.DestinationPath,
+        &info.Path,
+        &content,
     )
     if err == sql.ErrNoRows {
         logger.Logf(logger.Info, "No pending file transfers for agent: %s\n", uuid)
@@ -40,6 +41,7 @@ func FetchNextFileTransfer(uuid string) types.FileResponse {
         return info
     }
 
+    info.Chunk = content
     logger.Logf(logger.Info, "Fetched file transfer %s for agent %s\n", info.FileID, uuid)
     return info
 }
