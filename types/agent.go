@@ -12,14 +12,12 @@ const (
 	KeysRequestType            		RequestType = "KeysRequest"
 	FileRequestType           		RequestType = "FileRequest"
 	FileToServerType				RequestType = "FileToServer"
-	FileTransferStatusRequestType	RequestType = ""
 
 	ConfigurationResponseType  		ResponseType = "ConfigurationResponse"
 	CommandResponseType        		ResponseType = "CommandResponse"
 	CommandStatusResponseType  		ResponseType = "CommandStatusResponse"
 	KeysResponseType           		ResponseType = "KeysResponse"
 	FileResponseType           		ResponseType = "FileResponse"
-	FileToClientType				ResponseType = "FileToClient"
 	FileTransferStatusResponseType	ResponseType = "FileTransferStatusResponse"
 )
 
@@ -109,22 +107,22 @@ type FileRequest struct {
 type FileResponse struct {
 	FileID    		string `json:"fileid"`
 	AgentID			string `json:"uuid"`
-	Type			string `json:"type"`
+	Type			string `json:"transfertype"`
 	Path 			string `json:"paFileResponseth"`
 	Chunk			[]byte `json:"chunk"`
 }
 
-// Both of these will be sent, but one will be empty
+// This manages success messages if Type = download. Otherwise, send data to server
 type FileToServer struct {
 	FileID    		string `json:"fileid"`
 	AgentID			string `json:"uuid"`
-	Type			string `json:"type"`
+	Type			string `json:"transfertype"`
 	Path 			string `json:"path"`
+	Status			string `json:"status"`
 	Chunk			[]byte `json:"chunk"`
 }
 
 type FileTransferStatusResponse struct {
 	FileID    		string `json:"fileid"`
 	AgentID			string `json:"uuid"`
-	Status			string `json:"status"`
 }

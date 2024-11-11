@@ -2,6 +2,7 @@ package data
 
 import (
 	"database/sql"
+    "fmt"
 
 	"github.com/PatronC2/Patron/types"	
 	"github.com/PatronC2/Patron/lib/logger"	
@@ -45,3 +46,27 @@ func FetchNextFileTransfer(uuid string) types.FileResponse {
     logger.Logf(logger.Info, "Fetched file transfer %s for agent %s\n", info.FileID, uuid)
     return info
 }
+
+func UpdateFileTransfer(fileData types.FileToServer) error {
+	var query string
+	var args []interface{}
+
+	if fileData.Type == "Download" {
+		query = `UPDATE files SET "Status" = $1 WHERE "FileID" = $2 AND "UUID" = $3 AND "Type" = $4`
+		args = append(args, fileData.Status, fileData.FileID, fileData.AgentID, fileData.Type)
+	} else if fileData.Type == "Upload" {
+		query = `UPDATE files SET "Status" = $1, "Content" = $2 WHERE "FileID" = $3 AND "UUID" = $4 AND "Type" = $5`
+		args = append(args, fileData.Status, fileData.Chunk, fileData.FileID, fileData.AgentID, fileData.Type)
+	} else {
+		return fmt.Errorf("unknown transfer type: %s", fileData.Type)
+	}
+
+	_, err := db.Exec(query, args...)
+	if err != nil {
+		return fmt.Errorf("failed to update file transfer: %v", err)
+	}
+
+	fmt.Printf("File transfer with ID %s updated successfully\n", fileData.FileID)
+	return nil
+}
+

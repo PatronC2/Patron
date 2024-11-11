@@ -19,6 +19,7 @@ func HandleFileRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Deco
 			return err
 		}
 		var response types.Response
+		var success = "Error"
 		if err := decoder.Decode(&response); err != nil {
 			return fmt.Errorf("error decoding command response: %v", err)
 		}
@@ -31,7 +32,11 @@ func HandleFileRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Deco
 					if err != nil {
 						return fmt.Errorf("Failed to download file")
 					}
-					// Temporary, we need to tell the server we're all good
+					success = "Success"
+					err = fileTransferSuccessHandler(fileResponse.FileID, fileResponse.AgentID, fileResponse.Type, success, encoder, decoder)
+					if err != nil {
+						logger.Logf(logger.Error, "Error sending file transfer success: %v", err)
+					}
 					goto Exit 
 
 				} else if fileResponse.Type == "Upload" {
@@ -69,4 +74,33 @@ func downloadHandler(fileData types.FileResponse) error {
 	}
 	logger.Logf(logger.Info, "Successfully downloaded file to %s", fileData.Path)
 	return nil
+}
+
+func fileTransferSuccessHandler(fileID string, agentID string, transferType string, success string, encoder *gob.Encoder, decoder *gob.Decoder) error {
+	successReq := createSuccessRequest(fileID, agentID, transferType, success)
+	if err := SendRequest(encoder, types.FileToServerType, successReq); err != nil {
+		return err
+	}
+	var response types.Response
+	if err := decoder.Decode(&response); err != nil {
+		return err
+	}
+
+	if response.Type == types.FileTransferStatusResponseType {
+		if configResponse, ok := response.Payload.(types.FileTransferStatusResponse); ok {
+			logger.Logf(logger.Info, "Completed a file transfer: %v", configResponse)
+		}
+	} else {
+		return fmt.Errorf("unexpected response type: %v", response.Type)
+	}
+	return nil
+}
+
+func createSuccessRequest(fileID string, agentID string, transferType string, success string) types.FileToServer {
+	return types.FileToServer{
+		FileID:    	fileID,
+		AgentID:	agentID,
+		Type:		transferType,
+		Status:		success,
+	}
 }
