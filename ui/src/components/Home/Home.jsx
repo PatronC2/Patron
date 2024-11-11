@@ -21,7 +21,7 @@ const Home = () => {
       if (Array.isArray(responseData)) {
         setData(responseData);
       } else {
-        setError('No Agents, yet...');
+        setData([]);
       }
     } catch (err) {
       setError(err.message);

