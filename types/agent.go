@@ -6,17 +6,21 @@ type ResponseType string
 
 // Constants for request and response types
 const (
-	ConfigurationRequestType   RequestType  = "ConfigurationRequest"
-	CommandRequestType         RequestType  = "CommandRequest"
-	CommandStatusRequestType   RequestType  = "CommandStatusRequest"
-	FileRequestType            RequestType  = "FileRequest"
-	KeysRequestType            RequestType  = "KeysRequest"
+	ConfigurationRequestType   		RequestType = "ConfigurationRequest"
+	CommandRequestType         		RequestType = "CommandRequest"
+	CommandStatusRequestType   		RequestType = "CommandStatusRequest"
+	KeysRequestType            		RequestType = "KeysRequest"
+	FileRequestType           		RequestType = "FileRequest"
+	FileToServerType				RequestType = "FileToServer"
+	FileTransferStatusRequestType	RequestType = ""
 
-	ConfigurationResponseType  ResponseType = "ConfigurationResponse"
-	CommandResponseType        ResponseType = "CommandResponse"
-	CommandStatusResponseType  ResponseType  = "CommandStatusResponse"
-	FileResponseType           ResponseType = "FileResponse"
-	KeysResponseType           ResponseType = "KeysResponse"
+	ConfigurationResponseType  		ResponseType = "ConfigurationResponse"
+	CommandResponseType        		ResponseType = "CommandResponse"
+	CommandStatusResponseType  		ResponseType = "CommandStatusResponse"
+	KeysResponseType           		ResponseType = "KeysResponse"
+	FileResponseType           		ResponseType = "FileResponse"
+	FileToClientType				ResponseType = "FileToClient"
+	FileTransferStatusResponseType	ResponseType = "FileTransferStatusResponse"
 )
 
 // General Request struct with typed payload
@@ -95,3 +99,50 @@ type AgentCommands struct {
 	CommandUUID string `json:"commanduuid"`
 	Output      string `json:"output"`
 }
+
+// FileRequest is sent by agent to check for files
+type FileRequest struct {
+	AgentID string `json:"uuid"`
+}
+
+// FileResponse is sent back to the agent after a FileRequest. Prepares the agent for a transfer
+type FileResponse struct {
+	FileID    		string `json:"fileid"`
+	AgentID			string `json:"uuid"`
+	Type			string `json:"type"`
+	SourcePath 		string `json:"sourcepath"`
+	DestinationPath string `json:"destinationpath"`
+}
+
+// Both of these will be sent, but one will be empty
+type FileToServer struct {
+	FileID    		string `json:"fileid"`
+	AgentID			string `json:"uuid"`
+	Type			string `json:"type"`
+	SourcePath 		string `json:"sourcepath"`
+	DestinationPath string `json:"destinationpath"`
+	Chunk			[]byte `json:"chunk`
+}
+
+type FileToClient struct {
+	FileID    		string `json:"fileid"`
+	AgentID			string `json:"uuid"`
+	Type			string `json:"type"`
+	SourcePath 		string `json:"sourcepath"`
+	DestinationPath string `json:"destinationpath"`
+	Chunk			[]byte `json:"chunk"`
+}
+
+// Sent after file transfers are complete
+type FileTransferStatusRequest struct {
+	FileID 			string `json:"fileid`
+	AgentID			string `json:"uuid"`
+	Status			string `json:"status"`
+}
+
+type FileTransferStatusResponse struct {
+	FileID 			string `json:"fileid`
+	AgentID			string `json:"uuid"`
+	Status			string `json:"status"`
+}
+

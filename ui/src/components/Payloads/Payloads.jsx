@@ -4,7 +4,7 @@ import AuthContext from '../../context/AuthProvider';
 import NewPayloadForm from './NewPayloadForm';
 import './Payloads.css';
 
-const FILE_SERVER = `https://${process.env.REACT_APP_NGINX_IP}:${process.env.REACT_APP_NGINX_PORT}/files/`
+const FILE_SERVER = `https://${process.env.REACT_APP_NGINX_IP}:${process.env.REACT_APP_NGINX_PORT}/payloads/`
 
 const Payloads = () => {
     const { auth } = useContext(AuthContext);

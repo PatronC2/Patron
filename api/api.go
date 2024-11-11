@@ -44,7 +44,7 @@ func main() {
     // host payloads server
     workDir, _ := os.Getwd()
     filesDir := http.Dir(filepath.Join(workDir, "payloads"))    
-    FileServer(r, "/files", filesDir)
+    FileServer(r, "/payloads", filesDir)
 
     // handle logins
     r.POST("/api/login", api.LoginHandler)
