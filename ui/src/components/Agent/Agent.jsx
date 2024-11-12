@@ -297,10 +297,9 @@ const Agent = () => {
           <input
             type="file"
             onChange={(e) => setFileToUpload(e.target.files[0])}
-            required
           />
         </div>
-        <button type="submit">Upload</button>
+        <button type="submit">Request Transfer</button>
       </form>
       {uploadError && <p className="error">{uploadError}</p>}
     </div>
