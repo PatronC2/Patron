@@ -3,6 +3,7 @@ package data
 import (
 	"database/sql"
     "fmt"
+    "path/filepath"
 
 	"github.com/PatronC2/Patron/types"	
 	"github.com/PatronC2/Patron/lib/logger"	
@@ -68,5 +69,77 @@ func UpdateFileTransfer(fileData types.FileToServer) error {
 
 	fmt.Printf("File transfer with ID %s updated successfully\n", fileData.FileID)
 	return nil
+}
+
+func ListFilesForUUID(uuid string) ([]types.FileResponse, error) {
+    var files []types.FileResponse
+    query := `
+        SELECT 
+            "FileID",
+            "Path",
+            "Type"
+        FROM "files"
+        WHERE "UUID" = $1;
+    `
+    rows, err := db.Query(query, uuid)
+    if err != nil {
+        logger.Logf(logger.Error, "Error listing files for UUID %s: %v\n", uuid, err)
+        return nil, err
+    }
+    defer rows.Close()
+
+    for rows.Next() {
+        var file types.FileResponse
+        err := rows.Scan(&file.FileID, &file.Path, &file.Type)
+        if err != nil {
+            logger.Logf(logger.Error, "Error scanning file for UUID %s: %v\n", uuid, err)
+            return nil, err
+        }
+        files = append(files, file)
+    }
+
+    if err = rows.Err(); err != nil {
+        logger.Logf(logger.Error, "Error with result rows for UUID %s: %v\n", uuid, err)
+        return nil, err
+    }
+
+    return files, nil
+}
+
+func DownloadFile(fileID string) ([]byte, string, error) {
+    var content []byte
+    var path string
+    query := `
+        SELECT "Content", "Path"
+        FROM "files"
+        WHERE "FileID" = $1;
+    `
+
+    err := db.QueryRow(query, fileID).Scan(&content, &path)
+    if err == sql.ErrNoRows {
+        logger.Logf(logger.Info, "No file found with FileID: %s\n", fileID)
+        return nil, "", nil
+    } else if err != nil {
+        logger.Logf(logger.Error, "Error downloading file with FileID %s: %v\n", fileID, err)
+        return nil, "", err
+    }
+
+    return content, filepath.Base(path), nil
+}
+
+func UploadFile(path string, uuid string, content []byte) error {
+    // "Download" is from the agent POV, not the api.
+    query := `
+        INSERT INTO "files" ("UUID", "Type", "Path", "Content", "Status")
+        VALUES ($1, 'Download', $2, $3, 'Pending');
+    `
+    _, err := db.Exec(query, uuid, path, content)
+    if err != nil {
+        logger.Logf(logger.Error, "Error uploading file for UUID %s to path %s: %v\n", uuid, path, err)
+        return err
+    }
+
+    logger.Logf(logger.Info, "File uploaded for UUID %s to path %s\n", uuid, path)
+    return nil
 }
 
