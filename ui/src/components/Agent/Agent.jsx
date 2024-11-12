@@ -281,7 +281,7 @@ const Agent = () => {
         </tbody>
       </table>
   
-      <h3>Initiate File Transfer</h3>
+      <h3>File Transfers</h3>
       <form onSubmit={(e) => { e.preventDefault(); handleFileTransferRequest(); }}>
         <div>
           <label>Path: </label>
