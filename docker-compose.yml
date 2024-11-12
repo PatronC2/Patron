@@ -16,6 +16,7 @@ services:
     volumes:
       - ./logs:/app/logs
       - ./certs:/app/certs
+      - ./files:/app/files
     networks:
       - internal_c2_network
     ports:
@@ -48,6 +49,7 @@ services:
     volumes:
       - ./logs:/app/logs
       - ./payloads:/app/payloads
+      - ./files:/app/files
       - /var/run/docker.sock:/var/run/docker.sock
       - ./client/payloads.json:/app/payloads.json
     networks:

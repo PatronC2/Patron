@@ -17,6 +17,10 @@ func RegisterGobTypes() {
 		types.CommandStatusResponse{},
 		types.KeysRequest{},
 		types.KeysResponse{},
+		types.FileRequest{},
+		types.FileResponse{},
+		types.FileToServer{},
+		types.FileTransferStatusResponse{},
 	} {
 		gob.Register(t)
 	}

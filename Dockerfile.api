@@ -18,7 +18,7 @@ RUN apk add docker-cli curl upx
 EXPOSE ${WEBSERVER_PORT}
 
 HEALTHCHECK --interval=15s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -fL http://localhost:${WEBSERVER_PORT}/files || exit 1
+  CMD curl -fL http://localhost:${WEBSERVER_PORT}/fileserver || exit 1
 
 # Command to run the API
 CMD ["./app"]
