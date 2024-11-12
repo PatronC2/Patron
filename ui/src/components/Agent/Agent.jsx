@@ -40,6 +40,7 @@ const Agent = () => {
   const [fileUploadPath, setFileUploadPath] = useState('');
   const [fileToUpload, setFileToUpload] = useState(null);
   const [uploadError, setUploadError] = useState(null);
+  const fileInputRef = useRef(null);
   
 
   const getQueryParam = (param) => {
@@ -130,7 +131,6 @@ const Agent = () => {
     }
   };
   
-  
   const handleFileTransferRequest = async () => {
     try {
       const formData = new FormData();
@@ -148,6 +148,11 @@ const Agent = () => {
       await axios.post('/api/files/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+  
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''; 
+      }
+  
     } catch (err) {
       setUploadError('Failed to upload file');
     }
@@ -298,6 +303,7 @@ const Agent = () => {
             <input
               type="file"
               onChange={(e) => setFileToUpload(e.target.files[0])}
+              ref={fileInputRef}
             />
           </div>
           <button type="submit">Request Transfer</button>
