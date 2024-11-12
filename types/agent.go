@@ -6,17 +6,19 @@ type ResponseType string
 
 // Constants for request and response types
 const (
-	ConfigurationRequestType   RequestType  = "ConfigurationRequest"
-	CommandRequestType         RequestType  = "CommandRequest"
-	CommandStatusRequestType   RequestType  = "CommandStatusRequest"
-	FileRequestType            RequestType  = "FileRequest"
-	KeysRequestType            RequestType  = "KeysRequest"
+	ConfigurationRequestType   		RequestType = "ConfigurationRequest"
+	CommandRequestType         		RequestType = "CommandRequest"
+	CommandStatusRequestType   		RequestType = "CommandStatusRequest"
+	KeysRequestType            		RequestType = "KeysRequest"
+	FileRequestType           		RequestType = "FileRequest"
+	FileToServerType				RequestType = "FileToServer"
 
-	ConfigurationResponseType  ResponseType = "ConfigurationResponse"
-	CommandResponseType        ResponseType = "CommandResponse"
-	CommandStatusResponseType  ResponseType  = "CommandStatusResponse"
-	FileResponseType           ResponseType = "FileResponse"
-	KeysResponseType           ResponseType = "KeysResponse"
+	ConfigurationResponseType  		ResponseType = "ConfigurationResponse"
+	CommandResponseType        		ResponseType = "CommandResponse"
+	CommandStatusResponseType  		ResponseType = "CommandStatusResponse"
+	KeysResponseType           		ResponseType = "KeysResponse"
+	FileResponseType           		ResponseType = "FileResponse"
+	FileTransferStatusResponseType	ResponseType = "FileTransferStatusResponse"
 )
 
 // General Request struct with typed payload
@@ -94,4 +96,33 @@ type AgentCommands struct {
 	Command     string `json:"command"`
 	CommandUUID string `json:"commanduuid"`
 	Output      string `json:"output"`
+}
+
+// FileRequest is sent by agent to check for files
+type FileRequest struct {
+	AgentID string `json:"uuid"`
+}
+
+// FileResponse is sent back to the agent after a FileRequest. Prepares the agent for a transfer
+type FileResponse struct {
+	FileID    		string `json:"fileid"`
+	AgentID			string `json:"uuid"`
+	Type			string `json:"transfertype"`
+	Path 			string `json:"filepath"`
+	Chunk			[]byte `json:"chunk"`
+}
+
+// This manages success messages if Type = download. Otherwise, send data to server
+type FileToServer struct {
+	FileID    		string `json:"fileid"`
+	AgentID			string `json:"uuid"`
+	Type			string `json:"transfertype"`
+	Path 			string `json:"path"`
+	Status			string `json:"status"`
+	Chunk			[]byte `json:"chunk"`
+}
+
+type FileTransferStatusResponse struct {
+	FileID    		string `json:"fileid"`
+	AgentID			string `json:"uuid"`
 }

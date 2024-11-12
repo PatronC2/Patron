@@ -16,7 +16,7 @@
     background-color: red;
     padding: 20px;
     border-radius: 5px;
-    width: 600px;
+    width: 620px;
     height: 800px;
 }
 
@@ -117,4 +117,10 @@ input[type="text"], input[type="number"] {
     padding: 10px;
     box-sizing: border-box;
     margin-bottom: 10px;
+}
+
+.files-list {
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 10px;
 }

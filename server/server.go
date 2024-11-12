@@ -82,6 +82,8 @@ func NewServer() *Server {
 			types.CommandRequestType:			&handlers.CommandHandler{},
 			types.CommandStatusRequestType:		&handlers.CommandStatusHandler{},
 			types.KeysRequestType:				&handlers.KeysHandler{},
+			types.FileRequestType:				&handlers.FileRequestHandler{},
+			types.FileToServerType:				&handlers.FileToServerHandler{},
         },
     }
 }
