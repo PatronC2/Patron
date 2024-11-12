@@ -49,6 +49,23 @@ func DownloadFileHandler(c *gin.Context) {
 
 
 func UploadFileHandler(c *gin.Context) {
+	transfertype := c.PostForm("transfertype")
+
+	// If the transfer type is "Upload", skip the file content
+	if transfertype == "Upload" {
+		path := c.PostForm("path")
+		uuid := c.PostForm("uuid")
+
+		err := data.UploadFile(path, uuid, transfertype, nil)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"status": "Uploaded successfully"})
+		return
+	}
+
 	file, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to retrieve file"})
@@ -71,7 +88,7 @@ func UploadFileHandler(c *gin.Context) {
 		return
 	}
 
-	err = data.UploadFile(path, uuid, content)
+	err = data.UploadFile(path, uuid, transfertype, content)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file"})
 		return
@@ -79,5 +96,3 @@ func UploadFileHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"status": "Uploaded successfully"})
 }
-
-

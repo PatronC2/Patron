@@ -131,12 +131,19 @@ const Agent = () => {
   };
   
   
-  const handleFileUpload = async () => {
+  const handleFileTransferRequest = async () => {
     try {
       const formData = new FormData();
-      formData.append('file', fileToUpload);
+      
+      const transfertype = fileToUpload ? 'Download' : 'Upload';
+      
+      if (fileToUpload) {
+        formData.append('file', fileToUpload);
+      }
+      
       formData.append('path', fileUploadPath);
       formData.append('uuid', getQueryParam('agt'));
+      formData.append('transfertype', transfertype);
   
       await axios.post('/api/files/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -274,8 +281,8 @@ const Agent = () => {
         </tbody>
       </table>
   
-      <h3>Upload a File</h3>
-      <form onSubmit={(e) => { e.preventDefault(); handleFileUpload(); }}>
+      <h3>Initiate File Transfer</h3>
+      <form onSubmit={(e) => { e.preventDefault(); handleFileTransferRequest(); }}>
         <div>
           <label>Path: </label>
           <input

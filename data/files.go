@@ -127,19 +127,34 @@ func DownloadFile(fileID string) ([]byte, string, error) {
     return content, filepath.Base(path), nil
 }
 
-func UploadFile(path string, uuid string, content []byte) error {
-    // "Download" is from the agent POV, not the api.
-    query := `
-        INSERT INTO "files" ("UUID", "Type", "Path", "Content", "Status")
-        VALUES ($1, 'Download', $2, $3, 'Pending');
-    `
-    _, err := db.Exec(query, uuid, path, content)
-    if err != nil {
-        logger.Logf(logger.Error, "Error uploading file for UUID %s to path %s: %v\n", uuid, path, err)
-        return err
-    }
+func UploadFile(path string, uuid string, transfertype string, content []byte) error {
+	// "Download" is from the agent's perspective, not the API.
+	// If it's an "Upload", we don't need to store content
+	if transfertype == "Upload" {
+		// Insert file with no content for uploads
+		query := `
+			INSERT INTO "files" ("UUID", "Type", "Path")
+			VALUES ($1, $2, $3);
+		`
+		_, err := db.Exec(query, uuid, transfertype, path)
+		if err != nil {
+			logger.Logf(logger.Error, "Error uploading file for UUID %s to path %s: %v\n", uuid, path, err)
+			return err
+		}
+		logger.Logf(logger.Info, "File uploaded for UUID %s to path %s\n", uuid, path)
+	} else if transfertype == "Download" {
+		// Insert file with content for downloads
+		query := `
+			INSERT INTO "files" ("UUID", "Type", "Path", "Content")
+			VALUES ($1, $2, $3, $4);
+		`
+		_, err := db.Exec(query, uuid, transfertype, path, content)
+		if err != nil {
+			logger.Logf(logger.Error, "Error uploading file for UUID %s to path %s: %v\n", uuid, path, err)
+			return err
+		}
+		logger.Logf(logger.Info, "File uploaded for UUID %s to path %s\n", uuid, path)
+	}
 
-    logger.Logf(logger.Info, "File uploaded for UUID %s to path %s\n", uuid, path)
-    return nil
+	return nil
 }
-
