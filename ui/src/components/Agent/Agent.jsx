@@ -258,28 +258,30 @@ const Agent = () => {
   const renderFilesTab = () => (
     <div className="files-tab">
       <h3>Files</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>File Path</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {files.map((file) => (
-            <tr key={file.FileID}>
-              <td>{file.Path}</td>
-              <td>{file.Status}</td>
-              <td>
-                <button onClick={() => handleDownloadFile(file.FileID)}>
-                  Download
-                </button>
-              </td>
+      <div className="files-list">
+        <table>
+          <thead>
+            <tr>
+              <th>File Path</th>
+              <th>Status</th>
+              <th>Action</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {files.map((file) => (
+              <tr key={file.FileID}>
+                <td>{file.Path}</td>
+                <td>{file.Status}</td>
+                <td>
+                  <button onClick={() => handleDownloadFile(file.FileID)}>
+                    Download
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
   
       <h3>File Transfers</h3>
       <form onSubmit={(e) => { e.preventDefault(); handleFileTransferRequest(); }}>
@@ -304,7 +306,6 @@ const Agent = () => {
       {uploadError && <p className="error">{uploadError}</p>}
     </div>
   );
-  
 
   const handleSaveNotes = async () => {
     try {

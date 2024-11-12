@@ -118,3 +118,8 @@ input[type="text"], input[type="number"] {
     box-sizing: border-box;
     margin-bottom: 10px;
 }
+
+.files-list {
+    height: 600px;
+    overflow-y: auto; 
+}
