@@ -148,11 +148,11 @@ const Agent = () => {
       await axios.post('/api/files/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      setFileUploadPath('');
-      setFileToUpload(null);
     } catch (err) {
       setUploadError('Failed to upload file');
     }
+    setFileUploadPath('');
+    setFileToUpload(null);
   };
   
 
