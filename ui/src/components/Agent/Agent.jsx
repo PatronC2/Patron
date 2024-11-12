@@ -296,7 +296,6 @@ const Agent = () => {
           <div>
             <label>File: </label>
             <input
-              key={fileToUpload ? fileToUpload.name : 'No file chosen. This will attempt to download a file from target system.'}
               type="file"
               onChange={(e) => setFileToUpload(e.target.files[0])}
             />
