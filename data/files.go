@@ -71,8 +71,8 @@ func UpdateFileTransfer(fileData types.FileToServer) error {
 	return nil
 }
 
-func ListFilesForUUID(uuid string) ([]types.FileResponse, error) {
-    var files []types.FileResponse
+func ListFilesForUUID(uuid string) ([]types.FileToServer, error) {
+    var files []types.FileToServer
     query := `
         SELECT 
             "FileID",
@@ -89,7 +89,7 @@ func ListFilesForUUID(uuid string) ([]types.FileResponse, error) {
     defer rows.Close()
 
     for rows.Next() {
-        var file types.FileResponse
+        var file types.FileToServer
         err := rows.Scan(&file.FileID, &file.Path, &file.Status)
         if err != nil {
             logger.Logf(logger.Error, "Error scanning file for UUID %s: %v\n", uuid, err)

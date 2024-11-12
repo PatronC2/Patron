@@ -108,7 +108,7 @@ type FileResponse struct {
 	FileID    		string `json:"fileid"`
 	AgentID			string `json:"uuid"`
 	Type			string `json:"transfertype"`
-	Path 			string `json:"paFileResponseth"`
+	Path 			string `json:"filepath"`
 	Chunk			[]byte `json:"chunk"`
 }
 
