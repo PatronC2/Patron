@@ -255,57 +255,58 @@ const Agent = () => {
     </div>
   );
 
-  const renderFilesTab = () => (
-    <div className="files-tab">
-      <h3>Files</h3>
-      <div className="files-list">
-        <table>
-          <thead>
-            <tr>
-              <th>File Path</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {files.map((file) => (
-              <tr key={file.FileID}>
-                <td>{file.Path}</td>
-                <td>{file.Status}</td>
-                <td>
-                  <button onClick={() => handleDownloadFile(file.FileID)}>
-                    Download
-                  </button>
-                </td>
+  const renderFilesTab = () => {
+    return (
+      <div>
+        <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+          <table>
+            <thead>
+              <tr>
+                <th>File Path</th>
+                <th>Status</th>
+                <th>Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {files.map((file) => (
+                <tr key={file.FileID}>
+                  <td>{file.Path}</td>
+                  <td>{file.Status}</td>
+                  <td>
+                    <button onClick={() => handleDownloadFile(file.FileID)}>
+                      Download
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <h3>File Transfers</h3>
+        <form onSubmit={(e) => { e.preventDefault(); handleFileTransferRequest(); }}>
+          <div>
+            <label>Path: </label>
+            <input
+              type="text"
+              value={fileUploadPath}
+              onChange={(e) => setFileUploadPath(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label>File: </label>
+            <input
+              key={fileToUpload ? fileToUpload.name : 'No file chosen. This will attempt to download a file from target system.'}
+              type="file"
+              onChange={(e) => setFileToUpload(e.target.files[0])}
+            />
+          </div>
+          <button type="submit">Request Transfer</button>
+        </form>
+        {uploadError && <p className="error">{uploadError}</p>}
       </div>
-  
-      <h3>File Transfers</h3>
-      <form onSubmit={(e) => { e.preventDefault(); handleFileTransferRequest(); }}>
-        <div>
-          <label>Path: </label>
-          <input
-            type="text"
-            value={fileUploadPath}
-            onChange={(e) => setFileUploadPath(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label>File: </label>
-          <input
-            type="file"
-            onChange={(e) => setFileToUpload(e.target.files[0])}
-          />
-        </div>
-        <button type="submit">Request Transfer</button>
-      </form>
-      {uploadError && <p className="error">{uploadError}</p>}
-    </div>
-  );
+    );
+  };
 
   const handleSaveNotes = async () => {
     try {
@@ -444,13 +445,13 @@ const Agent = () => {
   const renderTagsTab = () => {
     return (
       <div>
-      <div style={{ maxHeight: '300px', overflowY: 'auto' }}> {/* Set your desired height */}
+      <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
         <table>
           <thead>
             <tr>
               <th>Key</th>
               <th>Value</th>
-              <th>Action</th> {/* Added a header for actions */}
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -459,7 +460,7 @@ const Agent = () => {
                 <td>{tag.key}</td>
                 <td>{tag.value || 'N/A'}</td>
                 <td>
-                  <button onClick={() => handleDeleteTag(tag.tagid)}>Delete</button> {/* Delete button */}
+                  <button onClick={() => handleDeleteTag(tag.tagid)}>Delete</button>
                 </td>
               </tr>
             ))}

