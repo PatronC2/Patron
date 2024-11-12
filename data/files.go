@@ -77,7 +77,7 @@ func ListFilesForUUID(uuid string) ([]types.FileResponse, error) {
         SELECT 
             "FileID",
             "Path",
-            "Type"
+            "Status"
         FROM "files"
         WHERE "UUID" = $1;
     `
@@ -90,7 +90,7 @@ func ListFilesForUUID(uuid string) ([]types.FileResponse, error) {
 
     for rows.Next() {
         var file types.FileResponse
-        err := rows.Scan(&file.FileID, &file.Path, &file.Type)
+        err := rows.Scan(&file.FileID, &file.Path, &file.Status)
         if err != nil {
             logger.Logf(logger.Error, "Error scanning file for UUID %s: %v\n", uuid, err)
             return nil, err

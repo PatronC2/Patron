@@ -25,7 +25,7 @@ func HandleFileRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Deco
 		}
 		if response.Type == types.FileResponseType {
 			if fileResponse, ok := response.Payload.(types.FileResponse); ok {
-				logger.Logf(logger.Info, "Recieved File Response Type: FileID: %v AgentID: %v Type: %v, Content: %v", fileResponse.FileID, fileResponse.AgentID, fileResponse.Type, fileResponse.Chunk)
+				logger.Logf(logger.Info, "Recieved File Response Type: FileID: %v AgentID: %v Type: %v", fileResponse.FileID, fileResponse.AgentID, fileResponse.Type)
 				if fileResponse.Type == "Download" {
 					logger.Logf(logger.Info, "Downloading file to %v", fileResponse.Path)
 					err := downloadHandler(fileResponse)

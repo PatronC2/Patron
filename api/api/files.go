@@ -25,7 +25,7 @@ func ListFilesForUUIDHandler(c *gin.Context) {
 		fileList = append(fileList, gin.H{
 			"FileID": file.FileID,
 			"Path":   file.Path,
-			"Type":   file.Type,
+			"Status": file.Status,
 		})
 	}
 
