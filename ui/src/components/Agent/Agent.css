@@ -5,7 +5,6 @@
 
 .agent-details {
     flex: 1;
-    background-color: #66a4b0;
     padding: 20px;
     border-radius: 5px;
     width: 600px;
@@ -82,7 +81,6 @@
 
 .command-input button {
     padding: 10px 20px;
-    background-color: #66a4b0;
     border: none;
     cursor: pointer;
     color: white;

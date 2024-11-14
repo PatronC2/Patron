@@ -87,8 +87,8 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
                     setNotification('Error: Unauthorized.');
                     setNotificationType('error');
                 } else {
-                    console.error(`Failed to compile: ${error.response.error}`);
-                    setNotification(`Failed to compile: ${error.response.error}`);
+                    console.error(`Failed to compile: ${error.response.data.error}`);
+                    setNotification(`Failed to compile: ${error.response.data.error}`);
                     setNotificationType('error');
                 }
             } else if (error.request) {

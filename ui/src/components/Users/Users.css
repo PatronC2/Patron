@@ -42,13 +42,11 @@
     align-items: center;
     padding-top: 140px;
     margin-left: 250px;
-    background-color: #66a4b0;
     transition: margin-left 0.3s ease-in-out;
 }
 
 body.users-page {
     min-height: 100vh;
-    background-color: #66a4b0;
     padding-top: 70px;
     display: flex;
     justify-content: center;
