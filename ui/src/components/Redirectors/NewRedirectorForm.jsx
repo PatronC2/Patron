@@ -15,7 +15,6 @@ const NewRedirectorForm = ({ fetchData, setActiveTab }) => {
         Description: '',
         ForwardIP: `${PATRON_C2_IP}`,
         ForwardPort: `${PATRON_C2_PORT}`,
-        ListenIP: `0.0.0.0`,
         ListenPort: `${PATRON_C2_PORT}`,
     });
     const [loading, setLoading] = useState(false);
@@ -88,7 +87,7 @@ const NewRedirectorForm = ({ fetchData, setActiveTab }) => {
 
     return (
         <div>
-            {loading && <div className="loading-indicator">Loading...</div>} {/* Loading indicator */}
+            {loading && <div className="loading-indicator">Loading...</div>}
             <form onSubmit={handleSubmit}>
                 <div>
                     <label htmlFor="Name">Redirector Name:</label>
@@ -105,10 +104,6 @@ const NewRedirectorForm = ({ fetchData, setActiveTab }) => {
                 <div>
                     <label htmlFor="ForwardPort">Forward Port:</label>
                     <input type="text" id="ForwardPort" name="ForwardPort" value={formData.ForwardPort} onChange={handleChange} />
-                </div>
-                <div>
-                    <label htmlFor="ListenIP">Listen IP:</label>
-                    <input type="text" id="ListenIP" name="ListenIP" value={formData.ListenIP} onChange={handleChange} />
                 </div>
                 <div>
                     <label htmlFor="ListenPort">Listen Port:</label>

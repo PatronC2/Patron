@@ -18,6 +18,7 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
         serverport: `${PATRON_C2_PORT}`,
         callbackfrequency: '300',
         callbackjitter: '80',
+        logging: 'false',
     });
     const [availableTypes, setAvailableTypes] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -86,8 +87,8 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
                     setNotification('Error: Unauthorized.');
                     setNotificationType('error');
                 } else {
-                    console.error(`Failed to compile: ${error.response.data}`);
-                    setNotification(`Failed to compile: ${error.response.data}`);
+                    console.error(`Failed to compile: ${error.response.error}`);
+                    setNotification(`Failed to compile: ${error.response.error}`);
                     setNotificationType('error');
                 }
             } else if (error.request) {
@@ -141,6 +142,13 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
                 <div>
                     <label htmlFor="callbackjitter">Call Back Jitter:</label>
                     <input type="text" id="callbackjitter" name="callbackjitter" value={formData.callbackjitter} onChange={handleChange} />
+                </div>
+                <div>
+                    <label htmlFor="logging">Enable Logging:</label>
+                    <select id="logging" name="logging" value={formData.logging} onChange={handleChange}>
+                        <option value="true">True</option>
+                        <option value="false">False</option>
+                    </select>
                 </div>
                 <button type="submit">Create Payload</button>
                 {notification && (

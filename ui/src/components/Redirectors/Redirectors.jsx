@@ -109,7 +109,6 @@ const Redirectors = () => {
                                     <th>Description</th>
                                     <th>Forward IP</th>
                                     <th>Forward Port</th>
-                                    <th>Listener IP</th>
                                     <th>Listener Port</th>
                                     <th>Status</th>
                                 </tr>
@@ -121,7 +120,6 @@ const Redirectors = () => {
                                         <td>{item.description}</td>
                                         <td>{item.forwardip}</td>
                                         <td>{item.forwardport}</td>
-                                        <td>{item.listenip}</td>
                                         <td>{item.listenport}</td>
                                         <td>{item.status}</td>
                                     </tr>

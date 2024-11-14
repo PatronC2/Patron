@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"encoding/json"
 	"io/ioutil"
+    "net"
 	"net/http"
 	"os"
 	"os/exec"
 	"strings"
+    "strconv"
 
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/types"
@@ -47,6 +49,11 @@ func CreatePayloadHandler(c *gin.Context) {
         return
     }
 
+    if err := validateBody(body); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
     key := body["type"]
     config, exists := configs[key]
     if !exists {
@@ -64,7 +71,7 @@ func CreatePayloadHandler(c *gin.Context) {
 
     commandString := fmt.Sprintf(
         "docker run --rm -v %s:/build -w /build golang:1.22.3 sh -c '"+
-            "%s env %s go build %s \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" "+
+            "%s env %s go build %s \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s -X main.LoggingEnabled=%s\" "+
             "-o /build/payloads/%s%s /build/client/%s'",
         repo_dir,
 		dependencyCommands,
@@ -75,6 +82,7 @@ func CreatePayloadHandler(c *gin.Context) {
         body["callbackfrequency"],
         body["callbackjitter"],
         publickey,
+        body["logging"],
         concat,
         config.FileSuffix,
         config.CodePath,
@@ -104,6 +112,38 @@ func CreatePayloadHandler(c *gin.Context) {
     data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat)
     c.JSON(http.StatusOK, gin.H{"data": "success"})
 }
+
+func validateBody(body map[string]string) error {
+    if net.ParseIP(body["serverip"]) == nil {
+        return fmt.Errorf("Invalid IP address")
+    }
+
+    port, err := strconv.Atoi(body["serverport"])
+    if err != nil || port < 1 || port > 65535 {
+        return fmt.Errorf("Invalid port")
+    }
+
+    callbackFrequency, err := strconv.Atoi(body["callbackfrequency"])
+    if err != nil || callbackFrequency < 0 || callbackFrequency > 3600 {
+        return fmt.Errorf("callbackfrequency must be a number between 0 and 3600")
+    }
+
+    callbackJitter, err := strconv.Atoi(body["callbackjitter"])
+    if err != nil || callbackJitter < 1 || callbackJitter > 99 {
+        return fmt.Errorf("callbackjitter must be a number between 1 and 99")
+    }
+
+    if strings.Contains(body["name"], " ") {
+        return fmt.Errorf("name must not contain spaces")
+    }
+
+    if body["logging"] != "true" && body["logging"] != "false" {
+        return fmt.Errorf("logging must be either 'true' or 'false'")
+    }
+
+    return nil
+}
+
 
 func GetConfigurationsHandler(c *gin.Context) {
 	configs, err := loadConfigurations("payloads.json")

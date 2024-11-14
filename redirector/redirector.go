@@ -19,7 +19,6 @@ import (
 var (
 	mainServerIP    = os.Getenv("MAIN_SERVER_IP")
 	mainServerPort  = os.Getenv("MAIN_SERVER_PORT")
-	forwarderIP     = os.Getenv("FORWARDER_IP")
 	forwarderPort   = os.Getenv("FORWARDER_PORT")
 	apiIP           = os.Getenv("API_IP")
 	apiPort         = os.Getenv("API_PORT")
@@ -33,7 +32,6 @@ func main() {
 	logger.EnableLogging(enableLogging)
     common.RegisterGobTypes()
 
-	// Set the log file
 	logFileName := "logs/forwarder.log"
 	err := logger.SetLogFile(logFileName)
 	if err != nil {
@@ -41,23 +39,15 @@ func main() {
 		return
 	}
 
-	// Load TLS certificate for the listener
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		logger.Logf(logger.Warning, "Failed to load certificate: %v", err)
 	}
 
-	// TLS configuration for incoming connections
 	tlsConfig := &tls.Config{Certificates: []tls.Certificate{cert}}
 
-	// Start listening on forwarder IP and port
-	listener, err := tls.Listen("tcp", forwarderIP+":"+forwarderPort, tlsConfig)
-	if err != nil {
-		logger.Logf(logger.Warning, "Failed to start listener: %v\n", err)
-		return
-	}
-	defer listener.Close()
-	logger.Logf(logger.Info, "Forwarder listening on %s:%s", forwarderIP, forwarderPort)
+	go listenAndServe("0.0.0.0:"+forwarderPort, tlsConfig)
+	go listenAndServe("[::]:"+forwarderPort, tlsConfig)
 
 	go func() {
 		for {
@@ -69,10 +59,22 @@ func main() {
 		}
 	}()
 
+	select {}
+}
+
+func listenAndServe(address string, tlsConfig *tls.Config) {
+	listener, err := tls.Listen("tcp", address, tlsConfig)
+	if err != nil {
+		logger.Logf(logger.Warning, "Failed to start listener on %s: %v", address, err)
+		return
+	}
+	defer listener.Close()
+	logger.Logf(logger.Info, "Forwarder listening on %s", address)
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			logger.Logf(logger.Warning, "Failed to accept connection: %v\n", err)
+			logger.Logf(logger.Warning, "Failed to accept connection on %s: %v", address, err)
 			continue
 		}
 		go handleClientConnection(conn)

