@@ -58,7 +58,7 @@ func GetRedirectors() (redirectors []types.Redirector, err error) {
 func CreateRedirector(RedirectorID, Name, Description, ForwardIP, ForwardPort, ListenPort string) error {
     InsertSQL := `
         INSERT INTO "redirectors" ("RedirectorID", "Name", "Description", "ForwardIP", "ForwardPort", "ListenPort")
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        VALUES ($1, $2, $3, $4, $5, $6)
     `
 
     _, err := db.Exec(InsertSQL, RedirectorID, Name, Description, ForwardIP, ForwardPort, ListenPort)
