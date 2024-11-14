@@ -23,8 +23,8 @@ import (
 )
 
 
-func Initialize() {
-	logger.EnableLogging(true)
+func Initialize(logging_enabled bool) {
+	logger.EnableLogging(logging_enabled)
 	if err := logger.SetLogFile("app.log"); err != nil {
 		fmt.Printf("Error setting log file: %v\n", err)
 	}

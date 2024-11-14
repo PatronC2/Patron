@@ -71,7 +71,7 @@ func CreatePayloadHandler(c *gin.Context) {
 
     commandString := fmt.Sprintf(
         "docker run --rm -v %s:/build -w /build golang:1.22.3 sh -c '"+
-            "%s env %s go build %s \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s\" "+
+            "%s env %s go build %s \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s -X main.LoggingEnabled=%s\" "+
             "-o /build/payloads/%s%s /build/client/%s'",
         repo_dir,
 		dependencyCommands,
@@ -82,6 +82,7 @@ func CreatePayloadHandler(c *gin.Context) {
         body["callbackfrequency"],
         body["callbackjitter"],
         publickey,
+        body["logging"],
         concat,
         config.FileSuffix,
         config.CodePath,
@@ -134,6 +135,10 @@ func validateBody(body map[string]string) error {
 
     if strings.Contains(body["name"], " ") {
         return fmt.Errorf("name must not contain spaces")
+    }
+
+    if body["logging"] != "true" && body["logging"] != "false" {
+        return fmt.Errorf("logging must be either 'true' or 'false'")
     }
 
     return nil
