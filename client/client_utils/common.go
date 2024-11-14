@@ -23,8 +23,12 @@ import (
 )
 
 
-func Initialize(logging_enabled bool) {
-	logger.EnableLogging(logging_enabled)
+func Initialize(logging_enabled string) {
+    set_logging, err := strconv.ParseBool(logging_enabled)
+    if err != nil {
+        log.Fatalf("Failed to parse LoggingEnabled: %v\n", err)
+    }
+	logger.EnableLogging(set_logging)
 	if err := logger.SetLogFile("app.log"); err != nil {
 		fmt.Printf("Error setting log file: %v\n", err)
 	}

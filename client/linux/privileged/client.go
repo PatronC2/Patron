@@ -19,7 +19,7 @@ var (
 	CallbackFrequency	string
 	CallbackJitter		string
 	RootCert			string
-	LoggingEnabled		bool
+	LoggingEnabled		string
 	cache				string
 )
 

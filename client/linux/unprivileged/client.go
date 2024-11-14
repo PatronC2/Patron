@@ -18,7 +18,7 @@ var (
 	CallbackFrequency	string
 	CallbackJitter		string
 	RootCert			string
-	LoggingEnabled		bool
+	LoggingEnabled		string
 )
 
 func main() {
