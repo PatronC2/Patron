@@ -13,9 +13,9 @@ html {
 }
 
 :root {
-    --background-color: #ffffff;
+    --background-color: #e2f3f2;
     --text-color: #000000;
-    --primary-color: #cbe9e4;
+    --primary-color: #66a4b0;
     --status-online: green;
     --status-offline: red;
 }
