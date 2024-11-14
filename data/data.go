@@ -202,7 +202,6 @@ func InitDatabase() {
 		"Description" TEXT,
 		"ForwardIP" TEXT,
 		"ForwardPort" TEXT,
-		"ListenIP" TEXT NOT NULL DEFAULT '0.0.0.0',
 		"ListenPort" TEXT NOT NULL,
 		"LastReport" TIMESTAMP
 	);
@@ -213,7 +212,6 @@ func InitDatabase() {
 		"Description",
 		"ForwardIP",
 		"ForwardPort",
-		"ListenIP",
 		"ListenPort",
 		"LastReport",
 		CASE 

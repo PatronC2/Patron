@@ -18,7 +18,6 @@ func GetRedirectors() (redirectors []types.Redirector, err error) {
 		"Description",
 		"ForwardIP",
 		"ForwardPort",
-		"ListenIP",
 		"ListenPort",
 		"Status"
 	FROM "redirector_status"
@@ -37,7 +36,6 @@ func GetRedirectors() (redirectors []types.Redirector, err error) {
 			&data.Description,
 			&data.ForwardIP,
 			&data.ForwardPort,
-			&data.ListenIP,
 			&data.ListenPort,
 			&data.Status,
 		)
@@ -57,13 +55,13 @@ func GetRedirectors() (redirectors []types.Redirector, err error) {
 	return redirectors, nil
 }
 
-func CreateRedirector(RedirectorID, Name, Description, ForwardIP, ForwardPort, ListenIP, ListenPort string) error {
+func CreateRedirector(RedirectorID, Name, Description, ForwardIP, ForwardPort, ListenPort string) error {
     InsertSQL := `
-        INSERT INTO "redirectors" ("RedirectorID", "Name", "Description", "ForwardIP", "ForwardPort", "ListenIP", "ListenPort")
+        INSERT INTO "redirectors" ("RedirectorID", "Name", "Description", "ForwardIP", "ForwardPort", "ListenPort")
         VALUES ($1, $2, $3, $4, $5, $6, $7)
     `
 
-    _, err := db.Exec(InsertSQL, RedirectorID, Name, Description, ForwardIP, ForwardPort, ListenIP, ListenPort)
+    _, err := db.Exec(InsertSQL, RedirectorID, Name, Description, ForwardIP, ForwardPort, ListenPort)
     if err != nil {
         logger.Logf(logger.Error, "Error creating redirector with RedirectorID %s: %v", RedirectorID, err)
         return err

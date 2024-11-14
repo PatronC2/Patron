@@ -26,6 +26,7 @@ func GetRedirectorsHandler(c *gin.Context) {
 func CreateRedirectorHandler(c *gin.Context) {
 	api_ip			:= os.Getenv("REACT_APP_NGINX_IP")
 	api_port		:= os.Getenv("REACT_APP_NGINX_PORT")
+	// redirector_port is static, we can use docker networking to set the host port at runtime
 	redirector_port	:= os.Getenv("REDIRECTOR_PORT")
 
 	newRedirectorID := uuid.New().String()
@@ -37,15 +38,12 @@ func CreateRedirectorHandler(c *gin.Context) {
 
 	vForwardIP, _	:= regexp.MatchString(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`, body["ForwardIP"])	
 	vForwardPort, _	:= regexp.MatchString(`^(6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`, body["ForwardPort"])
-	vListenIP, _		:= regexp.MatchString(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`, body["ListenIP"])
 	vListenPort, _	:= regexp.MatchString(`^(6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`, body["ListenPort"])
 
 	if !vForwardIP {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ForwardIP"})
 	} else if !vForwardPort {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ForwardPort"})
-	} else if !vListenIP {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ListenIP"})
 	} else if !vListenPort {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ListenPort"})
 	} else {
@@ -55,6 +53,10 @@ func CreateRedirectorHandler(c *gin.Context) {
 linking_key="%s"
 api_ip="%s"
 api_port="%s"
+# This is the port set when the app was compiled. Do not change.
+redirector_port=%s
+# This port can be freely changed to change the port that the redirector listens on.
+external_redirector_port=%s
 tar_file="redirector.tar"
 
 rm -f $tar_file
@@ -89,6 +91,10 @@ else
 	sudo docker --version
 fi
 
+echo '{"ipv6": true, "fixed-cidr-v6": "2001:db8:1::/64"}" > /etc/docker/daemon.json '
+
+systemctl restart docker
+
 if [ -x "$wget" ]; then
     echo "wget Check OK"
 else
@@ -98,17 +104,16 @@ fi
 wget --no-check-certificate https://$api_ip:$api_port/fileserver/$tar_file
 docker load -i $tar_file
 docker run -d \
-	-p %s:%s \
+	-p $external_redirector_port:$redirector_port \
 	-e MAIN_SERVER_IP="%s" \
 	-e MAIN_SERVER_PORT="%s" \
-	-e FORWARDER_IP="%s" \
 	-e FORWARDER_PORT="%s" \
 	-e LINKING_KEY="$linking_key" \
 	-e API_IP="$api_ip" \
 	-e API_PORT="$api_port" \
 	-v ./logs:/app/logs \
 	patron-redirector
-`, newRedirectorID, api_ip, api_port, redirector_port, body["ListenPort"], body["ForwardIP"], body["ForwardPort"], body["ListenIP"], body["ListenPort"])
+`, newRedirectorID, api_ip, api_port, redirector_port, body["ListenPort"], body["ForwardIP"], body["ForwardPort"], body["ListenPort"])
 
 		logger.Logf(logger.Info, "Running command: %s", commandString)
 		cmd := exec.Command("sh", "-c", commandString)
@@ -118,7 +123,7 @@ docker run -d \
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error", "details": err.Error()})
 		} else {
-			data.CreateRedirector(newRedirectorID, body["Name"], body["Description"], body["ForwardIP"], body["ForwardPort"], body["ListenIP"], body["ListenPort"])
+			data.CreateRedirector(newRedirectorID, body["Name"], body["Description"], body["ForwardIP"], body["ForwardPort"], body["ListenPort"])
 			c.Header("Content-Disposition", "attachment; filename=redirector_install.sh")
 			c.Data(http.StatusOK, "application/x-sh", []byte(script))
 		}

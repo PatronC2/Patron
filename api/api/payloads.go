@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"encoding/json"
 	"io/ioutil"
+    "net"
 	"net/http"
 	"os"
 	"os/exec"
 	"strings"
+    "strconv"
 
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/types"
@@ -44,6 +46,11 @@ func CreatePayloadHandler(c *gin.Context) {
     var body map[string]string
     if err := c.BindJSON(&body); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+        return
+    }
+
+    if err := validateBody(body); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
 
@@ -104,6 +111,34 @@ func CreatePayloadHandler(c *gin.Context) {
     data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat)
     c.JSON(http.StatusOK, gin.H{"data": "success"})
 }
+
+func validateBody(body map[string]string) error {
+    if net.ParseIP(body["serverip"]) == nil {
+        return fmt.Errorf("Invalid IP address")
+    }
+
+    port, err := strconv.Atoi(body["serverport"])
+    if err != nil || port < 1 || port > 65535 {
+        return fmt.Errorf("Invalid port")
+    }
+
+    callbackFrequency, err := strconv.Atoi(body["callbackfrequency"])
+    if err != nil || callbackFrequency < 0 || callbackFrequency > 3600 {
+        return fmt.Errorf("callbackfrequency must be a number between 0 and 3600")
+    }
+
+    callbackJitter, err := strconv.Atoi(body["callbackjitter"])
+    if err != nil || callbackJitter < 1 || callbackJitter > 99 {
+        return fmt.Errorf("callbackjitter must be a number between 1 and 99")
+    }
+
+    if strings.Contains(body["name"], " ") {
+        return fmt.Errorf("name must not contain spaces")
+    }
+
+    return nil
+}
+
 
 func GetConfigurationsHandler(c *gin.Context) {
 	configs, err := loadConfigurations("payloads.json")
