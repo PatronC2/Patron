@@ -57,7 +57,7 @@ const Login = ({ onSuccessfulLogin }) => {
     };
 
     return (
-        <section>
+        <loginprompt>
             <p ref={errRef} className={errMsg ? "errmsg" : "offscreen"} aria-live="assertive">{errMsg}</p>
             <h1>Patron C2</h1>
             <form onSubmit={handleSubmit}>
@@ -82,7 +82,7 @@ const Login = ({ onSuccessfulLogin }) => {
                 <button>Sign in</button>
                 <p>Contact an Administrator if you need an account</p>
             </form>
-        </section>
+        </loginprompt>
     );
 };
 

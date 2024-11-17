@@ -1,58 +1,83 @@
+.side-menu-container {
+    position: relative;
+    height: 100%;
+}
+
 .side-menu {
     position: fixed;
-    top: 0;
+    top: var(--header-height);
     left: 0;
     width: 250px;
-    height: 100%;
-    background-color: #333;
-    color: white;
+    height: calc(100vh - var(--header-height));
+    background-color: var(--primary-color);
+    color: var(--text-color);
     transform: translateX(-100%);
     transition: transform 0.3s ease-in-out;
     z-index: 9999;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
 }
 
 .side-menu.open {
     transform: translateX(0);
 }
 
-body.menu-open .main-content {
-    transition: margin-left 0.3s ease-in-out;
-}
-
-.main-content {
-    width: calc(100% - 250px);
-    transition: width 0.3s ease-in-out;
-}
-
-.home-container {
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-}
-
-.status-boxes-container {
-    display: flex;
-    justify-content: space-around;
-    width: 100%;
-    margin-bottom: 1rem;
-}
-
-.status-boxes {
-    margin-bottom: 1rem;
-}
-
-.status-box {
-    flex: 1;
-    padding: 1rem;
-    margin: 0 1rem;
+.toggle-button {
+    position: fixed;
+    top: 70px;
+    left: 10px;
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    border: none;
+    padding: 0.5rem;
     border-radius: 5px;
-    text-align: center;
-    color: white;
+    cursor: pointer;
+    font-size: 1.2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 10000;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.status-box h2 {
-    font-size: 2rem;
-    width: 100px;
+.toggle-button.open {
+    left: 260px;
+}
+
+.toggle-button:hover {
+    background-color: var(--text-color);
+    color: var(--primary-color);
+}
+
+.menu-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.menu-nav li {
+    margin: 0;
+    padding: 0;
+}
+
+.menu-nav li + li {
+    margin-top: 10px;
+}
+
+.menu-nav a,
+.menu-button {
+    all: unset;
+    display: block;
+    padding: 10px 20px;
+    font-size: 18px;
+    color: var(--text-color);
+    background-color: transparent;
+    text-align: left;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+
+.menu-nav a:hover,
+.menu-button:hover {
+    background-color: var(--primary-color);
+    color: var(--background-color);
 }

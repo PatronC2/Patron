@@ -1,8 +1,7 @@
-/* Header.css */
 .app-header {
-    background-color: #333;
-    color: rgba(251, 18, 29, 255);
-    padding: 1rem;
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    height: var(--header-height);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -11,22 +10,26 @@
     top: 0;
     left: 0;
     z-index: 1000;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    padding: 0 1rem;
 }
 
 .header-content {
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: space-between;
     width: 100%;
     max-width: 1200px;
-    margin: 0 auto;
+    position: relative;
 }
 
 .center-container {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-grow: 1;
 }
 
 .app-name {
@@ -37,127 +40,22 @@
 
 .app-logo {
     height: 50px;
-    margin-left: 1rem;
-}
-
-.header-nav {
-    position: absolute;
-    right: 1rem;
-}
-
-.header-nav ul {
-    list-style-type: none;
-    display: flex;
-    margin: 0;
-    padding: 0;
-}
-
-.header-nav li {
-    margin-left: 1rem;
-}
-
-.header-nav a {
-    color: white;
-    text-decoration: none;
-    font-size: 1rem;
-}
-
-.header-nav a:hover {
-    text-decoration: underline;
-}
-
-.side-menu {
-    position: fixed;
-    top: 60px;
-    left: 0;
-    width: 250px;
-    height: calc(100% - 60px);
-    background-color: #333;
-    color: white;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease-in-out;
-}
-
-.side-menu.open {
-    transform: translateX(0);
-}
-
-.menu-nav button.menu-button {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 18px;
-    display: block;
-    padding: 10px 20px;
-    width: 100%;
-    text-align: left;
-    cursor: pointer;
-}
-
-.menu-nav button.menu-button:hover {
-    background-color: #575757;
-}
-
-.toggle-button {
-    position: absolute;
-    top: 20px;
-    right: -50px;
-    background-color: #333;
-    color: white;
-    border: none;
-    cursor: pointer;
-    padding: 10px;
-    border-radius: 5px;
-}
-
-.menu-nav ul {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-    margin-top: 60px;
-}
-
-.menu-nav li {
-    margin: 20px 0;
-}
-
-.menu-nav a {
-    color: white;
-    text-decoration: none;
-    font-size: 18px;
-    display: block;
-    padding: 10px 20px;
-}
-
-.menu-nav a:hover {
-    background-color: #575757;
-}
-
-.main-content {
-    margin-top: 60px;
-    flex-grow: 1;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-}
-
-.header-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 1rem;
+    margin-left: 0.5rem;
 }
 
 .theme-toggle {
-    background: none;
-    border: none;
-    color: inherit;
-    cursor: pointer;
+    margin-left: auto;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    border: 1px solid var(--text-color);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
     font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .theme-toggle:hover {
-    text-decoration: underline;
+    background-color: var(--primary-color);
+    color: var(--background-color);
 }
-

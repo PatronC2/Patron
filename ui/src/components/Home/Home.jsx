@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import axios from '../../api/axios';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
 import AuthContext from '../../context/AuthProvider';
 import './Home.css';
 
@@ -10,9 +10,9 @@ const Home = () => {
   const [error, setError] = useState(null);
   const [hostnameFilter, setHostnameFilter] = useState('');
   const [ipFilter, setIpFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('Online');
+  const [statusFilter, setStatusFilter] = useState('All');
 
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
 
   const fetchData = async () => {
     try {
@@ -51,12 +51,15 @@ const Home = () => {
   };
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return <div className="error-message">Error: {error}</div>;
   }
 
   return (
     <div className="home-container">
-      <h1>Agents</h1>
+      <header className="home-header">
+        <h1>Agents</h1>
+      </header>
+
       <div className="status-boxes">
         <div className="status-box online">
           <p>Online</p>
@@ -68,7 +71,6 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="filters">
         <input
           type="text"
@@ -118,7 +120,7 @@ const Home = () => {
           </tbody>
         </table>
       ) : (
-        <p>No Agents</p>
+        <p className="no-agents-message">No Agents</p>
       )}
     </div>
   );

@@ -1,17 +1,14 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthContext from '../../context/AuthProvider';
 import './Menu.css';
 
 const SideMenu = ({ setIsLoggedIn }) => {
-    const [isOpen, setIsOpen] = useState(true);
+    const [isOpen, setIsOpen] = useState(false);
     const { logout } = useContext(AuthContext);
     const navigate = useNavigate();
 
-    const toggleMenu = () => {
-        setIsOpen(!isOpen);
-        document.body.classList.toggle('menu-open', isOpen);
-    };
+    const toggleMenu = () => setIsOpen(!isOpen);
 
     const handleLogout = () => {
         logout();
@@ -19,34 +16,48 @@ const SideMenu = ({ setIsLoggedIn }) => {
         navigate('/login');
     };
 
+    useEffect(() => {
+        return () => document.body.classList.remove('menu-open');
+    }, []);
+
     return (
-        <div className={`side-menu ${isOpen ? 'open' : ''}`}>
-            <button className="toggle-button" onClick={toggleMenu}>
-                {isOpen ? '<' : '>'}
-            </button>
-            <nav className="menu-nav">
-                <ul>
-                    <li>
-                        <Link to="/home">Home</Link>
-                    </li>
-                    <li>
-                        <Link to="/payloads">Payloads</Link>
-                    </li>
-                    <li>
-                        <Link to="/redirectors">Redirectors</Link>
-                    </li>
-                    <li>
-                        <Link to="/profile">Profile</Link>
-                    </li>
-                    <li>
-                        <Link to="/users">Admin</Link>
-                    </li>
-                    <li>
-                        <button className="menu-button" onClick={handleLogout}>Logout</button>
-                    </li>
-                </ul>
-            </nav>
-        </div>
+        <>
+            <div className="side-menu-container">
+                <button
+                    className={`toggle-button ${isOpen ? 'open' : ''}`}
+                    aria-label="Toggle Menu"
+                    onClick={toggleMenu}
+                >
+                    {isOpen ? '<' : '>'}
+                </button>
+                <div className={`side-menu ${isOpen ? 'open' : ''}`}>
+                    <nav className="menu-nav" role="navigation" aria-label="Main Navigation">
+                        <ul>
+                            <li>
+                                <Link to="/home">Home</Link>
+                            </li>
+                            <li>
+                                <Link to="/payloads">Payloads</Link>
+                            </li>
+                            <li>
+                                <Link to="/redirectors">Redirectors</Link>
+                            </li>
+                            <li>
+                                <Link to="/profile">Profile</Link>
+                            </li>
+                            <li>
+                                <Link to="/users">Admin</Link>
+                            </li>
+                            <li>
+                                <button className="menu-button" onClick={handleLogout}>
+                                    Logout
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </>
     );
 };
 

@@ -1,5 +1,20 @@
 .home-container {
     padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.home-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.home-header h1 {
+    margin: 0;
+    font-size: 2rem;
 }
 
 .status-boxes {
@@ -14,23 +29,65 @@
     margin: 0 1rem;
     border-radius: 5px;
     text-align: center;
-    color: white;
+    background-color: var(--primary-color);
+    color: var(--text-color);
 }
 
 .status-box.online {
-    background-color: green;
+    background-color: var(--status-online);
 }
 
 .status-box.offline {
-    background-color: red;
+    background-color: var(--status-offline);
 }
 
-.status-box p {
-    margin: 0;
+.filters {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.filters input,
+.filters select {
+    padding: 0.5rem;
+    border: 1px solid var(--text-color);
+    border-radius: 0.5rem;
     font-size: 1rem;
+    background-color: var(--background-color);
+    color: var(--text-color);
 }
 
-.status-box h2 {
-    margin: 0;
-    font-size: 2rem;
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 1rem;
+    text-align: left;
+}
+
+thead {
+    background-color: var(--primary-color);
+    color: var(--text-color);
+}
+
+th, td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--text-color);
+}
+
+tr:hover {
+    background-color: var(--background-color);
+    color: var(--primary-color);
+}
+
+.no-agents-message {
+    text-align: center;
+    font-size: 1.25rem;
+    color: var(--text-color);
+}
+
+.error-message {
+    color: red;
+    font-weight: bold;
 }
