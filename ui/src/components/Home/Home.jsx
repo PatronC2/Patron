@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import AuthContext from '../../context/AuthProvider';
 import './Home.css';
 
-const Home = () => {
+const Home = ({ isMenuOpen }) => {
   const { auth } = useContext(AuthContext);
   const [data, setData] = useState([]);
   const [error, setError] = useState(null);

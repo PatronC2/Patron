@@ -1,39 +1,67 @@
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 1rem 0;
-}
-  
-th, td {
-  border: 1px solid #ddd;
-  padding: 0.5rem;
-  text-align: left;
-}
-  
-th {
-  background-color: #e02b2b;
-  color: white;
-}
-  
-tr:hover {
-   background-color: #ddd;
-}
-
-body.login-page {
-  min-height: 100vh;
+/* Center the login prompt in the viewport */
+.login-page {
   display: flex;
   justify-content: center;
   align-items: center;
+  min-height: 100vh;
+  background-color: var(--background-color);
+  color: var(--text-color);
 }
 
+/* Login prompt styling */
 .loginprompt {
   width: 100%;
   max-width: 420px;
   min-height: 400px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  padding: 1rem;
-  background-color: rgba(0,0,0,0.4);
-  margin: auto;
+  justify-content: center; /* Center horizontally */
+  align-items: center;
+  padding: 2rem;
+  background: linear-gradient(145deg, rgba(0, 0, 0, 0.5), rgba(255, 255, 255, 0.1)); /* Gradient background */
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Subtle border */
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Slight shadow */
+  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth animation effects */
+}
+
+/* Add a subtle hover/active effect to the login prompt */
+.loginprompt:hover {
+  transform: scale(1.02); /* Slightly enlarge */
+  box-shadow: 0px 8px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Styling for inputs and buttons inside the login prompt */
+input[type="text"],
+input[type="password"],
+button {
+  font-family: 'Nunito', sans-serif;
+  font-size: 18px;
+  padding: 0.75rem;
+  width: 100%;
+  margin-top: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.5); /* Initial border */
+  border-radius: 5px;
+  background-color: rgba(255, 255, 255, 0.2); /* Subtle transparency */
+  color: var(--text-color);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Smooth focus animation */
+}
+
+/* Focus effects on inputs */
+input[type="text"]:focus,
+input[type="password"]:focus {
+  outline: none;
+  border-color: var(--primary-color); /* Highlight border */
+  box-shadow: 0px 0px 8px var(--primary-color); /* Glow effect */
+  background-color: rgba(255, 255, 255, 0.3); /* Slightly brighter background */
+}
+
+/* Button hover and focus effects */
+button:hover,
+button:focus {
+  background-color: var(--primary-color);
+  color: var(--text-color);
+  border-color: var(--text-color);
+  box-shadow: 0px 0px 12px var(--primary-color); /* Glow effect */
+  cursor: pointer;
 }

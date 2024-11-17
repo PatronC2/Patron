@@ -1,35 +1,30 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaBars, FaChevronLeft } from 'react-icons/fa';
 import AuthContext from '../../context/AuthProvider';
 import './Menu.css';
 
-const SideMenu = ({ setIsLoggedIn }) => {
-    const [isOpen, setIsOpen] = useState(() => {
-        const savedState = localStorage.getItem('isMenuOpen');
-        return savedState === 'true' ? true : false;
-    });
+const SideMenu = ({ setIsLoggedIn, isOpen, setIsOpen }) => {
+  const { logout } = useContext(AuthContext);
+  const navigate = useNavigate();
 
-    const { logout } = useContext(AuthContext);
-    const navigate = useNavigate();
+  const toggleMenu = () => {
+    const newState = !isOpen;
+    setIsOpen(newState);
+    localStorage.setItem('isMenuOpen', newState);
+  };
 
-    const toggleMenu = () => {
-        const newState = !isOpen;
-        setIsOpen(newState);
-        localStorage.setItem('isMenuOpen', newState);
-    };
+  const handleLogout = () => {
+    logout();
+    setIsLoggedIn(false);
+    navigate('/login');
+  };
 
-    const handleLogout = () => {
-        logout();
-        setIsLoggedIn(false);
-        navigate('/login');
-    };
+  useEffect(() => {
+    return () => document.body.classList.remove('menu-open');
+  }, []);
 
-    useEffect(() => {
-        return () => document.body.classList.remove('menu-open');
-    }, []);
-
-    return (
+  return (
         <div className="side-menu-container">
             <button
                 className={`toggle-button ${isOpen ? 'open' : ''}`}

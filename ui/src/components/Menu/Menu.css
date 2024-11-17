@@ -23,7 +23,7 @@
 
 .toggle-button {
     position: fixed;
-    top: calc(var(--header-height) + 10px);
+    top: calc(var(--header-height) + 5px);
     left: 10px;
     background-color: var(--primary-color);
     color: var(--text-color);
@@ -32,13 +32,17 @@
     border-radius: 5px;
     cursor: pointer;
     font-size: 1.2rem;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     z-index: 10000;
     transition: left 0.3s ease-in-out, background-color 0.3s ease, color 0.3s ease;
+    width: auto;
+    max-width: none;
+    margin: 0;
 }
+
 
 .toggle-button.open {
     left: 260px;
