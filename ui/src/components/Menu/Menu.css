@@ -14,7 +14,7 @@
     transform: translateX(-100%);
     transition: transform 0.3s ease-in-out;
     z-index: 9999;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 5px 0 5px -5px rgba(0, 0, 0, 0.2);
 }
 
 .side-menu.open {
@@ -23,7 +23,7 @@
 
 .toggle-button {
     position: fixed;
-    top: 70px;
+    top: calc(var(--header-height) + 10px);
     left: 10px;
     background-color: var(--primary-color);
     color: var(--text-color);
@@ -32,17 +32,29 @@
     border-radius: 5px;
     cursor: pointer;
     font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     z-index: 10000;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: left 0.3s ease-in-out, background-color 0.3s ease, color 0.3s ease;
 }
 
 .toggle-button.open {
     left: 260px;
 }
 
+.toggle-button svg {
+    color: var(--text-color);
+    transition: color 0.3s ease;
+}
+
 .toggle-button:hover {
     background-color: var(--text-color);
+    color: var(--primary-color);
+}
+
+.toggle-button:hover svg {
     color: var(--primary-color);
 }
 
@@ -74,7 +86,6 @@
     cursor: pointer;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
-
 
 .menu-nav a:hover,
 .menu-button:hover {
