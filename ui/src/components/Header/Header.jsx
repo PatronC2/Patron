@@ -13,9 +13,16 @@ const Header = () => {
                     <h1 className="app-name">Patron C2</h1>
                     <img src={logo} alt="App Logo" className="app-logo" />
                 </div>
-                <button className="theme-toggle" onClick={toggleTheme}>
-                    {theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-                </button>
+                <div className="theme-slider-container">
+                    <label className="theme-slider">
+                        <input
+                            type="checkbox"
+                            onChange={toggleTheme}
+                            checked={theme === 'dark'}
+                        />
+                        <span className="slider"></span>
+                    </label>
+                </div>
             </div>
         </header>
     );

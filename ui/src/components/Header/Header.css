@@ -9,7 +9,7 @@
     position: fixed;
     top: 0;
     left: 0;
-    z-index: 1000;
+    z-index: 999;
     transition: background-color 0.3s ease, color 0.3s ease;
     padding: 0 1rem;
 }
@@ -43,19 +43,61 @@
     margin-left: 0.5rem;
 }
 
-.theme-toggle {
+.theme-slider-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-left: auto;
-    background-color: var(--background-color);
-    color: var(--text-color);
-    border: 1px solid var(--text-color);
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.theme-toggle:hover {
+.theme-slider {
+    position: relative;
+    width: 60px;
+    height: 30px;
+    display: inline-block;
+}
+
+.theme-slider input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.theme-slider .slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--background-color);
+    border-radius: 50px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 8px;
+}
+
+.theme-slider .slider:before {
+    position: absolute;
+    content: '';
+    height: 26px;
+    width: 26px;
     background-color: var(--primary-color);
-    color: var(--background-color);
+    background-image: url('../../assets/images/sun-icon.svg');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 18px 18px;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s ease, background-color 0.3s ease, background-image 0.3s ease;
+    z-index: 2;
+}
+
+.theme-slider input:checked + .slider:before {
+    transform: translateX(30px);
+    background-color: var(--text-color);
+    background-image: url('../../assets/images/moon-icon.svg');
 }
