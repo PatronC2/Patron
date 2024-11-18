@@ -1,61 +1,73 @@
 .home-container {
     max-width: 1200px;
-    margin: 0 auto;
+    width: 100%;
     padding: 1rem;
+    margin: 0 auto;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
 .home-header {
+    width: 100%;
     display: flex;
     justify-content: center;
-    align-items: center;
     margin-bottom: 1rem;
-    text-align: center;
 }
 
 .home-header h1 {
     margin: 0;
     font-size: 2rem;
+    text-align: center;
+    color: var(--text-color);
 }
 
 .status-boxes {
     display: flex;
-    justify-content: space-around;
+    flex-wrap: wrap;
+    justify-content: center;
     margin-bottom: 1rem;
 }
 
 .status-box {
-    flex: 1;
+    flex: 1 1 200px;
     padding: 1rem;
-    margin: 0 1rem;
+    margin: 0.5rem;
     border-radius: 5px;
     text-align: center;
-    background-color: var(--primary-color);
+    box-sizing: border-box;
     color: var(--text-color);
-}
-
-.status-box.online {
-    background-color: var(--status-online);
-}
-
-.status-box.offline {
-    background-color: var(--status-offline);
 }
 
 .filters {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
     margin-bottom: 1rem;
-    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .filters input,
 .filters select {
+    flex: 1 1 200px;
+    max-width: 300px;
     padding: 0.5rem;
     border: 1px solid var(--text-color);
     border-radius: 0.5rem;
     font-size: 1rem;
     background-color: var(--background-color);
     color: var(--text-color);
+    box-sizing: border-box;
+}
+
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    align-self: stretch;
+    box-sizing: border-box;
 }
 
 table {
@@ -64,30 +76,30 @@ table {
     margin: 1rem 0;
     font-size: 1rem;
     text-align: left;
-}
-
-thead {
-    background-color: var(--primary-color);
     color: var(--text-color);
 }
 
-th, td {
+th,
+td {
     padding: 0.75rem;
-    border-bottom: 1px solid var(--text-color);
+    border-bottom: 1px solid var(--border-color);
+    word-wrap: break-word;
+    box-sizing: border-box;
+}
+
+tr:not(:last-child) td {
+    border-bottom: 1px solid var(--border-color);
 }
 
 tr:hover {
-    background-color: var(--background-color);
-    color: var(--primary-color);
-}
-
-.no-agents-message {
-    text-align: center;
-    font-size: 1.25rem;
+    background-color: rgba(0, 0, 0, 0.05);
     color: var(--text-color);
 }
 
-.error-message {
-    color: red;
-    font-weight: bold;
+:root {
+    --border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+    --border-color: rgba(255, 255, 255, 0.2);
 }

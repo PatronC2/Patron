@@ -1,4 +1,3 @@
-/* Center the login prompt in the viewport */
 .login-page {
   display: flex;
   justify-content: center;
@@ -8,30 +7,27 @@
   color: var(--text-color);
 }
 
-/* Login prompt styling */
 .loginprompt {
   width: 100%;
   max-width: 420px;
   min-height: 400px;
   display: flex;
   flex-direction: column;
-  justify-content: center; /* Center horizontally */
+  justify-content: center;
   align-items: center;
   padding: 2rem;
-  background: linear-gradient(145deg, rgba(0, 0, 0, 0.5), rgba(255, 255, 255, 0.1)); /* Gradient background */
+  background: linear-gradient(145deg, rgba(0, 0, 0, 0.5), rgba(255, 255, 255, 0.1));
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2); /* Subtle border */
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Slight shadow */
-  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth animation effects */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Add a subtle hover/active effect to the login prompt */
 .loginprompt:hover {
-  transform: scale(1.02); /* Slightly enlarge */
+  transform: scale(1.02);
   box-shadow: 0px 8px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* Styling for inputs and buttons inside the login prompt */
 .loginprompt input[type="text"],
 .loginprompt input[type="password"],
 .loginprompt button {
@@ -47,7 +43,6 @@
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Focus effects on inputs */
 .loginprompt input[type="text"]:focus,
 .loginprompt input[type="password"]:focus {
   outline: none;
@@ -56,7 +51,6 @@
   background-color: rgba(255, 255, 255, 0.3);
 }
 
-/* Button hover and focus effects */
 .loginprompt button:hover,
 .loginprompt button:focus {
   background-color: var(--primary-color);
