@@ -32,36 +32,36 @@
 }
 
 /* Styling for inputs and buttons inside the login prompt */
-input[type="text"],
-input[type="password"],
-button {
+.loginprompt input[type="text"],
+.loginprompt input[type="password"],
+.loginprompt button {
   font-family: 'Nunito', sans-serif;
   font-size: 18px;
   padding: 0.75rem;
   width: 100%;
   margin-top: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.5); /* Initial border */
+  border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 5px;
-  background-color: rgba(255, 255, 255, 0.2); /* Subtle transparency */
+  background-color: rgba(255, 255, 255, 0.2);
   color: var(--text-color);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Smooth focus animation */
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 /* Focus effects on inputs */
-input[type="text"]:focus,
-input[type="password"]:focus {
+.loginprompt input[type="text"]:focus,
+.loginprompt input[type="password"]:focus {
   outline: none;
-  border-color: var(--primary-color); /* Highlight border */
-  box-shadow: 0px 0px 8px var(--primary-color); /* Glow effect */
-  background-color: rgba(255, 255, 255, 0.3); /* Slightly brighter background */
+  border-color: var(--primary-color);
+  box-shadow: 0px 0px 8px var(--primary-color);
+  background-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Button hover and focus effects */
-button:hover,
-button:focus {
+.loginprompt button:hover,
+.loginprompt button:focus {
   background-color: var(--primary-color);
   color: var(--text-color);
   border-color: var(--text-color);
-  box-shadow: 0px 0px 12px var(--primary-color); /* Glow effect */
+  box-shadow: 0px 0px 12px var(--primary-color);
   cursor: pointer;
 }
