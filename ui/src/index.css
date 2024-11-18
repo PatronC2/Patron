@@ -79,6 +79,7 @@ a, a:visited {
 
 input[type="text"],
 input[type="password"],
+button:not(.menu-button):not(.toggle-button),
 textarea {
     font-family: 'Nunito', sans-serif;
     font-size: 22px;
@@ -87,11 +88,11 @@ textarea {
 }
 
 label,
-button:not(.toggle-button) {
+button:not(.menu-button):not(.toggle-button) {
     margin-top: 1rem;
 }
 
-button:not(.toggle-button) {
+button:not(.menu-button):not(.toggle-button) {
     padding: 0.5rem;
 }
 
