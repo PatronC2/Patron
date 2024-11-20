@@ -8,8 +8,8 @@ const Header = () => {
 
     return (
         <header className="app-header">
-            <div className="shared-container header-content">
-                <div className="center-container">
+            <div className="header-content">
+                <div className="header-title-container">
                     <h1 className="app-name">Patron C2</h1>
                     <img src={logo} alt="App Logo" className="app-logo" />
                 </div>

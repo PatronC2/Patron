@@ -20,16 +20,13 @@
     justify-content: space-between;
     width: 100%;
     max-width: 1200px;
-    position: relative;
 }
 
-.center-container {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+.header-title-container {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-grow: 1;
 }
 
 .app-name {
@@ -46,8 +43,7 @@
 .theme-slider-container {
     display: flex;
     align-items: center;
-    justify-content: center;
-    margin-left: auto;
+    justify-content: flex-end;
 }
 
 .theme-slider {

@@ -1,68 +1,3 @@
-.home-container {
-    max-width: 1200px;
-    width: 100%;
-    padding: 1rem;
-    margin: 0 auto;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-}
-
-.home-header {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    margin-bottom: 1rem;
-}
-
-.home-header h1 {
-    margin: 0;
-    font-size: 2rem;
-    text-align: center;
-    color: var(--text-color);
-}
-
-.status-boxes {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-bottom: 1rem;
-}
-
-.status-box {
-    flex: 1 1 200px;
-    padding: 1rem;
-    margin: 0.5rem;
-    border-radius: 5px;
-    text-align: center;
-    box-sizing: border-box;
-    color: var(--text-color);
-}
-
-.filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    justify-content: center;
-}
-
-.filters input,
-.filters select {
-    flex: 1 1 200px;
-    max-width: 300px;
-    padding: 0.5rem;
-    border: 1px solid var(--text-color);
-    border-radius: 0.5rem;
-    font-size: 1rem;
-    background-color: var(--background-color);
-    color: var(--text-color);
-    box-sizing: border-box;
-}
-
 .table-container {
     width: 100%;
     overflow-x: auto;
@@ -77,6 +12,18 @@ table {
     font-size: 1rem;
     text-align: left;
     color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+thead {
+    background-color: var(--primary-color); /* Highlight header row */
+    color: var(--text-color); /* Ensure header text contrasts with background */
+    font-weight: bold;
+}
+
+thead th {
+    text-align: center;
+    pointer-events: none; /* Prevent hover effects on header row */
 }
 
 th,
@@ -87,19 +34,62 @@ td {
     box-sizing: border-box;
 }
 
-tr:not(:last-child) td {
-    border-bottom: 1px solid var(--border-color);
+tr:hover {
+    background-color: rgba(0, 0, 0, 0.05); /* Highlight rows on hover */
+    color: var(--primary-color); /* Change text color on hover */
 }
 
-tr:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+tbody tr:nth-child(odd) {
+    background-color: rgba(0, 0, 0, 0.08); /* Slightly darker shade for odd rows */
+}
+
+tbody tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.1); /* Slightly lighter shade for even rows */
+}
+
+.filters input,
+.filters select {
+    flex: 1 1 200px;
+    max-width: 300px;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+.filters input:focus,
+.filters select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 5px var(--primary-color);
+}
+
+.home-header {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.home-header h1 {
+    margin: 0;
+    font-size: 2rem;
+    text-align: center;
     color: var(--text-color);
 }
 
-:root {
-    --border-color: rgba(0, 0, 0, 0.1);
-}
-
-[data-theme="dark"] {
-    --border-color: rgba(255, 255, 255, 0.2);
+.home-container {
+    width: 100%;
+    max-width: 1200px;
+    padding: 1rem;
+    margin: var(--header-height) auto 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
