@@ -82,9 +82,9 @@ const Home = ({ isMenuOpen }) => {
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
               >
-                  <option value="All">All</option>
-                  <option value="Online">Online</option>
-                  <option value="Offline">Offline</option>
+                  <option value="All">Status: All</option>
+                  <option value="Online">Status: Online</option>
+                  <option value="Offline">Status: Offline</option>
               </select>
           </div>
   

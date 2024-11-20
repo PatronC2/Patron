@@ -16,6 +16,7 @@ html {
     --background-color: #e2f3f2;
     --text-color: #000000;
     --primary-color: #66a4b0;
+    --secondary-color: #9e1717;
     --status-online: green;
     --status-offline: red;
     --header-height: 94px
@@ -25,6 +26,7 @@ html {
     --background-color: #1a1a1a;
     --text-color: #ffffff;
     --primary-color: #003a47;
+    --secondary-color: #9e1717;
     --status-online: green;
     --status-offline: red;
 }

@@ -16,14 +16,14 @@ table {
 }
 
 thead {
-    background-color: var(--primary-color); /* Highlight header row */
-    color: var(--text-color); /* Ensure header text contrasts with background */
+    background-color: var(--primary-color);
+    color: var(--text-color);
     font-weight: bold;
 }
 
 thead th {
     text-align: center;
-    pointer-events: none; /* Prevent hover effects on header row */
+    pointer-events: none;
 }
 
 th,
@@ -34,17 +34,22 @@ td {
     box-sizing: border-box;
 }
 
-tr:hover {
-    background-color: rgba(0, 0, 0, 0.05); /* Highlight rows on hover */
-    color: var(--primary-color); /* Change text color on hover */
+[data-theme="dark"] tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-color);
+}
+
+[data-theme="light"] tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--primary-color);
 }
 
 tbody tr:nth-child(odd) {
-    background-color: rgba(0, 0, 0, 0.08); /* Slightly darker shade for odd rows */
+    background-color: rgba(0, 0, 0, 0.08);
 }
 
 tbody tr:nth-child(even) {
-    background-color: rgba(255, 255, 255, 0.1); /* Slightly lighter shade for even rows */
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .filters input,

@@ -6,13 +6,17 @@ import './Agent.css';
 
 const Agent = () => {
   const { auth } = useContext(AuthContext);
+  const [error, setError] = useState(null);
+
   const [data, setData] = useState(null);
+  const [activeTab, setActiveTab] = useState('commands');
+  
+  // States related to commands tab
   const [commands, setCommands] = useState([]);
   const [keylogs, setKeylogs] = useState([]);
-  const [activeTab, setActiveTab] = useState('commands');
   const [newCommand, setNewCommand] = useState('');
-  const [error, setError] = useState(null);
   const commandListRef = useRef(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
 
   // States related to Configuration tab
   const [callbackIP, setCallbackIP] = useState('');
@@ -171,10 +175,32 @@ const Agent = () => {
   }, [location.search, activeTab]);
 
   useEffect(() => {
-    if (commandListRef.current) {
+    if (isAtBottom && commandListRef.current) {
       commandListRef.current.scrollTop = commandListRef.current.scrollHeight;
     }
-  }, [commands]);
+  }, [commands, isAtBottom]);
+  
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!commandListRef.current) return;
+  
+      const { scrollTop, scrollHeight, clientHeight } = commandListRef.current;
+      const atBottom = scrollHeight - scrollTop === clientHeight;
+      setIsAtBottom(atBottom);
+    };
+  
+    const commandListElement = commandListRef.current;
+    if (commandListElement) {
+      commandListElement.addEventListener('scroll', handleScroll);
+    }
+  
+    return () => {
+      if (commandListElement) {
+        commandListElement.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, []);
+  
 
   const handleSendCommand = async () => {
     try {
@@ -199,7 +225,7 @@ const Agent = () => {
     }
   }, [commands]);
 
-  const handleSave = async () => {
+  const handleSaveConfiguration = async () => {
     try {
       setIsSaving(true);
       setSaveError(null);
@@ -234,6 +260,13 @@ const Agent = () => {
     return <p>No data available</p>;
   }
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSendCommand();
+    }
+  };
+  
   const renderCommandsTab = () => (
     <div className="commands-list" ref={commandListRef}>
       {commands.length === 0 ? (
@@ -242,8 +275,13 @@ const Agent = () => {
         <ul>
           {commands.map((cmd) => (
             <li key={cmd.commanduuid}>
-              <strong>Command:</strong> {cmd.command} <br />
-              <strong>Output:</strong> {cmd.output !== '' ? cmd.output : 'Success (No output)'} <br />
+              <div>
+                <strong>Command:</strong> {cmd.command}
+              </div>
+              <div>
+                <strong>Output:</strong>
+                <pre>{cmd.output !== '' ? cmd.output : 'Success (No output)'}</pre>
+              </div>
             </li>
           ))}
         </ul>
@@ -254,12 +292,13 @@ const Agent = () => {
           placeholder="Enter command"
           value={newCommand}
           onChange={(e) => setNewCommand(e.target.value)}
+          onKeyDown={handleKeyPress}
         />
         <button onClick={handleSendCommand}>Send</button>
       </div>
     </div>
   );
-
+  
   const renderFilesTab = () => {
     return (
       <div>
@@ -363,54 +402,54 @@ const Agent = () => {
   );
 
   const renderConfigurationTab = () => (
-    <div>
-      <h3>Configuration</h3>
-      <form>
-        <div className="form-group">
-          <label htmlFor="callbackIP">Callback IP</label>
-          <input
-            type="text"
-            id="callbackIP"
-            value={callbackIP}
-            onChange={(e) => setCallbackIP(e.target.value)}
-            disabled={isSaving}
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="callbackPort">Callback Port</label>
-          <input
-            type="text"
-            id="callbackPort"
-            value={callbackPort}
-            onChange={(e) => setCallbackPort(e.target.value)}
-            disabled={isSaving}
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="callbackFreq">Callback Frequency (seconds)</label>
-          <input
-            type="number"
-            id="callbackFreq"
-            value={callbackFreq}
-            onChange={(e) => setCallbackFreq(e.target.value)}
-            disabled={isSaving}
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="callbackJitter">Callback Jitter (%)</label>
-          <input
-            type="number"
-            id="callbackJitter"
-            value={callbackJitter}
-            onChange={(e) => setCallbackJitter(e.target.value)}
-            disabled={isSaving}
-          />
-        </div>
-        <button type="button" onClick={handleSave} disabled={isSaving}>
-          {isSaving ? 'Saving...' : 'Save'}
-        </button>
-      </form>
-      {saveError && <p className="error">{saveError}</p>}
+    <div className="configuration-tab">
+        <h3>Agent Configuration</h3>
+        <form>
+            <div className="form-group">
+                <label htmlFor="callbackIP">Callback IP</label>
+                <input
+                    type="text"
+                    id="callbackIP"
+                    value={callbackIP}
+                    onChange={(e) => setCallbackIP(e.target.value)}
+                    disabled={isSaving}
+                />
+            </div>
+            <div className="form-group">
+                <label htmlFor="callbackPort">Callback Port</label>
+                <input
+                    type="text"
+                    id="callbackPort"
+                    value={callbackPort}
+                    onChange={(e) => setCallbackPort(e.target.value)}
+                    disabled={isSaving}
+                />
+            </div>
+            <div className="form-group">
+                <label htmlFor="callbackFreq">Callback Frequency (seconds)</label>
+                <input
+                    type="number"
+                    id="callbackFreq"
+                    value={callbackFreq}
+                    onChange={(e) => setCallbackFreq(e.target.value)}
+                    disabled={isSaving}
+                />
+            </div>
+            <div className="form-group">
+                <label htmlFor="callbackJitter">Callback Jitter (%)</label>
+                <input
+                    type="number"
+                    id="callbackJitter"
+                    value={callbackJitter}
+                    onChange={(e) => setCallbackJitter(e.target.value)}
+                    disabled={isSaving}
+                />
+            </div>
+            <button type="button" onClick={handleSaveConfiguration} disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save'}
+            </button>
+        </form>
+        {saveError && <p className="error">{saveError}</p>}
     </div>
   );
 
@@ -450,122 +489,108 @@ const Agent = () => {
   const renderTagsTab = () => {
     return (
       <div>
-      <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-        <table>
-          <thead>
-            <tr>
-              <th>Key</th>
-              <th>Value</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tags.map(tag => (
-              <tr key={tag.tagid}>
-                <td>{tag.key}</td>
-                <td>{tag.value || 'N/A'}</td>
-                <td>
-                  <button onClick={() => handleDeleteTag(tag.tagid)}>Delete</button>
-                </td>
+        <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+          <table>
+            <thead>
+              <tr>
+                <th>Key</th>
+                <th>Value</th>
+                <th>Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {tags.map(tag => (
+                <tr key={tag.tagid}>
+                  <td>{tag.key}</td>
+                  <td>{tag.value || 'N/A'}</td>
+                  <td>
+                    <button onClick={() => handleDeleteTag(tag.tagid)}>Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      <h3>Add / Modify Tags</h3>
-      <form onSubmit={handleAddTag}>
-        <div>
-          <label>Key: </label>
-          <input
-            type="text"
-            value={newKey}
-            onChange={(e) => setNewKey(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label>Value: </label>
-          <input
-            type="text"
-            value={newValue}
-            onChange={(e) => setNewValue(e.target.value)}
-          />
-        </div>
-        <button type="submit">Add Tag</button>
-      </form>
-    </div>
-  );
-};
+        <h3>Add / Modify Tags</h3>
+        <form onSubmit={handleAddTag}>
+          <div>
+            <label>Key: </label>
+            <input
+              type="text"
+              value={newKey}
+              onChange={(e) => setNewKey(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label>Value: </label>
+            <input
+              type="text"
+              value={newValue}
+              onChange={(e) => setNewValue(e.target.value)}
+            />
+          </div>
+          <button type="submit">Add Tag</button>
+        </form>
+      </div>
+    );
+  };
   
   return (
     <div className="agent-container">
-      {/* Agent Details */}
-      <div className="agent-details">
-        <h1>Agent Details</h1>
-        <ul>
-          <li><strong>UUID:</strong> {data.uuid}</li>
-          <li><strong>Callback IP:</strong> {data.serverip}</li>
-          <li><strong>Callback IP:</strong> {data.serverport}</li>
-          <li><strong>Callback Frequency:</strong> {data.callbackfrequency} seconds</li>
-          <li><strong>Callback Jitter:</strong> {data.callbackjitter}%</li>
-          <li><strong>Agent IP:</strong> {data.agentip || 'N/A'}</li>
-          <li><strong>Username:</strong> {data.username || 'N/A'}</li>
-          <li><strong>Hostname:</strong> {data.hostname || 'N/A'}</li>
-          <li><strong>Status:</strong> {data.status || 'Unknown'}</li>
-        </ul>
-      </div>
-
-      {/* Commands & Tabs */}
-      <div className="agent-tabs">
-        <div className="tabs">
-          <button
-            className={activeTab === 'commands' ? 'active' : ''}
-            onClick={() => setActiveTab('commands')}
-          >
-            Commands
-          </button>
-          <button
-            className={activeTab === 'files' ? 'active' : ''}
-            onClick={() => setActiveTab('files')}
-          >
-            Files
-          </button>
-          <button
-            className={activeTab === 'keys' ? 'active' : ''}
-            onClick={() => setActiveTab('keys')}
-          >
-            Keylogs
-          </button>
-          <button
-            className={activeTab === 'configuration' ? 'active' : ''}
-            onClick={() => setActiveTab('configuration')}
-          >
-            Configuration
-          </button>
-          <button
-            className={activeTab === 'notes' ? 'active' : ''}
-            onClick={() => setActiveTab('notes')}
-          >
-            Notes
-          </button>
-          <button 
-            className={activeTab === 'tags' ? 'active' : ''}
-            onClick={() => setActiveTab('tags')}>
-            Tags
-          </button>
+        <div className="agent-header">
+            {data.username?.trim()}@{data.hostname?.trim()}
         </div>
+        <div className="agent-tabs">
+            <div className="tabs">
+                <button
+                    className={activeTab === 'commands' ? 'active' : ''}
+                    onClick={() => setActiveTab('commands')}
+                >
+                    Commands
+                </button>
+                <button
+                    className={activeTab === 'files' ? 'active' : ''}
+                    onClick={() => setActiveTab('files')}
+                >
+                    Files
+                </button>
+                <button
+                    className={activeTab === 'keys' ? 'active' : ''}
+                    onClick={() => setActiveTab('keys')}
+                >
+                    Keylogs
+                </button>
+                <button
+                    className={activeTab === 'configuration' ? 'active' : ''}
+                    onClick={() => setActiveTab('configuration')}
+                >
+                    Configuration
+                </button>
+                <button
+                    className={activeTab === 'notes' ? 'active' : ''}
+                    onClick={() => setActiveTab('notes')}
+                >
+                    Notes
+                </button>
+                <button
+                    className={activeTab === 'tags' ? 'active' : ''}
+                    onClick={() => setActiveTab('tags')}
+                >
+                    Tags
+                </button>
+            </div>
 
-        {/* Tab content */}
-        <div className="tab-content">
-          {activeTab === 'commands' && renderCommandsTab()}
-          {activeTab === 'files' && renderFilesTab()}
-          {activeTab === 'keys' && renderKeylogsTab()}
-          {activeTab === 'configuration' && renderConfigurationTab()}
-          {activeTab === 'notes' && renderNotesTab()}
-          {activeTab === 'tags' && renderTagsTab()}
+            <div className="tab-content">
+                {activeTab === 'commands' && renderCommandsTab()}
+                {activeTab === 'files' && renderFilesTab()}
+                {activeTab === 'keys' && renderKeylogsTab()}
+                {activeTab === 'configuration' && renderConfigurationTab()}
+                {activeTab === 'notes' && renderNotesTab()}
+                {activeTab === 'tags' && renderTagsTab()}
+            </div>
         </div>
-      </div>
     </div>
   );
 };
