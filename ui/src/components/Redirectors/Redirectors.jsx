@@ -62,22 +62,24 @@ const Redirectors = () => {
         <div className="redirector-container">
             <div className="header">
                 <h1>Redirectors</h1>
-                <button
-                    className={activeTab === 'current_redirectors' ? 'active' : ''}
-                    onClick={() => handleTabChange('current_redirectors')}
-                >
-                    Existing Redirectors
-                </button>
-                <button
-                    className={activeTab === 'new' ? 'active' : ''}
-                    onClick={() => handleTabChange('new')}
-                >
-                    Create New Redirector
-                </button>
+                <div className="header-buttons">
+                    <button
+                        className={activeTab === 'current_redirectors' ? 'active' : ''}
+                        onClick={() => handleTabChange('current_redirectors')}
+                    >
+                        Existing Redirectors
+                    </button>
+                    <button
+                        className={activeTab === 'new' ? 'active' : ''}
+                        onClick={() => handleTabChange('new')}
+                    >
+                        Create New Redirector
+                    </button>
+                </div>
             </div>
 
             {activeTab === 'current_redirectors' ? (
-                <div className="redirector-container">
+                <div className="redirectors-container">
                     <h1>Redirectors</h1>
                     <div className="status-boxes">
                         <div className="status-box online">

@@ -540,7 +540,12 @@ const Agent = () => {
   return (
     <div className="agent-container">
         <div className="agent-header">
-            {data.username?.trim()}@{data.hostname?.trim()}
+            <div className="agent-identity">
+                {data.username?.trim()}@{data.hostname?.trim()}
+            </div>
+            <div className="agent-status">
+                Status: {data.status}
+            </div>
         </div>
         <div className="agent-tabs">
             <div className="tabs">
@@ -581,7 +586,7 @@ const Agent = () => {
                     Tags
                 </button>
             </div>
-
+  
             <div className="tab-content">
                 {activeTab === 'commands' && renderCommandsTab()}
                 {activeTab === 'files' && renderFilesTab()}
@@ -592,7 +597,7 @@ const Agent = () => {
             </div>
         </div>
     </div>
-  );
+  );  
 };
 
 export default Agent;

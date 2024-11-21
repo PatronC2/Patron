@@ -98,3 +98,45 @@ tbody tr:nth-child(even) {
     align-items: center;
     justify-content: center;
 }
+
+.status-boxes {
+    display: flex;
+    justify-content: center; /* Center align the status boxes */
+    gap: 1rem; /* Adjust the space between the boxes */
+    margin-bottom: 1rem;
+    width: 100%;
+    max-width: 1200px; /* Ensure it matches the table width */
+}
+
+.status-box {
+    flex: 0 0 auto; /* Prevent automatic resizing */
+    width: 150px; /* Fixed width to ensure squareness */
+    height: 150px; /* Fixed height to match width */
+    padding: 1rem;
+    border-radius: 5px;
+    text-align: center;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--primary-color);
+}
+
+.status-box.online {
+    background-color: var(--status-online);
+}
+
+.status-box.offline {
+    background-color: var(--status-offline);
+}
+
+.status-box p {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.status-box h2 {
+    margin: 0;
+    font-size: 2rem;
+}

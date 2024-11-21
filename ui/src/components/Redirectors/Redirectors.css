@@ -1,22 +1,114 @@
+.header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0.5rem 0 0.5rem;
+    background-color: var(--secondary-color);
+    width: 100vw;
+    box-sizing: border-box;
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    z-index: 998;
+    transition: margin-left 0.3s ease-in-out;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+.header + .redirector-container {
+    margin-top: 0;
+}
+
+h1, h2, p, .header, .redirector-container {
+    margin: 0;
+}
+
+body, .App {
+    overflow: hidden;
+}
+
 .redirector-container {
-    padding: 1rem;
-    max-width: 800px;
     margin: 0 auto;
+    padding: var(--header-height) 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 1200px;
+    position: relative;
+    transition: margin-left 0.3s ease-in-out;
+}
+
+.redirectors-container {
+    margin: calc(var(--header-height) + 3rem) auto 0;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 1200px;
+    position: relative;
+    transition: margin-left 0.3s ease-in-out;
+}
+
+.header h1 {
+    color: var(--text-color);
+    margin: 0 0 1rem;
     text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.header-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+}
+
+.header-buttons button {
+    flex: 1;
+    max-width: 300px;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.header-buttons button.active {
+    background-color: var(--background-color);
+    color: var(--secondary-color);
+    font-weight: bold;
+}
+
+.header-buttons button:hover {
+    background-color: var(--background-color);
+    color: var(--secondary-color);
 }
 
 .status-boxes {
     display: flex;
-    justify-content: center;
-    gap: 1rem;
+    justify-content: center; /* Center align the status boxes */
+    gap: 1rem; /* Adjust the space between the boxes */
     margin-bottom: 1rem;
-    max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
+    width: 100%;
+    max-width: 1200px; /* Ensure it matches the table width */
 }
 
 .status-box {
-    flex: 1;
+    flex: 0 0 auto; /* Prevent automatic resizing */
+    width: 150px; /* Fixed width to ensure squareness */
+    height: 150px; /* Fixed height to match width */
     padding: 1rem;
     border-radius: 5px;
     text-align: center;
@@ -25,16 +117,15 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    min-width: 150px;
-    max-width: 200px;
+    background-color: var(--primary-color);
 }
 
 .status-box.online {
-    background-color: green;
+    background-color: var(--status-online);
 }
 
 .status-box.offline {
-    background-color: red;
+    background-color: var(--status-offline);
 }
 
 .status-box p {
@@ -47,7 +138,67 @@
     font-size: 2rem;
 }
 
-.header h1 {
-    margin: 0;
-    text-align: center;
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 1rem;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+table thead {
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    font-weight: bold;
+    text-align: left;
+}
+
+table th, table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+    word-wrap: break-word;
+    box-sizing: border-box;
+}
+
+tbody tr:nth-child(odd) {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+tbody tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-color);
+}
+
+[data-theme="light"] tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--primary-color);
+}
+
+.filters {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.filters select {
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.filters select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 5px var(--primary-color);
 }
