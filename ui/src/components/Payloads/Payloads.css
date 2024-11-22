@@ -1,0 +1,124 @@
+.payloads-content {
+    margin: calc(var(--header-height) + 3rem) auto 0;
+    padding: var(--header-height) 1rem 1rem;
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 1200px;
+    position: relative;
+    transition: margin-left 0.3s ease-in-out;
+    position: relative;
+    overflow-y: auto;
+}
+
+.header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 1rem 0;
+    background-color: var(--secondary-color);
+    width: 100%;
+    color: var(--text-color);
+    box-sizing: border-box;
+}
+
+.header h1 {
+    color: var(--background-color);
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 1.8rem;
+}
+
+.header-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.header button {
+    padding: 0.5rem 1rem;
+    margin: 0.5rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 4px;
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.header button.active {
+    background-color: var(--background-color);
+    color: var(--secondary-color);
+    font-weight: bold;
+}
+
+.header button:hover {
+    background-color: var(--background-color);
+    color: var(--secondary-color);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 1rem;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    background-color: var(--background-color);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+table thead {
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    font-weight: bold;
+}
+
+table th, table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+}
+
+tbody tr:nth-child(odd) {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+tbody tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-color);
+}
+
+[data-theme='light'] tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--primary-color);
+}
+
+a {
+    color: var(--secondary-color);
+    text-decoration: underline;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: var(--status-online);
+}
+
+p {
+    text-align: center;
+    margin: 1rem 0;
+    font-size: 1.2rem;
+    color: var(--text-color);
+}

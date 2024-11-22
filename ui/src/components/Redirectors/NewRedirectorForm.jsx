@@ -90,7 +90,7 @@ const NewRedirectorForm = ({ fetchData, setActiveTab }) => {
     };    
 
     return (
-        <div className="form-container">
+        <div className="redirector-form-container">
             {loading && (
                 <div className="loading-indicator">
                     <span>Loading...</span>

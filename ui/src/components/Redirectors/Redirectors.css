@@ -29,7 +29,7 @@ h1, h2, p, .header, .redirector-container {
 }
 
 body, .App {
-    overflow: hidden;
+    overflow-x: hidden;
 }
 
 .redirector-container {
@@ -99,17 +99,17 @@ body, .App {
 
 .status-boxes {
     display: flex;
-    justify-content: center; /* Center align the status boxes */
-    gap: 1rem; /* Adjust the space between the boxes */
+    justify-content: center;
+    gap: 1rem;
     margin-bottom: 1rem;
     width: 100%;
-    max-width: 1200px; /* Ensure it matches the table width */
+    max-width: 1200px;
 }
 
 .status-box {
-    flex: 0 0 auto; /* Prevent automatic resizing */
-    width: 150px; /* Fixed width to ensure squareness */
-    height: 150px; /* Fixed height to match width */
+    flex: 0 0 auto;
+    width: 150px;
+    height: 150px;
     padding: 1rem;
     border-radius: 5px;
     text-align: center;

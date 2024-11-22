@@ -53,9 +53,10 @@ const Payloads = () => {
     }
 
     return (
-        <div className="main-content">
-            <div className="header">
-                <h1>Payloads</h1>
+        <div className="payloads-content">
+        <div className="header">
+            <h1>Payloads</h1>
+            <div className="header-buttons">
                 <button
                     className={activeTab === 'current_payloads' ? 'active' : ''}
                     onClick={() => handleTabChange('current_payloads')}
@@ -69,6 +70,7 @@ const Payloads = () => {
                     Create New Payload
                 </button>
             </div>
+        </div>
             {activeTab === 'current_payloads' ? (
                 data.length > 0 ? (
                     <table>

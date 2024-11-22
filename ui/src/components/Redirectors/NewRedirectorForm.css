@@ -1,5 +1,5 @@
-.form-container {
-    margin-top: calc(var(--header-height)*2);
+.redirector-form-container {
+    margin-top: 1rem;
     display: flex;
     flex-direction: column;
     padding: 1rem;

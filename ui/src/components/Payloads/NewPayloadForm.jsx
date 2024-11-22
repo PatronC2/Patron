@@ -106,20 +106,38 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
     };
 
     return (
-        <div>
-            {loading && <div className="loading-indicator">Loading...</div>} {/* Loading indicator */}
+        <div className="payload-form-container">
+            {loading && <div className="loading-indicator">Loading...</div>}
             <form onSubmit={handleSubmit}>
                 <div>
                     <label htmlFor="name">Payload Name:</label>
-                    <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} />
+                    <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        placeholder="Enter the payload name"
+                    />
                 </div>
                 <div>
                     <label htmlFor="description">Description:</label>
-                    <textarea id="description" name="description" value={formData.description} onChange={handleChange} />
+                    <textarea
+                        id="description"
+                        name="description"
+                        value={formData.description}
+                        onChange={handleChange}
+                        placeholder="Enter a brief description"
+                    />
                 </div>
                 <div>
                     <label htmlFor="type">Type:</label>
-                    <select id="type" name="type" value={formData.type} onChange={handleChange}>
+                    <select
+                        id="type"
+                        name="type"
+                        value={formData.type}
+                        onChange={handleChange}
+                    >
                         {availableTypes.map((type) => (
                             <option key={type.value} value={type.value}>
                                 {type.label}
@@ -129,34 +147,71 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
                 </div>
                 <div>
                     <label htmlFor="serverip">Listener IP:</label>
-                    <input type="text" id="serverip" name="serverip" value={formData.serverip} onChange={handleChange} />
+                    <input
+                        type="text"
+                        id="serverip"
+                        name="serverip"
+                        value={formData.serverip}
+                        onChange={handleChange}
+                        placeholder="Enter the listener IP"
+                    />
                 </div>
                 <div>
                     <label htmlFor="serverport">Listener Port:</label>
-                    <input type="text" id="serverport" name="serverport" value={formData.serverport} onChange={handleChange} />
+                    <input
+                        type="text"
+                        id="serverport"
+                        name="serverport"
+                        value={formData.serverport}
+                        onChange={handleChange}
+                        placeholder="Enter the listener port"
+                    />
                 </div>
                 <div>
                     <label htmlFor="callbackfrequency">Call Back Frequency:</label>
-                    <input type="text" id="callbackfrequency" name="callbackfrequency" value={formData.callbackfrequency} onChange={handleChange} />
+                    <input
+                        type="text"
+                        id="callbackfrequency"
+                        name="callbackfrequency"
+                        value={formData.callbackfrequency}
+                        onChange={handleChange}
+                        placeholder="Enter callback frequency"
+                    />
                 </div>
                 <div>
                     <label htmlFor="callbackjitter">Call Back Jitter:</label>
-                    <input type="text" id="callbackjitter" name="callbackjitter" value={formData.callbackjitter} onChange={handleChange} />
+                    <input
+                        type="text"
+                        id="callbackjitter"
+                        name="callbackjitter"
+                        value={formData.callbackjitter}
+                        onChange={handleChange}
+                        placeholder="Enter callback jitter"
+                    />
                 </div>
                 <div>
                     <label htmlFor="logging">Enable Logging:</label>
-                    <select id="logging" name="logging" value={formData.logging} onChange={handleChange}>
+                    <select
+                        id="logging"
+                        name="logging"
+                        value={formData.logging}
+                        onChange={handleChange}
+                    >
                         <option value="true">True</option>
                         <option value="false">False</option>
                     </select>
                 </div>
-                <button type="submit">Create Payload</button>
+                <button type="submit" disabled={loading}>
+                    {loading ? 'Creating...' : 'Create Payload'}
+                </button>
                 {notification && (
-                    <div className={`notification ${notificationType}`}>{notification}</div>
+                    <div className={`notification ${notificationType}`}>
+                        {notification}
+                    </div>
                 )}
             </form>
         </div>
-    );
+    );    
 };
 
 export default NewPayloadForm;
