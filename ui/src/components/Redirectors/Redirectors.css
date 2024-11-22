@@ -35,6 +35,7 @@ body, .App {
 .redirector-container {
     margin: 0 auto;
     padding: var(--header-height) 1rem 1rem;
+    color: var(--text-color);
     display: flex;
     flex-direction: column;
     align-items: center;
