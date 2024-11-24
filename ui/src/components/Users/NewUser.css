@@ -1,0 +1,92 @@
+.new-user-container {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.new-user-container input[type="text"],
+.new-user-container input[type="password"],
+.new-user-container select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 1rem;
+    border: 1px solid var(--text-color);
+    border-radius: 4px;
+    box-sizing: border-box;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+}
+
+.new-user-container input::placeholder,
+.new-user-container select::placeholder {
+    color: var(--placeholder-color);
+    opacity: 0.7;
+}
+
+.new-user-container label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.new-user-container button {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 4px;
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.new-user-container button:disabled {
+    background-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+}
+
+.new-user-container button:hover:not(:disabled) {
+    background-color: var(--text-color);
+    color: var(--primary-color);
+}
+
+.new-user-container .notification {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+}
+
+.new-user-container .notification.success {
+    background-color: lightgreen;
+}
+
+.new-user-container .notification.error {
+    background-color: red;
+}
+
+.new-user-container .input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.new-user-container .label-input-container {
+    display: flex;
+    flex-direction: column;
+}

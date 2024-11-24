@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import axios from '../../api/axios';
 import AuthContext from '../../context/AuthProvider';
-import './NewUser.css'
+import './NewUser.css';
 
 const NewUserForm = ({ fetchData, setActiveTab }) => {
     const { auth } = useContext(AuthContext);
@@ -9,6 +9,7 @@ const NewUserForm = ({ fetchData, setActiveTab }) => {
         username: '',
         role: 'readOnly',
         password: '',
+        confirmPassword: '',
     });
     const [error, setError] = useState('');
     const [notification, setNotification] = useState('');
@@ -24,7 +25,7 @@ const NewUserForm = ({ fetchData, setActiveTab }) => {
         const { username, password, confirmPassword, role } = formData;
         if (password !== confirmPassword) {
             setError('Passwords do not match');
-            setNotification('Passwords do not match')
+            setNotification('Passwords do not match');
             setNotificationType('error');
             setTimeout(() => {
                 setNotification('');
@@ -35,7 +36,6 @@ const NewUserForm = ({ fetchData, setActiveTab }) => {
         const url = `/api/admin/users`;
         try {
             const response = await axios.post(url, formData, {
-
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `${auth.accessToken}`,
@@ -76,34 +76,61 @@ const NewUserForm = ({ fetchData, setActiveTab }) => {
     };
 
     return (
-        <form onSubmit={handleSubmit}>
-            <div>
-                <label htmlFor="username">New username:</label>
-                <input type="text" id="username" name="username" value={formData.username} onChange={handleChange} />
-            </div>
-            <div>
-                <label htmlFor="role">User role:</label>
-                <select id="role" name="role" value={formData.role} onChange={handleChange}>
-                    <option value="readOnly">Read-Only</option>
-                    <option value="operator">Operator</option>
-                    <option value="admin">Admin</option>
-                </select>
-            </div>
-            <div className="input-container">
-                <div className="label-input-container">
-                    <label htmlFor="password">Password:</label>
-                    <input type="password" id="password" name="password" value={formData.password} onChange={handleChange} />
+        <div className="new-user-container">
+            <form onSubmit={handleSubmit}>
+                <div>
+                    <label htmlFor="username">New username:</label>
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        value={formData.username}
+                        onChange={handleChange}
+                    />
                 </div>
-                <div className="label-input-container">
-                    <label htmlFor="confirmPassword">Confirm Password:</label>
-                    <input type="password" id="confirmPassword" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} />
+                <div>
+                    <label htmlFor="role">User role:</label>
+                    <select
+                        id="role"
+                        name="role"
+                        value={formData.role}
+                        onChange={handleChange}
+                    >
+                        <option value="readOnly">Read-Only</option>
+                        <option value="operator">Operator</option>
+                        <option value="admin">Admin</option>
+                    </select>
                 </div>
-            </div>
-            <button type="submit">Create User</button>
-            {notification && (
-                <div className={`notification ${notificationType}`}>{notification}</div>
-            )}
-        </form>
+                <div className="input-container">
+                    <div className="label-input-container">
+                        <label htmlFor="password">Password:</label>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                        />
+                    </div>
+                    <div className="label-input-container">
+                        <label htmlFor="confirmPassword">Confirm Password:</label>
+                        <input
+                            type="password"
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                        />
+                    </div>
+                </div>
+                <button type="submit">Create User</button>
+                {notification && (
+                    <div className={`notification ${notificationType}`}>
+                        {notification}
+                    </div>
+                )}
+            </form>
+        </div>
     );
 };
 

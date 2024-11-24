@@ -92,15 +92,17 @@ const Redirectors = () => {
                         </div>
                     </div>
 
-                    <div className="filters">
-                        <select
-                            value={statusFilter}
-                            onChange={e => setStatusFilter(e.target.value)}
-                        >
-                            <option value="All">All</option>
-                            <option value="Online">Online</option>
-                            <option value="Offline">Offline</option>
-                        </select>
+                    <div className="filters-container">
+                        <div className="filters">
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                            >
+                                <option value="All">All</option>
+                                <option value="Online">Online</option>
+                                <option value="Offline">Offline</option>
+                            </select>
+                        </div>
                     </div>
 
                     {filteredData.length > 0 ? (

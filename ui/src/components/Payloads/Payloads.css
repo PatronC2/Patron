@@ -1,5 +1,5 @@
 .payloads-content {
-    margin: calc(var(--header-height) + 3rem) auto 0;
+    margin: 0 auto;
     padding: var(--header-height) 1rem 1rem;
     color: var(--text-color);
     display: flex;
@@ -9,31 +9,34 @@
     max-width: 1200px;
     position: relative;
     transition: margin-left 0.3s ease-in-out;
-    position: relative;
-    overflow-y: auto;
 }
 
-.header {
+.payloads-content .header {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     margin: 0;
-    padding: 1rem 0;
+    padding: 0.5rem 0 0.5rem;
     background-color: var(--secondary-color);
-    width: 100%;
+    width: 100vw;
+    box-sizing: border-box;
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    z-index: 998;
+    transition: margin-left 0.3s ease-in-out;
+}
+
+.payloads-content .header h1 {
     color: var(--text-color);
+    margin: 0 0 1rem;
+    text-align: center;
+    width: 100%;
     box-sizing: border-box;
 }
 
-.header h1 {
-    color: var(--background-color);
-    margin-bottom: 1rem;
-    text-align: center;
-    font-size: 1.8rem;
-}
-
-.header-buttons {
+.payloads-content .header-buttons {
     display: flex;
     justify-content: center;
     gap: 1rem;
@@ -41,7 +44,7 @@
     width: 100%;
 }
 
-.header button {
+.payloads-content .header button {
     padding: 0.5rem 1rem;
     margin: 0.5rem;
     font-size: 1rem;
@@ -64,7 +67,7 @@
     color: var(--secondary-color);
 }
 
-table {
+.payloads-content table {
     width: 100%;
     border-collapse: collapse;
     margin: 1rem 0;
@@ -76,49 +79,60 @@ table {
     overflow: hidden;
 }
 
-table thead {
+.payloads-content table thead {
     background-color: var(--primary-color);
     color: var(--text-color);
     font-weight: bold;
 }
 
-table th, table td {
+.payloads-content table th, table td {
     padding: 0.75rem;
     border-bottom: 1px solid var(--border-color);
     text-align: left;
 }
 
-tbody tr:nth-child(odd) {
+.payloads-content tbody tr:nth-child(odd) {
     background-color: rgba(0, 0, 0, 0.08);
 }
 
-tbody tr:nth-child(even) {
+.payloads-content tbody tr:nth-child(even) {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-[data-theme='dark'] tbody tr:hover {
+[data-theme='dark'] .payloads-content tbody tr:hover {
     background-color: rgba(255, 255, 255, 0.15);
     color: var(--text-color);
 }
 
-[data-theme='light'] tbody tr:hover {
+[data-theme='light'] .payloads-content tbody tr:hover {
     background-color: rgba(0, 0, 0, 0.05);
     color: var(--primary-color);
 }
 
-a {
+.payloads-content a {
     color: var(--secondary-color);
     text-decoration: underline;
     transition: color 0.3s ease;
 }
 
-a:hover {
+.payloads-content a:hover {
     color: var(--status-online);
 }
 
-p {
+.payloads-content p {
     text-align: center;
     margin: 1rem 0;
     font-size: 1.2rem;
     color: var(--text-color);
+}
+
+.payloads-content .payloads-container {
+    margin: calc(var(--header-height) + 3rem) auto 0;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 1200px;
+    position: relative;
 }

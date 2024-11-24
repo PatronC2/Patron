@@ -66,21 +66,23 @@ const Profile = () => {
     }
 
     return (
-        <div className="main-content">
+        <div className="profile-container">
             <div className="header">
                 <h1>User Profile</h1>
-                <button
-                    className={activeTab === 'user_profile' ? 'active' : ''}
-                    onClick={() => handleTabChange('user_profile')}
-                >
-                    Existing User
-                </button>
-                <button
-                    className={activeTab === 'new' ? 'active' : ''}
-                    onClick={() => handleTabChange('new')}
-                >
-                    Password Change
-                </button>
+                <div className="header-buttons">
+                    <button
+                        className={activeTab === 'user_profile' ? 'active' : ''}
+                        onClick={() => handleTabChange('user_profile')}
+                    >
+                        Existing User
+                    </button>
+                    <button
+                        className={activeTab === 'new' ? 'active' : ''}
+                        onClick={() => handleTabChange('new')}
+                    >
+                        Password Change
+                    </button>
+                </div>
             </div>
             {activeTab === 'user_profile' ? (
                 user ? (

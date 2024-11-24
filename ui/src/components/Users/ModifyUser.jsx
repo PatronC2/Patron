@@ -47,6 +47,7 @@ const ChangePasswordForm = ({ username, setActiveTab }) => {
             setTimeout(() => {
                 setNotification('');
                 setNotificationType('');
+                setActiveTab('current_users');
             }, 3000);
         } catch (error) {
             if (error.response) {
@@ -67,43 +68,45 @@ const ChangePasswordForm = ({ username, setActiveTab }) => {
     };
 
     return (
-        <form onSubmit={handleSubmit}>
-            <div>
-                <label htmlFor="newPassword">New Password:</label>
-                <input
-                    type="password"
-                    id="newPassword"
-                    name="newPassword"
-                    value={formData.newPassword}
-                    onChange={handleChange}
-                />
-            </div>
-            <div>
-                <label htmlFor="confirmNewPassword">Confirm New Password:</label>
-                <input
-                    type="password"
-                    id="confirmNewPassword"
-                    name="confirmNewPassword"
-                    value={formData.confirmNewPassword}
-                    onChange={handleChange}
-                />
-            </div>
-            <div>
-                <label htmlFor="newRole">User role:</label>
-                <select id="newRole" name="newRole" value={formData.newRole} onChange={handleChange}>
-                    <option value="">No Change</option>
-                    <option value="readOnly">Read-Only</option>
-                    <option value="operator">Operator</option>
-                    <option value="admin">Admin</option>
-                </select>
-            </div>
-            <button type="submit">Save Changes</button>
-            {notification && (
-                <div className={`notification ${notificationType}`}>
-                    {notification}
+        <div className="modify-user-container">
+            <form onSubmit={handleSubmit}>
+                <div>
+                    <label htmlFor="newPassword">New Password:</label>
+                    <input
+                        type="password"
+                        id="newPassword"
+                        name="newPassword"
+                        value={formData.newPassword}
+                        onChange={handleChange}
+                    />
                 </div>
-            )}
-        </form>
+                <div>
+                    <label htmlFor="confirmNewPassword">Confirm New Password:</label>
+                    <input
+                        type="password"
+                        id="confirmNewPassword"
+                        name="confirmNewPassword"
+                        value={formData.confirmNewPassword}
+                        onChange={handleChange}
+                    />
+                </div>
+                <div>
+                    <label htmlFor="newRole">User role:</label>
+                    <select id="newRole" name="newRole" value={formData.newRole} onChange={handleChange}>
+                        <option value="">No Change</option>
+                        <option value="readOnly">Read-Only</option>
+                        <option value="operator">Operator</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <button type="submit">Save Changes</button>
+                {notification && (
+                    <div className={`notification ${notificationType}`}>
+                        {notification}
+                    </div>
+                )}
+            </form>
+        </div>
     );
 };
 

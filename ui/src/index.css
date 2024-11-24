@@ -15,6 +15,7 @@ html {
 
 :root {
     --background-color: #e2f3f2;
+    --border-color: #ccc;
     --text-color: #000000;
     --placeholder-color: #1a1a1a80;
     --primary-color: #66a4b0;
@@ -26,6 +27,7 @@ html {
 
 [data-theme='dark'] {
     --background-color: #1a1a1a;
+    --border-color: #ccc;
     --text-color: #ffffff;
     --placeholder-color: #9c9c9c80;
     --primary-color: #003a47;

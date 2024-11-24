@@ -5,7 +5,7 @@
     box-sizing: border-box;
 }
 
-table {
+.home-container table {
     width: 100%;
     border-collapse: collapse;
     margin: 1rem 0;
@@ -15,44 +15,43 @@ table {
     border: 1px solid var(--border-color);
 }
 
-thead {
+.home-container thead {
     background-color: var(--primary-color);
     color: var(--text-color);
     font-weight: bold;
 }
 
-thead th {
+.home-container thead th {
     text-align: center;
     pointer-events: none;
 }
 
-th,
-td {
+.home-container th, td {
     padding: 0.75rem;
     border-bottom: 1px solid var(--border-color);
     word-wrap: break-word;
     box-sizing: border-box;
 }
 
-[data-theme="dark"] tbody tr:hover {
+[data-theme="dark"] .home-container tbody tr:hover {
     background-color: rgba(255, 255, 255, 0.15);
     color: var(--text-color);
 }
 
-[data-theme="light"] tbody tr:hover {
+[data-theme="light"] .home-container tbody tr:hover {
     background-color: rgba(0, 0, 0, 0.05);
     color: var(--primary-color);
 }
 
-tbody tr:nth-child(odd) {
+.home-container tbody tr:nth-child(odd) {
     background-color: rgba(0, 0, 0, 0.08);
 }
 
-tbody tr:nth-child(even) {
+.home-container tbody tr:nth-child(even) {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-.filters input,
+.home-container .filters input,
 .filters select {
     flex: 1 1 200px;
     max-width: 300px;
@@ -66,14 +65,18 @@ tbody tr:nth-child(even) {
     transition: all 0.3s ease;
 }
 
-.filters input:focus,
+.home-container .filters input:focus,
 .filters select:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 5px var(--primary-color);
 }
 
-.home-header {
+.home-container select {
+    border: 1px solid var(--border-color);
+}
+
+.home-container .home-header {
     width: 100%;
     display: flex;
     justify-content: center;
@@ -81,7 +84,7 @@ tbody tr:nth-child(even) {
     margin-bottom: 1rem;
 }
 
-.home-header h1 {
+.home-container .home-header h1 {
     margin: 0;
     font-size: 2rem;
     text-align: center;
@@ -101,7 +104,7 @@ tbody tr:nth-child(even) {
     overflow-y: auto;
 }
 
-.status-boxes {
+.home-container .status-boxes {
     display: flex;
     justify-content: center;
     gap: 1rem;
@@ -110,7 +113,7 @@ tbody tr:nth-child(even) {
     max-width: 1200px
 }
 
-.status-box {
+.home-container .status-box {
     flex: 0 0 auto;
     width: 150px;
     height: 150px;
@@ -125,20 +128,20 @@ tbody tr:nth-child(even) {
     background-color: var(--primary-color);
 }
 
-.status-box.online {
+.home-container .status-box.online {
     background-color: var(--status-online);
 }
 
-.status-box.offline {
+.home-container .status-box.offline {
     background-color: var(--status-offline);
 }
 
-.status-box p {
+.home-container .status-box p {
     margin: 0;
     font-size: 1rem;
 }
 
-.status-box h2 {
+.home-container .status-box h2 {
     margin: 0;
     font-size: 2rem;
 }

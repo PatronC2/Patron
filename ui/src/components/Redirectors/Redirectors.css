@@ -1,4 +1,4 @@
-.header {
+.redirector-container .header {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -20,7 +20,7 @@ body {
     padding: 0;
 }
 
-.header + .redirector-container {
+.redirector-container .header + .redirector-container {
     margin-top: 0;
 }
 
@@ -28,7 +28,7 @@ h1, h2, p, .header, .redirector-container {
     margin: 0;
 }
 
-body, .App {
+.redirector-container body, .App {
     overflow-x: hidden;
 }
 
@@ -57,7 +57,7 @@ body, .App {
     transition: margin-left 0.3s ease-in-out;
 }
 
-.header h1 {
+.redirector-container .header h1 {
     color: var(--text-color);
     margin: 0 0 1rem;
     text-align: center;
@@ -65,7 +65,7 @@ body, .App {
     box-sizing: border-box;
 }
 
-.header-buttons {
+.redirector-container .header-buttons {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -73,7 +73,7 @@ body, .App {
     width: 100%;
 }
 
-.header-buttons button {
+.redirector-container .header-buttons button {
     flex: 1;
     max-width: 300px;
     padding: 0.5rem 1rem;
@@ -86,18 +86,18 @@ body, .App {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.header-buttons button.active {
+.redirector-container .header-buttons button.active {
     background-color: var(--background-color);
     color: var(--secondary-color);
     font-weight: bold;
 }
 
-.header-buttons button:hover {
+.redirector-container .header-buttons button:hover {
     background-color: var(--background-color);
     color: var(--secondary-color);
 }
 
-.status-boxes {
+.redirector-container .status-boxes {
     display: flex;
     justify-content: center;
     gap: 1rem;
@@ -106,7 +106,7 @@ body, .App {
     max-width: 1200px;
 }
 
-.status-box {
+.redirector-container .status-box {
     flex: 0 0 auto;
     width: 150px;
     height: 150px;
@@ -121,25 +121,25 @@ body, .App {
     background-color: var(--primary-color);
 }
 
-.status-box.online {
+.redirector-container .status-box.online {
     background-color: var(--status-online);
 }
 
-.status-box.offline {
+.redirector-container .status-box.offline {
     background-color: var(--status-offline);
 }
 
-.status-box p {
+.redirector-container .status-box p {
     margin: 0;
     font-size: 1rem;
 }
 
-.status-box h2 {
+.redirector-container .status-box h2 {
     margin: 0;
     font-size: 2rem;
 }
 
-table {
+.redirector-container table {
     width: 100%;
     border-collapse: collapse;
     margin: 1rem 0;
@@ -148,14 +148,14 @@ table {
     border: 1px solid var(--border-color);
 }
 
-table thead {
+.redirector-container table thead {
     background-color: var(--primary-color);
     color: var(--text-color);
     font-weight: bold;
     text-align: left;
 }
 
-table th, table td {
+.redirector-container table th, table td {
     padding: 0.75rem;
     border-bottom: 1px solid var(--border-color);
     text-align: left;
@@ -163,32 +163,38 @@ table th, table td {
     box-sizing: border-box;
 }
 
-tbody tr:nth-child(odd) {
+.redirector-container tbody tr:nth-child(odd) {
     background-color: rgba(0, 0, 0, 0.08);
 }
 
-tbody tr:nth-child(even) {
+.redirector-container tbody tr:nth-child(even) {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-[data-theme="dark"] tbody tr:hover {
+[data-theme="dark"] .redirector-container tbody tr:hover {
     background-color: rgba(255, 255, 255, 0.15);
     color: var(--text-color);
 }
 
-[data-theme="light"] tbody tr:hover {
+[data-theme="light"] .redirector-container tbody tr:hover {
     background-color: rgba(0, 0, 0, 0.05);
     color: var(--primary-color);
 }
 
-.filters {
+.redirector-container .filters-container {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     width: 100%;
     margin-bottom: 1rem;
 }
 
-.filters select {
+.redirector-container .filters {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.redirector-container .filters select {
     padding: 0.5rem;
     border: 1px solid var(--border-color);
     border-radius: 0.5rem;
@@ -198,8 +204,12 @@ tbody tr:nth-child(even) {
     transition: all 0.3s ease;
 }
 
-.filters select:focus {
+.redirector-container .filters select:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 5px var(--primary-color);
+}
+
+.redirector-container select {
+    border: 1px solid var(--border-color);
 }

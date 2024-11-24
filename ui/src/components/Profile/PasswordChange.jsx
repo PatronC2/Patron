@@ -62,47 +62,49 @@ const PasswordChangeForm = ({ setActiveTab }) => {
     };
 
     return (
-        <form onSubmit={handleSubmit}>
-            <div>
-                <label htmlFor="oldPassword">Old Password:</label>
-                <input
-                    type="password"
-                    id="oldPassword"
-                    name="oldPassword"
-                    value={formData.oldPassword}
-                    onChange={handleChange}
-                    required
-                />
-            </div>
-            <div>
-                <label htmlFor="newPassword">New Password:</label>
-                <input
-                    type="password"
-                    id="newPassword"
-                    name="newPassword"
-                    value={formData.newPassword}
-                    onChange={handleChange}
-                    required
-                />
-            </div>
-            <div>
-                <label htmlFor="confirmNewPassword">Confirm New Password:</label>
-                <input
-                    type="password"
-                    id="confirmNewPassword"
-                    name="confirmNewPassword"
-                    value={formData.confirmNewPassword}
-                    onChange={handleChange}
-                    required
-                />
-            </div>
-            <button type="submit">Change Password</button>
-            {notification && (
-                <div className={`notification ${notificationType}`}>
-                    {notification}
+        <div className="password-change-container">
+            <form onSubmit={handleSubmit}>
+                <div>
+                    <label htmlFor="oldPassword">Old Password:</label>
+                    <input
+                        type="password"
+                        id="oldPassword"
+                        name="oldPassword"
+                        value={formData.oldPassword}
+                        onChange={handleChange}
+                        required
+                    />
                 </div>
-            )}
-        </form>
+                <div>
+                    <label htmlFor="newPassword">New Password:</label>
+                    <input
+                        type="password"
+                        id="newPassword"
+                        name="newPassword"
+                        value={formData.newPassword}
+                        onChange={handleChange}
+                        required
+                    />
+                </div>
+                <div>
+                    <label htmlFor="confirmNewPassword">Confirm New Password:</label>
+                    <input
+                        type="password"
+                        id="confirmNewPassword"
+                        name="confirmNewPassword"
+                        value={formData.confirmNewPassword}
+                        onChange={handleChange}
+                        required
+                    />
+                </div>
+                <button type="submit">Change Password</button>
+                {notification && (
+                    <div className={`notification ${notificationType}`}>
+                        {notification}
+                    </div>
+                )}
+            </form>
+        </div>
     );
 };
 
