@@ -1,126 +1,183 @@
 .agent-container {
+    margin-top: var(--header-height);
+    padding: 20px;
     display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: 20px;
 }
 
-.agent-details {
-    flex: 1;
-    background-color: #66a4b0;
-    padding: 20px;
-    border-radius: 5px;
-    width: 600px;
-}
-
-.agent-tabs {
-    flex: 2;
-    background-color: red;
-    padding: 20px;
-    border-radius: 5px;
-    width: 650px;
-    height: 800px;
-}
-
-.tabs {
-    display: flex;
-    gap: 10px;
+.agent-container .agent-header {
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: bold;
     margin-bottom: 20px;
+    color: var(--text-color);
 }
 
-.tabs button {
-    padding: 10px 20px;
-    background-color: #333;
-    color: #fff;
-    border: none;
-    cursor: pointer;
+.agent-container .agent-identity {
+    margin-bottom: 0.5rem;
 }
 
-.tabs button.active {
-    background-color: #141414;
-    color: #fff;
+.agent-container .agent-status {
+    font-size: 1.2rem;
 }
 
-.tabs button:hover {
-    background-color: #575757;
-    color: #fff;
-}
-
-.tab-content {
-    background-color: #f9f9f9;
+.agent-container .agent-tabs {
+    background-color: var(--primary-color);
     padding: 20px;
     border-radius: 5px;
-    color: #000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
-.commands-list {
-    height: 600px;
-    overflow-y: auto; 
+.agent-container .tabs {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
-.commands-list ul {
-    list-style-type: none;
-    padding: 0;
-}
-
-.commands-list li {
-    margin-bottom: 10px;
-    color: #000;
-}
-  
-.commands-list p {
-    color: #000;
-}
-
-.command-input {
-    margin-top: 20px;
-}
-
-.command-input input {
+.agent-container .tabs button {
+    flex: 1;
     padding: 10px;
-    margin-right: 10px;
-    width: 300px;
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    border: 2px solid transparent;
+    cursor: pointer;
+    text-align: center;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
-.command-input button {
-    padding: 10px 20px;
-    background-color: #66a4b0;
-    border: none;
-    cursor: pointer;
-    color: white;
+.agent-container .tabs button.active {
+    background: var(--secondary-color);
+    color: var(--text-color);
+    font-weight: bold;
+    border-color: var(--text-color);
+}
+
+.agent-container .tabs button:hover {
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    border-color: var(--secondary-color);
+}
+
+.agent-container .tab-content {
+    background: linear-gradient(
+        to bottom,
+        var(--primary-color) 60%,
+        var(--secondary-color) 100%
+    );
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    color: var(--text-color);
+}
+
+
+.agent-container .configuration-tab .form-group {
+    margin-bottom: 15px;
+}
+
+.agent-container .configuration-tab .form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: var(--text-color);
+}
+
+.agent-container input[type="text"],
+.agent-container input[type="number"],
+.agent-container input[type="file"],
+.agent-container textarea,
+.agent-container select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--text-color);
+    border-radius: 5px;
+    box-sizing: border-box;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.agent-container input[type="text"]:focus,
+.agent-container input[type="number"]:focus,
+.agent-container input[type="file"]:focus,
+.agent-container textarea:focus,
+.agent-container select:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 5px var(--secondary-color);
+}
+
+.agent-container table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 1rem;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    background-color: var(--background-color);
+    border-radius: 5px;
+    overflow: hidden;
+    text-align: center;
+}
+
+.agent-container table th,
+.agent-container table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    text-align: center;
+    vertical-align: middle;
+    word-wrap: break-word;
+}
+
+.agent-container table thead {
+    background-color: var(--secondary-color);
+    color: var(--text-color);
     font-weight: bold;
 }
 
-.command-input button:hover {
-    background-color: #575757;
+.agent-container tbody tr:nth-child(odd) {
+    background-color: rgba(0, 0, 0, 0.08);
 }
 
-.keylogs-list {
-    height: 600px;
-    overflow-y: auto; 
+.agent-container tbody tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
-.keylogs-list ul {
-    list-style-type: none;
-    padding: 0;
-}
-
-.keylogs-list li {
-    margin-bottom: 10px;
-    color: #000;
-}
-  
-.keylogs-list p {
-    color: #000;
-}
-
-input[type="text"], input[type="number"] {
-    width: 100%;
-    padding: 10px;
-    box-sizing: border-box;
-    margin-bottom: 10px;
-}
-
-.files-list {
+.agent-container .commands-list {
     max-height: 600px;
     overflow-y: auto;
-    padding-right: 10px;
+    padding: 10px;
+    border: 1px solid var(--text-color);
+    border-radius: 5px;
+    background-color: var(--background-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.agent-container .commands-list li {
+    margin-bottom: 1rem;
+}
+
+.agent-container .commands-list pre {
+    margin-bottom: 0.5rem;
+}
+
+.agent-container .keylogs-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.agent-container .keylogs-list li {
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
 }

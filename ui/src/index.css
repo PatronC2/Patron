@@ -10,36 +10,71 @@ html {
     font-family: 'Nunito', sans-serif;
     font-size: 22px;
     color: #fff;
+    overflow-y: auto
+}
+
+:root {
+    --background-color: #e2f3f2;
+    --border-color: #ccc;
+    --text-color: #000000;
+    --placeholder-color: #1a1a1a80;
+    --primary-color: #66a4b0;
+    --secondary-color: #9e1717;
+    --status-online: green;
+    --status-offline: red;
+    --header-height: 94px
+}
+
+[data-theme='dark'] {
+    --background-color: #1a1a1a;
+    --border-color: #ccc;
+    --text-color: #ffffff;
+    --placeholder-color: #9c9c9c80;
+    --primary-color: #003a47;
+    --secondary-color: #9e1717;
+    --status-online: green;
+    --status-offline: red;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 body {
-    min-height: 100vh;
-    background-color: #66a4b0;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--background-color);
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    overflow-x: hidden;
+    overflow-y: auto
 }
 
 .App {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    height: 100%;
-    padding: 1rem 0.5rem;
+    min-height: 100vh;
 }
 
-section {
-    width: 100%;
-    max-width: 420px;
-    min-height: 400px;
+.main-content {
+    padding-top: calc(var(--header-height) + 1rem);
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    align-items: center;
     padding: 1rem;
-    background-color: rgba(0,0,0,0.4);
-    margin: auto;
+    transition: margin-left 0.3s ease-in-out;
+}
+
+.main-content.menu-open {
+    margin-left: 250px;
 }
 
 form {
@@ -56,20 +91,18 @@ a, a:visited {
 
 input[type="text"],
 input[type="password"],
-button,
+button:not(.menu-button):not(.toggle-button),
 textarea {
     font-family: 'Nunito', sans-serif;
     font-size: 22px;
-    padding: 0.25rem;
-    border-radius: 0.5rem;
 }
 
 label,
-button {
+button:not(.menu-button):not(.toggle-button) {
     margin-top: 1rem;
 }
 
-button {
+button:not(.menu-button):not(.toggle-button) {
     padding: 0.5rem;
 }
 
@@ -77,8 +110,6 @@ button {
     font-size: 0.75rem;
     border-radius: 0.5rem;
     background: #000;
-    color: #fff;
-    padding: 0.25rem;
     position: relative;
     bottom: -10px;
 }
@@ -98,22 +129,25 @@ button {
 
 .valid {
     color: limegreen;
-    margin-left: 0.25rem;
 }
 
 .invalid {
     color: red;
-    margin-left: 0.25rem;
 }
 
 .errmsg {
     background-color: lightpink;
     color: firebrick;
     font-weight: bold;
-    padding: 0.5rem;
     margin-bottom: 0.5rem;
 }
 
 .line {
     display: inline-block;
+}
+
+.shared-container {
+    max-width: 1200px;
+    margin: var(--header-height) auto 0 auto;
+    box-sizing: border-box;
 }

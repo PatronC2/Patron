@@ -53,64 +53,68 @@ const Payloads = () => {
     }
 
     return (
-        <div className="main-content">
+        <div className="payloads-content">
             <div className="header">
                 <h1>Payloads</h1>
-                <button
-                    className={activeTab === 'current_payloads' ? 'active' : ''}
-                    onClick={() => handleTabChange('current_payloads')}
-                >
-                    Existing Payloads
-                </button>
-                <button
-                    className={activeTab === 'new' ? 'active' : ''}
-                    onClick={() => handleTabChange('new')}
-                >
-                    Create New Payload
-                </button>
+                <div className="header-buttons">
+                    <button
+                        className={activeTab === 'current_payloads' ? 'active' : ''}
+                        onClick={() => handleTabChange('current_payloads')}
+                    >
+                        Existing Payloads
+                    </button>
+                    <button
+                        className={activeTab === 'new' ? 'active' : ''}
+                        onClick={() => handleTabChange('new')}
+                    >
+                        Create New Payload
+                    </button>
+                </div>
             </div>
             {activeTab === 'current_payloads' ? (
-                data.length > 0 ? (
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>UUID</th>
-                                <th>Name</th>
-                                <th>Description</th>
-                                <th>Listener IP</th>
-                                <th>Listener Port</th>
-                                <th>Callback Frequency</th>
-                                <th>Callback Jitter</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                          {data.map(item => (
-                              <tr key={item.uuid}>
-                                  <td>{item.uuid.substring(0, 6)}</td>
-                                  <td>
-                                      <a href={`${FILE_SERVER}${item.concat}`} target="_blank" rel="noopener noreferrer">
-                                          {item.concat}
-                                      </a>
-                                  </td>
-                                  <td>{item.description}</td>
-                                  <td>{item.serverip}</td>
-                                  <td>{item.serverport}</td>
-                                  <td>{item.callbackfrequency}</td>
-                                  <td>{item.callbackjitter}</td>
-                              </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                ) : (
-                    <p>No Payloads</p>
-                )
+                <div className="payloads-container">
+                    {data.length > 0 ? (
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>UUID</th>
+                                    <th>Name</th>
+                                    <th>Description</th>
+                                    <th>Listener IP</th>
+                                    <th>Listener Port</th>
+                                    <th>Callback Frequency</th>
+                                    <th>Callback Jitter</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {data.map(item => (
+                                    <tr key={item.uuid}>
+                                        <td>{item.uuid.substring(0, 6)}</td>
+                                        <td>
+                                            <a href={`${FILE_SERVER}${item.concat}`} target="_blank" rel="noopener noreferrer">
+                                                {item.concat}
+                                            </a>
+                                        </td>
+                                        <td>{item.description}</td>
+                                        <td>{item.serverip}</td>
+                                        <td>{item.serverport}</td>
+                                        <td>{item.callbackfrequency}</td>
+                                        <td>{item.callbackjitter}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <p>No Payloads</p>
+                    )}
+                </div>
             ) : (
                 <div>
                     <NewPayloadForm fetchData={fetchData} setActiveTab={setActiveTab} />
                 </div>
             )}
         </div>
-    );
+    );    
 };
 
 export default Payloads;

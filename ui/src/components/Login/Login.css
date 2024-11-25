@@ -1,28 +1,61 @@
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1rem 0;
-  }
-  
-  th, td {
-    border: 1px solid #ddd;
-    padding: 0.5rem;
-    text-align: left;
-  }
-  
-  th {
-    background-color: #e02b2b;
-    color: white;
-  }
-  
-  tr:hover {
-    background-color: #ddd;
-  }
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
 
-  body.login-page {
-    min-height: 100vh;
-    background-color: #66a4b0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.loginprompt {
+  width: 100%;
+  max-width: 420px;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background: linear-gradient(145deg, rgba(0, 0, 0, 0.5), rgba(255, 255, 255, 0.1));
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.loginprompt:hover {
+  transform: scale(1.02);
+  box-shadow: 0px 8px 12px rgba(0, 0, 0, 0.2);
+}
+
+.loginprompt input[type="text"],
+.loginprompt input[type="password"],
+.loginprompt button {
+  font-family: 'Nunito', sans-serif;
+  font-size: 18px;
+  padding: 0.75rem;
+  width: 100%;
+  margin-top: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 5px;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-color);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.loginprompt input[type="text"]:focus,
+.loginprompt input[type="password"]:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0px 0px 8px var(--primary-color);
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.loginprompt button:hover,
+.loginprompt button:focus {
+  background-color: var(--primary-color);
+  color: var(--text-color);
+  border-color: var(--text-color);
+  box-shadow: 0px 0px 12px var(--primary-color);
+  cursor: pointer;
 }

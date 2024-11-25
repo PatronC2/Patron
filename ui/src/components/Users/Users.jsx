@@ -65,7 +65,7 @@ const Users = () => {
 
     const handleTabChange = (tab) => {
         setActiveTab(tab);
-        setSelectedUser(null);  // Clear selected user when tab changes
+        setSelectedUser(null);
     };
 
     const handleUserClick = (user) => {
@@ -97,31 +97,28 @@ const Users = () => {
         }
     };
 
-    const handleUpdateUser = (user) => {
-        setSelectedUser(user);
-        setActiveTab('edit_user');
-    };
-
     if (error) {
         return <div>Error: {error}</div>;
     }
 
     return (
-        <div className="main-content">
+        <div className="admin-content">
             <div className="header">
                 <h1>Admin</h1>
-                <button
-                    className={activeTab === 'current_users' ? 'active' : ''}
-                    onClick={() => handleTabChange('current_users')}
-                >
-                    Existing Users
-                </button>
-                <button
-                    className={activeTab === 'new_user' ? 'active' : ''}
-                    onClick={() => handleTabChange('new_user')}
-                >
-                    Create New User
-                </button>
+                <div className="header-buttons">
+                    <button
+                        className={activeTab === 'current_users' ? 'active' : ''}
+                        onClick={() => handleTabChange('current_users')}
+                    >
+                        Existing Users
+                    </button>
+                    <button
+                        className={activeTab === 'new_user' ? 'active' : ''}
+                        onClick={() => handleTabChange('new_user')}
+                    >
+                        Create New User
+                    </button>
+                </div>
             </div>
             {activeTab === 'current_users' ? (
                 data.length > 0 ? (
@@ -168,7 +165,8 @@ const Users = () => {
                 </div>
             )}
         </div>
-    );
+    );    
+
 };
 
 export default Users;

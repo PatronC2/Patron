@@ -1,36 +1,143 @@
-.home-container {
-    padding: 1rem;
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    align-self: stretch;
+    box-sizing: border-box;
 }
 
-.status-boxes {
+.home-container table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 1rem;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    background-color: var(--background-color);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.home-container table thead {
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    font-weight: bold;
+}
+
+.home-container table th, table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+}
+
+[data-theme="dark"] .home-container tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-color);
+}
+
+[data-theme="light"] .home-container tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--primary-color);
+}
+
+.home-container tbody tr:nth-child(odd) {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+.home-container tbody tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.home-container .filters input,
+.filters select {
+    flex: 1 1 200px;
+    max-width: 300px;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+.home-container .filters input:focus,
+.filters select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 5px var(--primary-color);
+}
+
+.home-container select {
+    border: 1px solid var(--border-color);
+}
+
+.home-container .home-header {
+    width: 100%;
     display: flex;
-    justify-content: space-around;
+    justify-content: center;
+    align-items: center;
     margin-bottom: 1rem;
 }
 
-.status-box {
-    flex: 1;
+.home-container .home-header h1 {
+    margin: 0;
+    font-size: 2rem;
+    text-align: center;
+    color: var(--text-color);
+}
+
+.home-container {
+    width: 100%;
+    max-width: 1200px;
     padding: 1rem;
-    margin: 0 1rem;
+    margin: var(--header-height) auto 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-height: calc(100vh - var(--header-height) - 3rem);
+    overflow-y: auto;
+}
+
+.home-container .status-boxes {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    width: 100%;
+    max-width: 1200px
+}
+
+.home-container .status-box {
+    flex: 0 0 auto;
+    width: 150px;
+    height: 150px;
+    padding: 1rem;
     border-radius: 5px;
     text-align: center;
     color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--primary-color);
 }
 
-.status-box.online {
-    background-color: green;
+.home-container .status-box.online {
+    background-color: var(--status-online);
 }
 
-.status-box.offline {
-    background-color: red;
+.home-container .status-box.offline {
+    background-color: var(--status-offline);
 }
 
-.status-box p {
+.home-container .status-box p {
     margin: 0;
     font-size: 1rem;
 }
 
-.status-box h2 {
+.home-container .status-box h2 {
     margin: 0;
     font-size: 2rem;
 }
