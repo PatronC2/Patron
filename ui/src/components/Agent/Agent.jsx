@@ -17,7 +17,6 @@ const Agent = () => {
   const [newCommand, setNewCommand] = useState('');
   const commandListRef = useRef(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
-  const prevCommandsLengthRef = useRef(0);
   const prevCommandsRef = useRef([]);
 
   // States related to Configuration tab
