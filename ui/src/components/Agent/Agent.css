@@ -104,33 +104,35 @@
     border-collapse: collapse;
     margin: 1rem 0;
     font-size: 1rem;
-    text-align: left;
     color: var(--text-color);
     border: 1px solid var(--border-color);
+    background-color: var(--background-color);
+    border-radius: 5px;
+    overflow: hidden;
+    text-align: center;
 }
 
-.agent-container th, td {
+.agent-container table th,
+.agent-container table td {
     padding: 0.75rem;
     border-bottom: 1px solid var(--border-color);
-    vertical-align: middle;
     text-align: center;
+    vertical-align: middle;
     word-wrap: break-word;
-    box-sizing: border-box;
 }
 
-.agent-container thead {
+.agent-container table thead {
     background-color: var(--secondary-color);
-    color: var(--background-color);
+    color: var(--text-color);
     font-weight: bold;
-    text-align: center;
 }
 
 .agent-container tbody tr:nth-child(odd) {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: rgba(0, 0, 0, 0.08);
 }
 
 .agent-container tbody tr:nth-child(even) {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .agent-container .commands-list {

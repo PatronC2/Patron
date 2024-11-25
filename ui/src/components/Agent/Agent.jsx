@@ -17,6 +17,8 @@ const Agent = () => {
   const [newCommand, setNewCommand] = useState('');
   const commandListRef = useRef(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const prevCommandsLengthRef = useRef(0);
+  const prevCommandsRef = useRef([]);
 
   // States related to Configuration tab
   const [callbackIP, setCallbackIP] = useState('');
@@ -79,9 +81,33 @@ const Agent = () => {
       }
 
       if (commandsResponse.data.data) {
-        setCommands(commandsResponse.data.data);
+        const newCommands = commandsResponse.data.data;
+  
+        let commandsChanged = false;
+  
+        if (newCommands.length !== prevCommandsRef.current.length) {
+          commandsChanged = true;
+        } else {
+          for (let i = 0; i < newCommands.length; i++) {
+            if (
+              newCommands[i].commanduuid !== prevCommandsRef.current[i].commanduuid ||
+              newCommands[i].output !== prevCommandsRef.current[i].output
+            ) {
+              commandsChanged = true;
+              break;
+            }
+          }
+        }
+  
+        if (commandsChanged) {
+          setCommands(newCommands);
+          prevCommandsRef.current = newCommands;
+        }
       } else {
-        setCommands([]);
+        if (commands.length !== 0) {
+          setCommands([]);
+          prevCommandsRef.current = [];
+        }
       }
       if (filesResponse.data.data){
         setFiles(filesResponse.data.data)
@@ -175,18 +201,13 @@ const Agent = () => {
   }, [location.search, activeTab]);
 
   useEffect(() => {
-    if (isAtBottom && commandListRef.current) {
-      commandListRef.current.scrollTop = commandListRef.current.scrollHeight;
-    }
-  }, [commands, isAtBottom]);
-  
-  useEffect(() => {
     const handleScroll = () => {
       if (!commandListRef.current) return;
   
       const { scrollTop, scrollHeight, clientHeight } = commandListRef.current;
-      const atBottom = scrollHeight - scrollTop === clientHeight;
-      setIsAtBottom(atBottom);
+      const isScrolledToBottom = scrollHeight - scrollTop - clientHeight <= 1;
+  
+      setIsAtBottom(isScrolledToBottom);
     };
   
     const commandListElement = commandListRef.current;
@@ -199,8 +220,15 @@ const Agent = () => {
         commandListElement.removeEventListener('scroll', handleScroll);
       }
     };
-  }, []);
+  }, []);   
   
+  useEffect(() => {
+    if (!commandListRef.current) return;
+  
+    if (isAtBottom) {
+      commandListRef.current.scrollTop = commandListRef.current.scrollHeight;
+    }
+  }, [commands, isAtBottom]);  
 
   const handleSendCommand = async () => {
     try {
@@ -218,12 +246,6 @@ const Agent = () => {
       setError('Failed to send command');
     }
   };
-
-  useEffect(() => {
-    if (commandListRef.current) {
-      commandListRef.current.scrollTop = commandListRef.current.scrollHeight;
-    }
-  }, [commands]);
 
   const handleSaveConfiguration = async () => {
     try {
