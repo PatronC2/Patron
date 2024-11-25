@@ -91,12 +91,23 @@
     color: var(--text-color);
 }
 
-.agent-container .configuration-tab .form-group input {
+.agent-container .configuration-tab .form-group input[type="text"],
+.agent-container .configuration-tab .form-group input[type="number"] {
     width: 100%;
     padding: 10px;
     border: 1px solid var(--text-color);
     border-radius: 5px;
     box-sizing: border-box;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.agent-container .configuration-tab .form-group input[type="text"]:focus,
+.agent-container .configuration-tab .form-group input[type="number"]:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 5px var(--secondary-color);
 }
 
 .agent-container table {

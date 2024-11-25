@@ -10,7 +10,7 @@ const Home = ({ isMenuOpen }) => {
     const [error, setError] = useState(null);
     const [hostnameFilter, setHostnameFilter] = useState('');
     const [ipFilter, setIpFilter] = useState('');
-    const [statusFilter, setStatusFilter] = useState('All');
+    const [statusFilter, setStatusFilter] = useState('Online');
 
     const navigate = useNavigate();
 

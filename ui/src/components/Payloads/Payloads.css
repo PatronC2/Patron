@@ -110,13 +110,13 @@
 }
 
 .payloads-content a {
-    color: var(--secondary-color);
+    color: var(--text-color);
     text-decoration: underline;
     transition: color 0.3s ease;
 }
 
 .payloads-content a:hover {
-    color: var(--status-online);
+    color: var(--secondary-color);
 }
 
 .payloads-content p {
