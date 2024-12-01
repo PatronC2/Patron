@@ -228,4 +228,3 @@ func InitDatabase() {
 	logger.Logf(logger.Info, "Redirectors table initialized\n")
 
 }
-
