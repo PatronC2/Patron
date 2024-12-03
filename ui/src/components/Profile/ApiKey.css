@@ -1,0 +1,79 @@
+.api-key-form-container {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.api-key-form-container input[type="password"],
+.api-key-form-container input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 1rem;
+    border: 1px solid var(--text-color);
+    border-radius: 4px;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+}
+
+.api-key-form-container input::placeholder {
+    color: var(--placeholder-color);
+    opacity: 0.7;
+}
+
+.api-key-form-container label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.api-key-form-container button {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 4px;
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.api-key-form-container button:hover {
+    background-color: var(--text-color);
+    color: var(--primary-color);
+}
+
+.api-key-form-container .notification {
+    margin-top: 1rem;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.api-key-form-container .notification.success {
+    background-color: lightgreen;
+}
+
+.api-key-form-container .notification.error {
+    background-color: red;
+}
+
+.api-key-display {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    word-wrap: break-word;
+    font-family: monospace;
+}
