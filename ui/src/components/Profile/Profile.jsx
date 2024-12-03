@@ -3,6 +3,7 @@ import axios from '../../api/axios';
 import AuthContext from '../../context/AuthProvider';
 import './Profile.css';
 import PasswordChangeForm from './PasswordChange';
+import ApiKeyForm from './ApiKey';
 
 const Profile = () => {
     const { auth } = useContext(AuthContext);
@@ -57,10 +58,6 @@ const Profile = () => {
         }
     };
 
-    const handleTabChange = (tab) => {
-        setActiveTab(tab);
-    };
-
     if (error) {
         return <div>Error: {error}</div>;
     }
@@ -72,48 +69,45 @@ const Profile = () => {
                 <div className="header-buttons">
                     <button
                         className={activeTab === 'user_profile' ? 'active' : ''}
-                        onClick={() => handleTabChange('user_profile')}
+                        onClick={() => setActiveTab('user_profile')}
                     >
                         Existing User
                     </button>
                     <button
-                        className={activeTab === 'new' ? 'active' : ''}
-                        onClick={() => handleTabChange('new')}
+                        className={activeTab === 'password_change' ? 'active' : ''}
+                        onClick={() => setActiveTab('password_change')}
                     >
                         Password Change
                     </button>
+                    <button
+                        className={activeTab === 'api_key' ? 'active' : ''}
+                        onClick={() => setActiveTab('api_key')}
+                    >
+                        API Key
+                    </button>
                 </div>
             </div>
-            {activeTab === 'user_profile' ? (
-                user ? (
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Username</th>
-                                <th>Role</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>{user.ID}</td>
-                                <td>{user.Username}</td>
-                                <td>{user.Role}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                ) : (
-                    <p>Loading...</p>
-                )
+            {activeTab === 'user_profile' && user ? (
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Role</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{user.ID}</td>
+                            <td>{user.Username}</td>
+                            <td>{user.Role}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            ) : activeTab === 'password_change' ? (
+                <PasswordChangeForm />
             ) : (
-                <div>
-                    <PasswordChangeForm fetchData={fetchData} setActiveTab={setActiveTab} />
-                </div>
-            )}
-            {notification && (
-                <div className={`notification ${notificationType}`}>
-                    {notification}
-                </div>
+                <ApiKeyForm username={user?.Username || ''} />
             )}
         </div>
     );

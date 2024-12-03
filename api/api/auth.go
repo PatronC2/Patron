@@ -45,11 +45,16 @@ func contains(s []string, e string) bool {
 	return false
 }
 
-func GenerateJWT(username string, role string) (tokenString string, err error) {
-	expirationTime := time.Now().Add(24 * time.Hour)
-	claims:= &types.JWTClaim{
+func GenerateJWT(username string, role string, expirationDuration time.Duration) (tokenString string, err error) {
+	// Default to 8 hours if no duration is provided
+	if expirationDuration == 0 {
+		expirationDuration = 8 * time.Hour
+	}
+
+	expirationTime := time.Now().Add(expirationDuration)
+	claims := &types.JWTClaim{
 		Username: username,
-		Role: role,
+		Role:     role,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
 		},
@@ -110,29 +115,38 @@ func ValidateAndGetClaims(tokenString string) (*types.JWTClaim, error) {
 }
 
 func LoginHandler(c *gin.Context) {
-    var loginRequest struct {
-        Username string `json:"username"`
-        Password string `json:"password"`
-    }
-    if err := c.ShouldBindJSON(&loginRequest); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
-        return
-    }
+	var loginRequest struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+		Duration int64  `json:"duration"`
+	}
 
-    user, err := GetUserByUsername(loginRequest.Username)
-    if err != nil || user.CheckPassword(loginRequest.Password) != nil {
+	if err := c.ShouldBindJSON(&loginRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	user, err := GetUserByUsername(loginRequest.Username)
+	if err != nil || user.CheckPassword(loginRequest.Password) != nil {
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		}
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-        return
-    }
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
 
-    token, err := GenerateJWT(user.Username, user.Role)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
-        return
-    }
+	var duration time.Duration
+	if loginRequest.Duration > 0 {
+		duration = time.Duration(loginRequest.Duration) * 24 * time.Hour
+	} else {
+		duration = 0
+	}
 
-    c.JSON(http.StatusOK, gin.H{"token": token})
+	token, err := GenerateJWT(user.Username, user.Role, duration)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"token": token})
 }
