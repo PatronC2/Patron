@@ -75,5 +75,15 @@
     border: 1px solid var(--border-color);
     border-radius: 5px;
     word-wrap: break-word;
+    word-break: break-word;
     font-family: monospace;
+    white-space: pre-wrap;
+}
+
+.api-key-display pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    margin: 0;
 }
