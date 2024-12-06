@@ -6,19 +6,19 @@ type ResponseType string
 
 // Constants for request and response types
 const (
-	ConfigurationRequestType   		RequestType = "ConfigurationRequest"
-	CommandRequestType         		RequestType = "CommandRequest"
-	CommandStatusRequestType   		RequestType = "CommandStatusRequest"
-	KeysRequestType            		RequestType = "KeysRequest"
-	FileRequestType           		RequestType = "FileRequest"
-	FileToServerType				RequestType = "FileToServer"
+	ConfigurationRequestType RequestType = "ConfigurationRequest"
+	CommandRequestType       RequestType = "CommandRequest"
+	CommandStatusRequestType RequestType = "CommandStatusRequest"
+	KeysRequestType          RequestType = "KeysRequest"
+	FileRequestType          RequestType = "FileRequest"
+	FileToServerType         RequestType = "FileToServer"
 
-	ConfigurationResponseType  		ResponseType = "ConfigurationResponse"
-	CommandResponseType        		ResponseType = "CommandResponse"
-	CommandStatusResponseType  		ResponseType = "CommandStatusResponse"
-	KeysResponseType           		ResponseType = "KeysResponse"
-	FileResponseType           		ResponseType = "FileResponse"
-	FileTransferStatusResponseType	ResponseType = "FileTransferStatusResponse"
+	ConfigurationResponseType      ResponseType = "ConfigurationResponse"
+	CommandResponseType            ResponseType = "CommandResponse"
+	CommandStatusResponseType      ResponseType = "CommandStatusResponse"
+	KeysResponseType               ResponseType = "KeysResponse"
+	FileResponseType               ResponseType = "FileResponse"
+	FileTransferStatusResponseType ResponseType = "FileTransferStatusResponse"
 )
 
 // General Request struct with typed payload
@@ -35,16 +35,17 @@ type Response struct {
 
 // ConfigurationRequest is sent by agent to start a callback
 type ConfigurationRequest struct {
-	AgentID           	string `json:"uuid"`
-	Username          	string `json:"username"`
-	Hostname          	string `json:"hostname"`
-	AgentIP           	string `json:"agentip"`
-	ServerIP          	string `json:"serverip"`
-	ServerPort        	string `json:"serverport"`
-	CallbackFrequency 	string `json:"callbackfrequency"`
-	CallbackJitter    	string `json:"callbackjitter"`
-	MasterKey         	string `json:"masterkey"`
-	Status				string `json:"status"`
+	AgentID           string `json:"uuid"`
+	Username          string `json:"username"`
+	Hostname          string `json:"hostname"`
+	AgentIP           string `json:"agentip"`
+	ServerIP          string `json:"serverip"`
+	ServerPort        string `json:"serverport"`
+	CallbackFrequency string `json:"callbackfrequency"`
+	CallbackJitter    string `json:"callbackjitter"`
+	MasterKey         string `json:"masterkey"`
+	Status            string `json:"status"`
+	Tags              []Tag  `json:"tags"`
 }
 
 // ConfigurationResponse is sent back to agent after a ConfigurationRequest
@@ -63,10 +64,10 @@ type CommandRequest struct {
 
 // CommandResponse is sent back to the agent after a CommandRequest
 type CommandResponse struct {
-	AgentID    	string `json:"uuid"`
-	CommandType	string `json:"commandtype"`
-	CommandID  	string `json:"commandid"`
-	Command    	string `json:"command"`
+	AgentID     string `json:"uuid"`
+	CommandType string `json:"commandtype"`
+	CommandID   string `json:"commandid"`
+	Command     string `json:"command"`
 }
 
 // CommandStatusRequest is sent by agent to tell the server the command outcome
@@ -78,16 +79,16 @@ type CommandStatusRequest struct {
 }
 
 type CommandStatusResponse struct {
-	AgentID       string `json:"uuid"`
+	AgentID string `json:"uuid"`
 }
 
 type KeysRequest struct {
-	AgentID	string `json:"uuid"`
-	Keys	string `json:"keys"`
+	AgentID string `json:"uuid"`
+	Keys    string `json:"keys"`
 }
 
 type KeysResponse struct {
-	AgentID	string `json:"uuid"`
+	AgentID string `json:"uuid"`
 }
 
 type AgentCommands struct {
@@ -105,24 +106,24 @@ type FileRequest struct {
 
 // FileResponse is sent back to the agent after a FileRequest. Prepares the agent for a transfer
 type FileResponse struct {
-	FileID    		string `json:"fileid"`
-	AgentID			string `json:"uuid"`
-	Type			string `json:"transfertype"`
-	Path 			string `json:"filepath"`
-	Chunk			[]byte `json:"chunk"`
+	FileID  string `json:"fileid"`
+	AgentID string `json:"uuid"`
+	Type    string `json:"transfertype"`
+	Path    string `json:"filepath"`
+	Chunk   []byte `json:"chunk"`
 }
 
 // This manages success messages if Type = download. Otherwise, send data to server
 type FileToServer struct {
-	FileID    		string `json:"fileid"`
-	AgentID			string `json:"uuid"`
-	Type			string `json:"transfertype"`
-	Path 			string `json:"path"`
-	Status			string `json:"status"`
-	Chunk			[]byte `json:"chunk"`
+	FileID  string `json:"fileid"`
+	AgentID string `json:"uuid"`
+	Type    string `json:"transfertype"`
+	Path    string `json:"path"`
+	Status  string `json:"status"`
+	Chunk   []byte `json:"chunk"`
 }
 
 type FileTransferStatusResponse struct {
-	FileID    		string `json:"fileid"`
-	AgentID			string `json:"uuid"`
+	FileID  string `json:"fileid"`
+	AgentID string `json:"uuid"`
 }

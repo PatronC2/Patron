@@ -11,56 +11,56 @@ import (
 )
 
 func GetAgentsHandler(c *gin.Context) {
-    // Get all agents
-    agents, err := data.Agents()
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agents"})
-        return
-    }
+	// Get all agents
+	agents, err := data.Agents()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agents"})
+		return
+	}
 
-    c.JSON(http.StatusOK, gin.H{"data": agents})
-    return
+	c.JSON(http.StatusOK, gin.H{"data": agents})
 }
 
 func GetGroupAgentsByIP(c *gin.Context) {
-    // Get agents by IP
+	// Get agents by IP
 	ip := c.Param("ip")
-    agents, err := data.AgentsByIp(ip)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agents"})
-        return
-    }
+	agents, err := data.AgentsByIp(ip)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agents"})
+		return
+	}
 
-    c.JSON(http.StatusOK, gin.H{"data": agents})
-    return
+	c.JSON(http.StatusOK, gin.H{"data": agents})
 }
 
 func GetOneAgentByUUID(c *gin.Context) {
-    // Get agents by UUID
+	// Get agents by UUID
 	uuid := c.Param("agt")
 	fmt.Println("Trying to find agent", uuid)
-    agents, err := data.FetchOneAgent(uuid)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agent"})
-        return
-    }
-	// agents = [{69a124a8-6795-4481-a6a5-1a88e57a6e88 192.168.50.240 600 80    }]
-    c.JSON(http.StatusOK, gin.H{"data": agents})
-    return
+	agents, err := data.FetchOneAgent(uuid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agent"})
+		return
+	}
+	tags, err := data.GetAgentTags(uuid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agent"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": agents, "tags": tags})
 }
 
 func GetAgentCommandsByUUID(c *gin.Context) {
-    // Get agents by UUID
+	// Get agents by UUID
 	uuid := c.Param("agt")
 	fmt.Println("Trying to find agent", uuid)
-    agents, err := data.GetAgentCommands(uuid)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agent"})
-        return
-    }
+	agents, err := data.GetAgentCommands(uuid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agent"})
+		return
+	}
 
-    c.JSON(http.StatusOK, gin.H{"data": agents})
-    return
+	c.JSON(http.StatusOK, gin.H{"data": agents})
 }
 
 func UpdateAgentHandler(c *gin.Context) {
@@ -128,7 +128,7 @@ func GetPayloadsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": payloads})
 }
 
-func GetNoteHandler (c *gin.Context) {
+func GetNoteHandler(c *gin.Context) {
 	agentParam := c.Param("agt")
 	notes, err := data.GetAgentNotes(agentParam)
 	if err != nil {
@@ -138,7 +138,7 @@ func GetNoteHandler (c *gin.Context) {
 	}
 }
 
-func PutNoteHandler (c *gin.Context) {
+func PutNoteHandler(c *gin.Context) {
 	agentParam := c.Param("agt")
 	var body map[string]string
 	if err := c.BindJSON(&body); err != nil {
@@ -154,7 +154,7 @@ func PutNoteHandler (c *gin.Context) {
 	}
 }
 
-func GetTagsHandler (c *gin.Context) {
+func GetTagsHandler(c *gin.Context) {
 	agentParam := c.Param("agt")
 	tags, err := data.GetAgentTags(agentParam)
 	if err != nil {
@@ -165,33 +165,33 @@ func GetTagsHandler (c *gin.Context) {
 }
 
 func PutTagsHandler(c *gin.Context) {
-    var body struct {
-        AgentUUIDs []string `json:"agents"`
-        Key        string   `json:"key"`
-        Value      string   `json:"value,omitempty"`
-    }
+	var body struct {
+		AgentUUIDs []string `json:"agents"`
+		Key        string   `json:"key"`
+		Value      string   `json:"value,omitempty"`
+	}
 
-    if err := c.BindJSON(&body); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
-        return
-    }
+	if err := c.BindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
 
-    if body.Value == "" {
-        body.Value = ""
-    }
+	if body.Value == "" {
+		body.Value = ""
+	}
 
-    for _, agentUUID := range body.AgentUUIDs {
-        err := data.PutAgentTags(agentUUID, body.Key, body.Value)
-        if err != nil {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tag for agent " + agentUUID})
-            return
-        }
-    }
+	for _, agentUUID := range body.AgentUUIDs {
+		err := data.PutAgentTags(agentUUID, body.Key, body.Value)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tag for agent " + agentUUID})
+			return
+		}
+	}
 
-    c.JSON(http.StatusOK, gin.H{"message": "Tags updated successfully for all agents"})
+	c.JSON(http.StatusOK, gin.H{"message": "Tags updated successfully for all agents"})
 }
 
-func DeleteTagHandler (c *gin.Context) {
+func DeleteTagHandler(c *gin.Context) {
 	tagid := c.Param("tagid")
 	err := data.DeleteTag(tagid)
 	if err != nil {

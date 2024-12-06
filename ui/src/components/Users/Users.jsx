@@ -19,7 +19,7 @@ const Users = () => {
         fetchData();
         const interval = setInterval(() => {
             fetchData();
-        }, 5000);
+        }, 10000);
 
         return () => {
             document.body.classList.remove('users-page');
