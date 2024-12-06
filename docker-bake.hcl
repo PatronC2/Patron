@@ -22,6 +22,10 @@ variable "API" {
   default = "patron-api"
 }
 
+variable "BOT" {
+  default = "patron-bot"
+}
+
 variable "UI" {
   default = "patron-ui"
 }
@@ -118,6 +122,17 @@ target "redirector-local" {
     }
 }
 
+target "bot-local" {
+    dockerfile = "./bot/Dockerfile.bot"
+    context = "."
+    output = ["type=docker"]
+    tags = ["${BOT}:${TAG}"]
+    args = {
+      REPO_URL = "https://github.com/PatronC2/PatronCLI.git"
+      REPO_BRANCH = "main"
+    }
+}
+
 target "nginx-release" {
     dockerfile = "Dockerfile.nginx"
     context = "."
@@ -169,6 +184,17 @@ target "ui-release" {
     }
 }
 
+target "bot-release" {
+    dockerfile = "./bot/Dockerfile.bot"
+    context = "."
+    output = ["type=registry,output=registry.${REGISTRY}/${BOT}:${TAG}"]
+    tags = ["${REGISTRY}/${BOT}:${TAG}"]
+    args = {
+      REPO_URL = "https://github.com/PatronC2/PatronCLI.git"
+      REPO_BRANCH = "main"
+    }
+}
+
 target "redirector-release" {
     dockerfile = "Dockerfile.redirector"
     context = "."
@@ -180,9 +206,9 @@ target "redirector-release" {
 }
 
 group "local" {
-    targets = ["nginx-local", "postgres-local", "api-local", "ui-local", "server-local", "redirector-local"]
+    targets = ["nginx-local", "postgres-local", "api-local", "ui-local", "server-local", "redirector-local", "bot-local"]
 }
 
 group "default" {
-    targets = ["nginx-release", "postgres-local", "api-release", "ui-release", "server-release", "redirector-release"]
+    targets = ["nginx-release", "postgres-local", "api-release", "ui-release", "server-release", "redirector-release", "bot-release"]
 }

@@ -1,105 +1,248 @@
 package main
 
-import (	
-	"database/sql"
+import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
-	"os/signal"
-	"strings"
+	"os/exec"
+	"path/filepath"
 
-	"github.com/PatronC2/Patron/bot/command"
-	"github.com/PatronC2/Patron/api/api"
 	"github.com/bwmarrin/discordgo"
-	"github.com/joho/godotenv"
-	"github.com/s-christian/gollehs/lib/logger"
 )
 
-// Bot structure holds the Discord session and database connection
-type Bot struct {
-	Session *discordgo.Session
+type Credential struct {
+	Profile string `json:"profile"`
+	IP      string `json:"ip"`
+	Port    string `json:"port"`
+	Token   string `json:"token"`
 }
 
-// add this to an helper function
-func goDotEnvVariable(key string) string {
+const credentialsPath = ".patron/credentials"
 
-	// load .env file
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		log.Fatalf("Error loading .env file")
+var (
+	botToken            = os.Getenv("DISCORD_BOT_TOKEN")
+	applicationCommands = []*discordgo.ApplicationCommand{
+		{
+			Name:        "configure",
+			Description: "Save a user token",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "token",
+					Description: "The token to save",
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "patron",
+			Description: "Execute a patron command",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "command",
+					Description: "The command to execute",
+					Required:    true,
+				},
+			},
+		},
 	}
-
-	return os.Getenv(key)
-}
-
-func (bot *Bot) newMsg(session *discordgo.Session, message *discordgo.MessageCreate) {
-	// ignore bot self
-	if message.Author.ID == session.State.User.ID {
-		return
-	}
-	switch {
-	case strings.Contains(message.Content, "!help"):
-		session.ChannelMessageSend(message.ChannelID, "Use `!agents` to list agents\nUse `!refresh <uuid>` to get agent commands/refresh\nUse `!cmd <uuid> ^command^` to issue commands to the agent\nUse `!keys <uuid>` to get keylogs")
-	case strings.Contains(message.Content, "!refresh"):
-		logger.Logf(logger.Info, "Bot received !refresh triggered :"+message.Content+"\n")
-		agentBot := command.GetBotAgent(message.Content)
-		session.ChannelMessageSendComplex(message.ChannelID, agentBot)
-	case strings.Contains(message.Content, "!agents"):
-		logger.Logf(logger.Info, "Bot received !agents triggered :"+message.Content+"\n")
-		agentsBot := command.GetBotAgents()
-		_ ,err := session.ChannelMessageSendComplex(message.ChannelID, agentsBot)
-		if err != nil {
-			log.Println("Error sending message:", err)
-			return
-		}
-		fmt.Println(agentsBot)
-		logger.Logf(logger.Info, "Bot sent !agents response"+"\n")
-	case strings.Contains(message.Content, "!keys"):
-		logger.Logf(logger.Info, "Bot received !keys triggered :"+message.Content+"\n")
-		agentsBot := command.GetBotKeys(message.Content)
-		session.ChannelMessageSendComplex(message.ChannelID, agentsBot)
-	case strings.Contains(message.Content, "!cmd"):
-		logger.Logf(logger.Info, "Bot received !cmd triggered :"+message.Content+"\n")
-		agentsBot := command.PostBotCmd(message.Content)
-		session.ChannelMessageSendComplex(message.ChannelID, agentsBot)
-	// case strings.Contains(message.Content, "!cmd"):
-	// 	session.ChannelMessageSend(message.ChannelID, "piss off")
-	case strings.Contains(message.Content, "milk"):
-		session.ChannelMessageSend(message.ChannelID, "I love milk")
-	case strings.Contains(message.Content, "steak"):
-		session.ChannelMessageSend(message.ChannelID, "I love steak")
-	case strings.Contains(message.Content, "pizza"):
-		session.ChannelMessageSend(message.ChannelID, "https://giphy.com/gifs/pizza-i-love-lover-VbU6X60pTQxUY")
-	case strings.Contains(message.Content, "soda"):
-		session.ChannelMessageSend(message.ChannelID, "I love soda")
-	}
-}
+)
 
 func main() {
-	// open database
-	api.OpenDatabase()
-	botToken := goDotEnvVariable("BOT_TOKEN")
-	// create session
-	logger.Logf(logger.Info, "Discord Bot Started\n")
-	discord, err := discordgo.New("Bot " + botToken)
+	log.Println("Starting bot...")
+
+	if botToken == "" {
+		log.Fatal("DISCORD_BOT_TOKEN environment variable is not set")
+	}
+
+	dg, err := discordgo.New("Bot " + botToken)
 	if err != nil {
-		logger.Logf(logger.Debug, "Discord Bot Crashed\n")
+		log.Fatalf("Error creating Discord session: %v", err)
 	}
 
-	// Create an instance of the Bot structure
-	bot := Bot{
-		Session: discord
+	dg.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		log.Printf("Interaction received: %s", i.ApplicationCommandData().Name)
+		handleInteraction(s, i)
+	})
+
+	err = dg.Open()
+	if err != nil {
+		log.Fatalf("Error opening Discord session: %v", err)
+	}
+	defer dg.Close()
+
+	log.Println("Bot connected to Discord successfully.")
+
+	for _, cmd := range applicationCommands {
+		_, err := dg.ApplicationCommandCreate(dg.State.User.ID, "", cmd)
+		if err != nil {
+			log.Fatalf("Cannot create '%v' command globally: %v", cmd.Name, err)
+		}
+		log.Printf("Command '%v' registered globally.", cmd.Name)
 	}
 
-	// Add event handler
-	discord.AddHandler(bot.newMsg)
+	log.Println("Bot is running. Press CTRL+C to exit.")
+	select {}
+}
 
-	discord.Open()
-	defer discord.Close()
+func handleInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	if i.GuildID == "" {
+		log.Println("Interaction received in a DM.")
+	} else {
+		log.Printf("Interaction received in guild: %s", i.GuildID)
+	}
 
-	logger.Logf(logger.Info, "Discord Running\n")
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	<-c
+	switch i.ApplicationCommandData().Name {
+	case "configure":
+		log.Println("Handling 'configure' command.")
+		handleSaveCommand(s, i)
+	case "patron":
+		log.Println("Handling 'patron' command.")
+		handlePatronCommand(s, i)
+	default:
+		log.Printf("Unhandled command: %s", i.ApplicationCommandData().Name)
+		sendResponse(s, i, "Unknown command. Use /help for a list of available commands.")
+	}
+}
+
+func handleSaveCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	if i.GuildID != "" {
+		sendResponse(s, i, "The `configure` command can only be used in a direct message. Please DM me to configure your token.")
+		return
+	}
+
+	var userID string
+	if i.Member != nil && i.Member.User != nil {
+		userID = i.Member.User.ID
+	} else if i.User != nil {
+		userID = i.User.ID
+	} else {
+		sendResponse(s, i, "Failed to retrieve user information.")
+		return
+	}
+
+	options := i.ApplicationCommandData().Options
+	var token string
+	for _, opt := range options {
+		if opt.Name == "token" {
+			token = opt.StringValue()
+		}
+	}
+	log.Printf("Received token for user %s: %s", userID, token)
+
+	if token == "" {
+		log.Println("Token is empty.")
+		sendResponse(s, i, "Token is required.")
+		return
+	}
+
+	err := saveCredential(Credential{
+		Profile: userID,
+		IP:      os.Getenv("PATRON_IP"),
+		Port:    os.Getenv("PATRON_PORT"),
+		Token:   token,
+	})
+	if err != nil {
+		log.Printf("Error saving credential: %v", err)
+		sendResponse(s, i, "Failed to save token: "+err.Error())
+		return
+	}
+
+	log.Println("Token saved successfully.")
+	sendResponse(s, i, "Token saved successfully!")
+}
+
+func handlePatronCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	options := i.ApplicationCommandData().Options
+	var command string
+
+	for _, opt := range options {
+		if opt.Name == "command" {
+			command = opt.StringValue()
+		}
+	}
+	log.Printf("Received command: %s", command)
+
+	fullCommand := fmt.Sprintf("/usr/bin/patron %s --profile %s", command, i.Member.User.ID)
+
+	cmd := exec.Command("sh", "-c", fullCommand)
+	log.Printf("Executing command: %v", cmd.Args)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Printf("Error executing patron command: %v", err)
+		sendResponse(s, i, "Failed to execute command: "+err.Error()+"\nOutput: "+string(output))
+		return
+	}
+
+	log.Printf("Command executed successfully. Output: %s", string(output))
+	sendResponse(s, i, "Command executed successfully!\nOutput:\n"+string(output))
+}
+
+func sendResponse(s *discordgo.Session, i *discordgo.InteractionCreate, content string) {
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: content,
+		},
+	})
+	if err != nil {
+		log.Printf("Failed to send interaction response: %v", err)
+	}
+	log.Printf("Response sent: %s", content)
+}
+
+func saveCredential(newCred Credential) error {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("failed to get home directory: %w", err)
+	}
+	credentialsFile := filepath.Join(homeDir, credentialsPath)
+	log.Printf("Saving credential to file: %s", credentialsFile)
+
+	var credentials []Credential
+
+	if _, err := os.Stat(credentialsFile); err == nil {
+		data, err := os.ReadFile(credentialsFile)
+		if err != nil {
+			return fmt.Errorf("failed to read credentials file: %w", err)
+		}
+		if err := json.Unmarshal(data, &credentials); err != nil {
+			return fmt.Errorf("failed to parse credentials file: %w", err)
+		}
+		log.Println("Existing credentials loaded.")
+	}
+
+	updated := false
+	for i, cred := range credentials {
+		if cred.Profile == newCred.Profile {
+			credentials[i] = newCred
+			updated = true
+			break
+		}
+	}
+
+	if !updated {
+		credentials = append(credentials, newCred)
+	}
+
+	data, err := json.MarshalIndent(credentials, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to serialize credentials: %w", err)
+	}
+
+	err = os.MkdirAll(filepath.Dir(credentialsFile), 0755)
+	if err != nil {
+		return fmt.Errorf("failed to create credentials directory: %w", err)
+	}
+
+	err = os.WriteFile(credentialsFile, data, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write credentials file: %w", err)
+	}
+
+	log.Println("Credential saved successfully.")
+	return nil
 }

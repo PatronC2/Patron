@@ -11,12 +11,13 @@ fi
 mkdir -p logs
 
 function show_help {
-   echo "Usage: $0 [-d ] [-w ] [ -s <your_ip_address> ]"
+   echo "Usage: $0 [-d ] [-w ] [ -s <your_ip_address> ] [-b]"
    echo "Options:"
    echo "  -d    Use default options"
    echo "  -w    Wipe Database"
    echo "  -s    <your_ip_address>   Server IP address"
    echo "  -p    Prompts you to enter passwords"
+   echo "  -b    Prompt for Discord Bot Token and start the bot container"
    echo "  -h    Show this help message"
 }
 
@@ -52,7 +53,22 @@ function ask_prompt {
    read -p "Enter Database Port: " dbport
    read -p "Enter Database User: " dbuser
    read -p "Enter Database Name: " dbname
-   read -p "Enter DISCORD BOT TOKEN: " bottoken
+}
+
+function prompt_bot_token {
+   read -p "Enter your Discord Bot Token: " bottoken
+   if [ -z "$bottoken" ]; then
+      echo "Error: Discord Bot Token cannot be empty."
+      exit 1
+   fi
+}
+
+function run_bot_container {
+   echo "Starting patron_c2_bot container..."
+   export BOT_TOKEN=$bottoken
+   echo "BOT_TOKEN=$bottoken" >> .env
+   docker compose up -d patron_c2_bot
+   echo "Discord bot container started successfully."
 }
 
 function wipe_db {
@@ -117,9 +133,10 @@ default=""
 clean_db=""
 ipaddress=""
 postgres_pass=""
+run_bot=""
 
 # Parse command line arguments using getopts
-while getopts "dws:ph" opt; do
+while getopts "dws:pbh" opt; do
    case $opt in
       d)
          set_global_default_variable
@@ -135,6 +152,10 @@ while getopts "dws:ph" opt; do
       p)
          pass_prompt
          postgres_pass="y"
+         ;;
+      b)
+         prompt_bot_token
+         run_bot="y"
          ;;
       h)
          show_help
@@ -192,7 +213,7 @@ WEBSERVER_PORT=$webserverport
 C2SERVER_IP=$c2serverip
 C2SERVER_PORT=$c2serverport
 PUBLIC_KEY=$encpubkey
-BOT_TOKEN=$bottoken
+DISCORD_BOT_TOKEN=$bottoken
 DB_HOST=$dbhost
 DB_PORT=$dbport
 DB_USER=$dbuser
@@ -216,6 +237,10 @@ echo "Cooking the Steak..."
 export $(grep -v '^#' .env | xargs)
 docker buildx bake local
 docker compose up -d
+
+if [ "$run_bot" == "y" ]; then
+   run_bot_container
+fi
 
 echo "------------------------------------------ Informational --------------------------------------"
 echo ""
