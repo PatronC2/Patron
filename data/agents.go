@@ -159,8 +159,9 @@ func Agents() (agentAppend []types.ConfigurationRequest, err error) {
 		log.Fatal(err)
 	}
 	defer row.Close()
+
 	for row.Next() {
-		row.Scan(
+		err := row.Scan(
 			&agents.AgentID,
 			&agents.ServerIP,
 			&agents.ServerPort,
@@ -171,9 +172,23 @@ func Agents() (agentAppend []types.ConfigurationRequest, err error) {
 			&agents.Hostname,
 			&agents.Status,
 		)
-		agentAppend = append(agentAppend, agents)
+		if err != nil {
+			log.Println("Error scanning agent row:", err)
+			return nil, err
+		}
+
+		tags, err := GetAgentTags(agents.AgentID)
+		if err != nil {
+			log.Println("Error fetching tags for agent:", agents.AgentID, err)
+			return nil, err
+		}
+
+		agentWithTags := agents
+		agentWithTags.Tags = tags
+
+		agentAppend = append(agentAppend, agentWithTags)
 	}
-	logger.Logf(logger.Info, "Agents: %v", agentAppend)
+	logger.Logf(logger.Info, "Agents: %+v", agentAppend)
 	return agentAppend, err
 }
 

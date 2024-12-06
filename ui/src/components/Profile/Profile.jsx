@@ -18,7 +18,7 @@ const Profile = () => {
         fetchData();
         const interval = setInterval(() => {
             fetchData();
-        }, 5000);
+        }, 10000);
 
         return () => {
             document.body.classList.remove('profile-page');
