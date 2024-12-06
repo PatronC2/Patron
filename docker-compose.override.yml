@@ -1,0 +1,19 @@
+services:
+  patron_c2_bot:
+    image: patron-bot
+    build:
+      context: .
+      dockerfile: ./bot/Dockerfile.bot
+    environment:
+      - PATRON_IP=${REACT_APP_NGINX_IP}
+      - PATRON_PORT=${REACT_APP_NGINX_PORT}
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+    networks:
+      - internal_c2_network
+    depends_on:
+      patron_c2_api:
+        condition: service_healthy
+    volumes:
+      - ./bot/data:/root/.patron
+    entrypoint: ["./bot"]
+    restart: "no"
