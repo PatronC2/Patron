@@ -565,7 +565,9 @@ const Agent = () => {
                 {data.username?.trim()}@{data.hostname?.trim()}
             </div>
             <div className="agent-status">
-                Status: {data.status}
+                <div>Status: {data.status}</div>
+                <div>OS: {data.osbuild} {data.arch}</div>
+                <div>CPUs: {data.cpus} Memory: {data.memory}GB</div>
             </div>
         </div>
         <div className="agent-tabs">

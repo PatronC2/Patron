@@ -18,6 +18,8 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/PatronC2/Patron/client/client_utils/linux/linux_utils"
+	"github.com/PatronC2/Patron/client/client_utils/windows/windows_utils"
 	"github.com/PatronC2/Patron/lib/common"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
@@ -118,11 +120,37 @@ func HandleError(beacon *tls.Conn, reqType string, err error) {
 }
 
 func CalculateSleepInterval(CallbackFrequency string, CallbackJitter string) float64 {
-	rand.Seed(time.Now().UnixNano())
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	frequency, _ := strconv.Atoi(CallbackFrequency)
 	jitter, _ := strconv.Atoi(CallbackJitter)
 	jitterPercent := float64(jitter) * 0.01
 	baseTime := float64(frequency)
-	variance := baseTime * jitterPercent * rand.Float64()
+	variance := baseTime * jitterPercent * r.Float64()
 	return baseTime - (jitterPercent * baseTime) + 2*variance
+}
+
+func GetOSInfo() (string, string, string, string, string) {
+	osType := runtime.GOOS
+	osArch := runtime.GOARCH
+	cpus := strconv.Itoa(runtime.NumCPU())
+
+	var memory string
+	if osType == "windows" {
+		output := RunShellCommand("wmic os get TotalVisibleMemorySize /Value")
+		memory = windows_utils.ParseWindowsMemory(output)
+	} else {
+		output := RunShellCommand("cat /proc/meminfo")
+		memory = linux_utils.ParseLinuxMemory(output)
+	}
+
+	var osVersion string
+	if osType == "windows" {
+		output := RunShellCommand("systeminfo")
+		osVersion = windows_utils.ParseWindowsSystemInfo(output)
+	} else {
+		output := RunShellCommand("uname -sr")
+		osVersion = strings.TrimSpace(output)
+	}
+
+	return osType, osArch, osVersion, cpus, memory
 }

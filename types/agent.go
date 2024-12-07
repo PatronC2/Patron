@@ -38,6 +38,11 @@ type ConfigurationRequest struct {
 	AgentID           string `json:"uuid"`
 	Username          string `json:"username"`
 	Hostname          string `json:"hostname"`
+	OSType            string `json:"ostype"`
+	OSArch            string `json:"arch"`
+	OSBuild           string `json:"osbuild"`
+	CPUS              string `json:"cpus"`
+	MEMORY            string `json:"memory"`
 	AgentIP           string `json:"agentip"`
 	ServerIP          string `json:"serverip"`
 	ServerPort        string `json:"serverport"`

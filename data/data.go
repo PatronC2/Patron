@@ -6,39 +6,39 @@ import (
 	"log"
 	"os"
 
-	"github.com/PatronC2/Patron/lib/logger"	
+	"github.com/PatronC2/Patron/lib/logger"
 	_ "github.com/lib/pq"
 )
 
 var db *sql.DB
 
 func OpenDatabase() {
-    var err error
+	var err error
 
-    host := os.Getenv("DB_HOST")
-    port := os.Getenv("DB_PORT")
-    user := os.Getenv("DB_USER")
-    password := os.Getenv("DB_PASS")
-    dbname := os.Getenv("DB_NAME")
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASS")
+	dbname := os.Getenv("DB_NAME")
 
-    psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
-        "password=%s dbname=%s sslmode=disable",
-        host, port, user, password, dbname)
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
 
-    db, err = sql.Open("postgres", psqlInfo)
-    if err != nil {
-        logger.Logf(logger.Error, "Failed to open database connection: %v\n", err)
-        return
-    }
+	db, err = sql.Open("postgres", psqlInfo)
+	if err != nil {
+		logger.Logf(logger.Error, "Failed to open database connection: %v\n", err)
+		return
+	}
 
-    err = db.Ping()
-    if err != nil {
-        logger.Logf(logger.Error, "Failed to ping database: %v\n", err)
-        db.Close()
-        return
-    }
+	err = db.Ping()
+	if err != nil {
+		logger.Logf(logger.Error, "Failed to ping database: %v\n", err)
+		db.Close()
+		return
+	}
 
-    logger.Logf(logger.Info, "Connected to the database successfully.")
+	logger.Logf(logger.Info, "Connected to the database successfully.")
 }
 
 func InitDatabase() {
@@ -54,6 +54,11 @@ func InitDatabase() {
 		"Ip" TEXT NOT NULL DEFAULT 'Unknown',
 		"User" TEXT NOT NULL DEFAULT 'Unknown',
 		"Hostname" TEXT NOT NULL DEFAULT 'Unknown',
+		"OSType" TEXT NOT NULL DEFAULT 'Unknown',
+		"OSArch" TEXT NOT NULL DEFAULT 'Unknown',
+		"OSBuild" TEXT NOT NULL DEFAULT 'Unkown',
+		"CPUS" TEXT NOT NULL DEFAULT 'Unknown',
+		"MEMORY" TEXT NOT NULL DEFAULT 'Unknown',
 		"LastCallBack" TIMESTAMP
 	);
 	CREATE OR REPLACE VIEW agents_status AS
@@ -67,6 +72,11 @@ func InitDatabase() {
 		"Ip",
 		"User",
 		"Hostname",
+		"OSType",
+		"OSArch",
+		"OSBuild",
+		"CPUS",
+		"MEMORY",
 		"LastCallBack",
 		CASE 
 			WHEN "LastCallBack" IS NULL OR "LastCallBack" < NOW() - INTERVAL '1 second' * 2 * CAST("CallBackFreq" AS INTEGER) THEN 'Offline'
@@ -150,7 +160,7 @@ func InitDatabase() {
 	}
 	logger.Logf(logger.Info, "Payloads table initialized\n")
 
-    UsersSQL := `
+	UsersSQL := `
 	CREATE TABLE IF NOT EXISTS users (
 		id SERIAL PRIMARY KEY,
 		username VARCHAR(50) UNIQUE NOT NULL,
@@ -158,11 +168,11 @@ func InitDatabase() {
 		role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'operator', 'readOnly'))
 	);
 	`
-    _, err = db.Exec(UsersSQL)
-    if err != nil {
-        log.Fatal(err.Error())
-    }
-    logger.Logf(logger.Info, "Users table initialized")
+	_, err = db.Exec(UsersSQL)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	logger.Logf(logger.Info, "Users table initialized")
 
 	NotesSQL := `
 	CREATE TABLE IF NOT EXISTS "notes" (
