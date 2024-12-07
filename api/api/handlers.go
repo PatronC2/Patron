@@ -123,11 +123,6 @@ func GetKeylogHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": keylogs})
 }
 
-func GetPayloadsHandler(c *gin.Context) {
-	payloads := data.Payloads()
-	c.JSON(http.StatusOK, gin.H{"data": payloads})
-}
-
 func GetNoteHandler(c *gin.Context) {
 	agentParam := c.Param("agt")
 	notes, err := data.GetAgentNotes(agentParam)

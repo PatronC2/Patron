@@ -1,6 +1,7 @@
 package types
 
 type Payload struct {
+	PayloadID         string `json:"payloadid"`
 	Uuid              string `json:"uuid"`
 	Name              string `json:"name"`
 	Description       string `json:"description"`
