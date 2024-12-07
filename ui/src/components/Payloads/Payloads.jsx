@@ -4,13 +4,15 @@ import AuthContext from '../../context/AuthProvider';
 import NewPayloadForm from './NewPayloadForm';
 import './Payloads.css';
 
-const FILE_SERVER = `https://${process.env.REACT_APP_NGINX_IP}:${process.env.REACT_APP_NGINX_PORT}/fileserver/`
+const FILE_SERVER = `https://${process.env.REACT_APP_NGINX_IP}:${process.env.REACT_APP_NGINX_PORT}/fileserver/`;
 
 const Payloads = () => {
     const { auth } = useContext(AuthContext);
     const [data, setData] = useState([]);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('current_payloads');
+    const [notification, setNotification] = useState('');
+    const [notificationType, setNotificationType] = useState('');
 
     useEffect(() => {
         document.body.classList.add('payloads-page');
@@ -29,8 +31,8 @@ const Payloads = () => {
         try {
             const response = await axios.get('/api/payloads', {
                 headers: {
-                    'Authorization': `${auth.accessToken}`
-                }
+                    'Authorization': `${auth.accessToken}`,
+                },
             });
 
             const responseData = response.data.data;
@@ -41,6 +43,25 @@ const Payloads = () => {
             }
         } catch (err) {
             setError(err.message);
+        }
+    };
+
+    const handleDelete = async (payloadid) => {
+        try {
+            await axios.delete(`/api/payloads/${payloadid}`, {
+                headers: {
+                    'Authorization': `${auth.accessToken}`,
+                },
+            });
+
+            setNotification('Payload deleted successfully!');
+            setNotificationType('success');
+            fetchData();
+        } catch (err) {
+            setNotification('Failed to delete payload.');
+            setNotificationType('error');
+        } finally {
+            setTimeout(() => setNotification(''), 3000);
         }
     };
 
@@ -84,14 +105,19 @@ const Payloads = () => {
                                     <th>Listener Port</th>
                                     <th>Callback Frequency</th>
                                     <th>Callback Jitter</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {data.map(item => (
+                                {data.map((item) => (
                                     <tr key={item.uuid}>
                                         <td>{item.uuid.substring(0, 6)}</td>
                                         <td>
-                                            <a href={`${FILE_SERVER}${item.concat}`} target="_blank" rel="noopener noreferrer">
+                                            <a
+                                                href={`${FILE_SERVER}${item.concat}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
                                                 {item.concat}
                                             </a>
                                         </td>
@@ -100,6 +126,14 @@ const Payloads = () => {
                                         <td>{item.serverport}</td>
                                         <td>{item.callbackfrequency}</td>
                                         <td>{item.callbackjitter}</td>
+                                        <td>
+                                            <button
+                                                onClick={() => handleDelete(item.payloadid)}
+                                                className="delete-button"
+                                            >
+                                                Delete
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -113,9 +147,13 @@ const Payloads = () => {
                     <NewPayloadForm fetchData={fetchData} setActiveTab={setActiveTab} />
                 </div>
             )}
+            {notification && (
+                <div className={`notification ${notificationType}`}>
+                    {notification}
+                </div>
+            )}
         </div>
-    );    
+    );
 };
 
 export default Payloads;
-

@@ -136,3 +136,36 @@
     max-width: 1200px;
     position: relative;
 }
+
+.payloads-content .delete-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.payloads-content .delete-button:hover {
+    color: var(--secondary-color);
+    background-color: var(--text-color);
+}
+
+.payloads-content .notification {
+    margin-top: 1rem;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    color: var(--text-color);
+}
+
+.payloads-content .notification.success {
+    background-color: lightgreen;
+}
+
+.payloads-content .notification.error {
+    background-color: red;
+}
+
