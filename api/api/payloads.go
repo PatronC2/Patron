@@ -3,7 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -25,7 +25,11 @@ func loadConfigurations(filePath string) (types.PayloadConfigurations, error) {
 	defer configFile.Close()
 
 	var configs types.PayloadConfigurations
-	byteValue, _ := ioutil.ReadAll(configFile)
+	byteValue, err := io.ReadAll(configFile)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := json.Unmarshal(byteValue, &configs); err != nil {
 		return nil, err
 	}
@@ -97,15 +101,17 @@ func CreatePayloadHandler(c *gin.Context) {
 		return
 	}
 
-	upxCommand := fmt.Sprintf("upx --best --lzma /app/payloads/%s%s", concat, config.FileSuffix)
-	fmt.Printf("Running UPX command: %s", upxCommand)
-	upxCmd := exec.Command("sh", "-c", upxCommand)
-	upxCmd.Stdout = os.Stdout
-	upxCmd.Stderr = os.Stderr
-	err = upxCmd.Run()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "UPX compression failed", "details": err.Error()})
-		return
+	if body["compression"] == "upx" {
+		upxCommand := fmt.Sprintf("upx --best --lzma /app/payloads/%s%s", concat, config.FileSuffix)
+		fmt.Printf("Running UPX command: %s", upxCommand)
+		upxCmd := exec.Command("sh", "-c", upxCommand)
+		upxCmd.Stdout = os.Stdout
+		upxCmd.Stderr = os.Stderr
+		err = upxCmd.Run()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "UPX compression failed", "details": err.Error()})
+			return
+		}
 	}
 
 	data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat)
@@ -138,6 +144,10 @@ func validateBody(body map[string]string) error {
 
 	if body["logging"] != "true" && body["logging"] != "false" {
 		return fmt.Errorf("logging must be either 'true' or 'false'")
+	}
+
+	if body["compression"] != "none" && body["compression"] != "upx" {
+		return fmt.Errorf("logging must be either 'none' or 'upx'")
 	}
 
 	return nil

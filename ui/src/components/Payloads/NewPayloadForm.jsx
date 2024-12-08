@@ -19,6 +19,7 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
         callbackfrequency: '300',
         callbackjitter: '80',
         logging: 'false',
+        compression: 'none',
     });
     const [availableTypes, setAvailableTypes] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -28,19 +29,19 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
             try {
                 const response = await axios.get('/api/payloadconfs', {
                     headers: {
-                        'Authorization': `${auth.accessToken}`
-                    }
+                        Authorization: `${auth.accessToken}`,
+                    },
                 });
-                
+
                 const types = Object.entries(response.data).map(([key, value]) => ({
                     value: key,
-                    label: value.type
+                    label: value.type,
                 }));
-                
+
                 setAvailableTypes(types);
-                setFormData(prevData => ({
+                setFormData((prevData) => ({
                     ...prevData,
-                    type: types[0]?.value || ''
+                    type: types[0]?.value || '',
                 }));
             } catch (error) {
                 console.error('Error fetching payload types:', error);
@@ -60,14 +61,14 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const url = `/api/payload`;
-        
+
         setLoading(true);
-        
+
         try {
             const response = await axios.post(url, formData, {
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `${auth.accessToken}`,
+                    Authorization: `${auth.accessToken}`,
                 },
             });
 
@@ -201,6 +202,18 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
                         <option value="false">False</option>
                     </select>
                 </div>
+                <div>
+                    <label htmlFor="compression">Compression:</label>
+                    <select
+                        id="compression"
+                        name="compression"
+                        value={formData.compression}
+                        onChange={handleChange}
+                    >
+                        <option value="none">None</option>
+                        <option value="upx">UPX</option>
+                    </select>
+                </div>
                 <button type="submit" disabled={loading}>
                     {loading ? 'Creating...' : 'Create Payload'}
                 </button>
@@ -211,7 +224,7 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
                 )}
             </form>
         </div>
-    );    
+    );
 };
 
 export default NewPayloadForm;
