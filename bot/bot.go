@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -108,18 +109,10 @@ func handleInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
 }
 
 func handleSaveCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if i.GuildID != "" {
-		sendResponse(s, i, "The `configure` command can only be used in a direct message. Please DM me to configure your token.")
-		return
-	}
-
-	var userID string
-	if i.Member != nil && i.Member.User != nil {
-		userID = i.Member.User.ID
-	} else if i.User != nil {
-		userID = i.User.ID
-	} else {
+	userID, err := getUserID(i)
+	if err != nil {
 		sendResponse(s, i, "Failed to retrieve user information.")
+		log.Printf("Error retrieving user ID: %v", err)
 		return
 	}
 
@@ -138,7 +131,7 @@ func handleSaveCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	err := saveCredential(Credential{
+	err = saveCredential(Credential{
 		Profile: userID,
 		IP:      os.Getenv("PATRON_IP"),
 		Port:    os.Getenv("PATRON_PORT"),
@@ -155,6 +148,13 @@ func handleSaveCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 }
 
 func handlePatronCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	userID, err := getUserID(i)
+	if err != nil {
+		sendResponse(s, i, "Failed to retrieve user information.")
+		log.Printf("Error retrieving user ID: %v", err)
+		return
+	}
+
 	options := i.ApplicationCommandData().Options
 	var command string
 
@@ -165,7 +165,14 @@ func handlePatronCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 	log.Printf("Received command: %s", command)
 
-	fullCommand := fmt.Sprintf("/usr/bin/patron %s --profile %s", command, i.Member.User.ID)
+	bannedStrings := []string{"||", "&&", ";", "`", "--profile"}
+	if containsAnySubstring(command, bannedStrings) {
+		sendResponse(s, i, "Nice try. Try harder.")
+		log.Printf("Blocked potentially malicious command: %s", command)
+		return
+	}
+
+	fullCommand := fmt.Sprintf("/usr/bin/patron %s --profile %s", command, userID)
 
 	cmd := exec.Command("sh", "-c", fullCommand)
 	log.Printf("Executing command: %v", cmd.Args)
@@ -173,12 +180,12 @@ func handlePatronCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Printf("Error executing patron command: %v", err)
-		sendResponse(s, i, "Failed to execute command: "+err.Error()+"\nOutput: "+string(output))
+		sendResponse(s, i, fmt.Sprintf("Failed to execute command: %s\nOutput: %s", err.Error(), string(output)))
 		return
 	}
 
 	log.Printf("Command executed successfully. Output: %s", string(output))
-	sendResponse(s, i, "Command executed successfully!\nOutput:\n"+string(output))
+	sendResponse(s, i, fmt.Sprintf("Command executed successfully!\nOutput:\n%s", string(output)))
 }
 
 func sendResponse(s *discordgo.Session, i *discordgo.InteractionCreate, content string) {
@@ -245,4 +252,23 @@ func saveCredential(newCred Credential) error {
 
 	log.Println("Credential saved successfully.")
 	return nil
+}
+
+func getUserID(i *discordgo.InteractionCreate) (string, error) {
+	if i.Member != nil && i.Member.User != nil {
+		return i.Member.User.ID, nil
+	}
+	if i.User != nil {
+		return i.User.ID, nil
+	}
+	return "", fmt.Errorf("failed to retrieve user information")
+}
+
+func containsAnySubstring(str string, substrings []string) bool {
+	for _, substr := range substrings {
+		if strings.Contains(str, substr) {
+			return true
+		}
+	}
+	return false
 }

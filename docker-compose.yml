@@ -131,6 +131,7 @@ services:
         condition: service_healthy
     volumes:
       - ./bot/data:/root/.patron
+      - /usr/bin/patron:/usr/bin/patron
     entrypoint: ["./bot"]
     restart: "no"
 
