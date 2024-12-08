@@ -31,8 +31,10 @@ func Initialize(logging_enabled string) {
 		fmt.Printf("Failed to parse LoggingEnabled: %v\n", err)
 	}
 	logger.EnableLogging(set_logging)
-	if err := logger.SetLogFile("app.log"); err != nil {
-		fmt.Printf("Error setting log file: %v\n", err)
+	if set_logging {
+		if err := logger.SetLogFile("app.log"); err != nil {
+			fmt.Printf("Error setting log file: %v\n", err)
+		}
 	}
 	common.RegisterGobTypes()
 }
