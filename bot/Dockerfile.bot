@@ -1,15 +1,3 @@
-FROM golang:1.23.3 AS binary-builder
-
-WORKDIR /build
-
-ARG REPO_URL=https://github.com/PatronC2/PatronCLI.git
-ARG REPO_BRANCH=main
-
-RUN git clone --branch $REPO_BRANCH $REPO_URL
-WORKDIR /build/PatronCLI
-
-RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o /build/patron
-
 FROM golang:1.23.3 AS bot-builder
 
 WORKDIR /app
@@ -26,7 +14,6 @@ RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 
 WORKDIR /root/
 
-COPY --from=binary-builder /build/patron /usr/bin/patron
 COPY --from=bot-builder /app/bot ./bot
 
 RUN apk --no-cache add ca-certificates

@@ -63,14 +63,6 @@ function prompt_bot_token {
    fi
 }
 
-function run_bot_container {
-   echo "Starting patron_c2_bot container..."
-   export BOT_TOKEN=$bottoken
-   echo "BOT_TOKEN=$bottoken" >> .env
-   docker compose up -d patron_c2_bot
-   echo "Discord bot container started successfully."
-}
-
 function wipe_db {
    rm -rf data/postgres_data
    echo "Database Wiped!"
@@ -88,6 +80,7 @@ function prereq_app_check {
    base64=$(which base64 || echo "not found")
    openssl=$(which openssl || echo "not found")
    docker=$(which docker || echo "not found")
+   make=$(which make || echo "not found")
 
    # Check base64
    if [ -x "$base64" ]; then
@@ -102,6 +95,14 @@ function prereq_app_check {
       echo "openssl Check OK"
    else
       echo "Error: openssl is not installed"
+      exit 1
+   fi
+
+   # Check make
+   if [ -x "$make" ]; then
+      echo "make Check OK"
+   else
+      echo "Error: make is not installed"
       exit 1
    fi
 
@@ -233,14 +234,17 @@ PORT=$reactclientport
 REDIRECTOR_PORT=$redirectorport
 EOF
 
+echo "Building CLI"
+
+REPO_URL=https://github.com/PatronC2/PatronCLI.git
+REPO_BRANCH=main
+git clone --branch $REPO_BRANCH $REPO_URL
+cd PatronCLI && ./build.sh && cd ..
+
 echo "Cooking the Steak..."
 export $(grep -v '^#' .env | xargs)
 docker buildx bake local
 docker compose up -d
-
-if [ "$run_bot" == "y" ]; then
-   run_bot_container
-fi
 
 echo "------------------------------------------ Informational --------------------------------------"
 echo ""
