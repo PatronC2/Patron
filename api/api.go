@@ -85,6 +85,20 @@ func main() {
 	r.GET("/api/files/list/:agt", api.Auth(readRoles), api.ListFilesForUUIDHandler)
 	r.GET("/api/files/download/:fileid", api.Auth(readRoles), api.DownloadFileHandler)
 
+	r.GET("/api/events", api.Auth(readRoles), api.ListEventsHandler)
+	r.POST("/api/events", api.Auth(writeRoles), api.CreateEventHandler)
+	r.PUT("/api/events/:eventID", api.Auth(writeRoles), api.UpdateEventHandler)
+	r.DELETE("/api/events/:eventID", api.Auth(writeRoles), api.DeleteEventHandler)
+	r.GET("/api/events/:eventID", api.Auth(readRoles), api.GetEventHandler)
+
+	r.GET("/api/actions", api.Auth(readRoles), api.ListActionsHandler)
+	r.POST("/api/actions", api.Auth(writeRoles), api.CreateActionHandler)
+	r.DELETE("/api/actions/:actionID", api.Auth(writeRoles), api.DeleteActionHandler)
+
+	r.GET("/api/events/:eventID/triggers", api.Auth(readRoles), api.ListTriggersForEventHandler)
+	r.POST("/api/triggers", api.Auth(writeRoles), api.CreateTriggerHandler)
+	r.DELETE("/api/triggers/:triggerID", api.Auth(writeRoles), api.DeleteTriggerHandler)
+
 	// Functions which can only modify / view their own user
 	r.PUT("/api/profile/password", api.Auth(readRoles), api.UpdatePasswordHandler)
 	r.GET("/api/profile/user", api.Auth(readRoles), api.GetCurrentUserHandler)

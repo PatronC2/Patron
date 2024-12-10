@@ -237,4 +237,46 @@ func InitDatabase() {
 	}
 	logger.Logf(logger.Info, "Redirectors table initialized\n")
 
+	EventsSQL := `
+	CREATE TABLE IF NOT EXISTS "events" (
+		"EventID" SERIAL PRIMARY KEY,
+		"Name" TEXT NOT NULL,
+		"Description" TEXT,
+		"Script" BYTEA,
+		"Schedule" TEXT NOT NULL,
+		"LastRun" TIMESTAMP
+	);
+	`
+	_, err = db.Exec(EventsSQL)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	logger.Logf(logger.Info, "Eventss table initialized")
+
+	ActionsSQL := `
+	CREATE TABLE IF NOT EXISTS "actions" (
+		"ActionID" SERIAL PRIMARY KEY,
+		"Name" TEXT NOT NULL,
+		"Description" TEXT,
+		"File" BYTEA NOT NULL
+	);
+	`
+	_, err = db.Exec(ActionsSQL)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	logger.Logf(logger.Info, "Actions table initialized")
+
+	TriggersSQL := `
+	CREATE TABLE IF NOT EXISTS "triggers" (
+		"ID" SERIAL PRIMARY KEY,
+		"EventID" INT REFERENCES events("EventID") ON DELETE CASCADE,
+		"ActionID" INT REFERENCES actions("ActionID") ON DELETE CASCADE
+	);
+	`
+	_, err = db.Exec(TriggersSQL)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	logger.Logf(logger.Info, "Triggers table initialized")
 }
