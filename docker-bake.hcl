@@ -26,6 +26,10 @@ variable "BOT" {
   default = "patron-bot"
 }
 
+variable "DONUT" {
+  default = "patron-donut"
+}
+
 variable "UI" {
   default = "patron-ui"
 }
@@ -133,6 +137,13 @@ target "bot-local" {
     }
 }
 
+target "donut-local" {
+    dockerfile = "./Dockerfile.donut"
+    context = "."
+    output = ["type=docker"]
+    tags = ["${DONUT}:${TAG}"]
+}
+
 target "nginx-release" {
     dockerfile = "Dockerfile.nginx"
     context = "."
@@ -195,6 +206,13 @@ target "bot-release" {
     }
 }
 
+target "donut-release" {
+    dockerfile = "./Dockerfile.donut"
+    context = "."
+    output = ["type=registry,output=registry.${REGISTRY}/${DONUT}:${TAG}"]
+    tags = ["${REGISTRY}/${DONUT}:${TAG}"]
+}
+
 target "redirector-release" {
     dockerfile = "Dockerfile.redirector"
     context = "."
@@ -206,9 +224,9 @@ target "redirector-release" {
 }
 
 group "local" {
-    targets = ["nginx-local", "postgres-local", "api-local", "ui-local", "server-local", "redirector-local", "bot-local"]
+    targets = ["nginx-local", "postgres-local", "api-local", "ui-local", "server-local", "redirector-local", "bot-local", "donut-local"]
 }
 
 group "default" {
-    targets = ["nginx-release", "postgres-local", "api-release", "ui-release", "server-release", "redirector-release", "bot-release"]
+    targets = ["nginx-release", "postgres-local", "api-release", "ui-release", "server-release", "redirector-release", "bot-release", "donut-release"]
 }

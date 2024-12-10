@@ -23,7 +23,8 @@
         "environment": "GOOS=windows GOARCH=amd64",
         "file_suffix": ".exe",
         "dependencies": [
-            "github.com/TheTitanrain/w32"
+            "github.com/TheTitanrain/w32",
+            "github.com/kardianos/service"
         ]
     },
     "windows/privileged": {
@@ -31,6 +32,18 @@
         "description": "windows keylogger",
         "code_path": "windows/privileged/client.go",
         "flags": "-trimpath -ldflags",
+        "environment": "GOOS=windows GOARCH=amd64",
+        "file_suffix": ".exe",
+        "dependencies": [
+            "github.com/TheTitanrain/w32",
+            "github.com/kardianos/service"
+        ]
+    },
+    "windows/test": {
+        "type": "Windows Test",
+        "description": "windows test",
+        "code_path": "windows/test/client.go",
+        "flags": "-trimpath -ldflags -buildmode=pie",
         "environment": "GOOS=windows GOARCH=amd64",
         "file_suffix": ".exe",
         "dependencies": [
