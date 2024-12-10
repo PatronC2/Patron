@@ -1,9 +1,9 @@
 FROM ubuntu:22.04
 
-RUN apt-get update
-RUN apt-get install --no-install-recommends --no-install-suggests -y \
-      mingw-w64 zip build-essential perl python3 xml2 pkg-config automake \
-      libtool autotools-dev make g++ git ruby wget libssl-dev
+RUN apt-get update && apt-get install --no-install-recommends --no-install-suggests -y \
+    mingw-w64 zip build-essential perl python3 xml2 pkg-config automake \
+    libtool autotools-dev make g++ git ruby wget libssl-dev && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt
 RUN git clone https://github.com/TheWover/donut.git

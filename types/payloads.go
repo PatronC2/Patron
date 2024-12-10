@@ -17,6 +17,7 @@ type BuildConfig struct {
 	Description  string   `json:"description"`
 	CodePath     string   `json:"code_path"`
 	Flags        string   `json:"flags"`
+	UPXFlags     string   `json:"upxflags`
 	Environment  string   `json:"environment"`
 	FileSuffix   string   `json:"file_suffix"`
 	Dependencies []string `json:"dependencies"`
