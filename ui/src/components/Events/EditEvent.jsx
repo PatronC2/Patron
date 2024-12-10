@@ -98,7 +98,7 @@ const EditEvent = () => {
                         onChange={(e) => setEvent({ ...event, Schedule: e.target.value })}
                     />
                 </div>
-                <div>
+                <div className="button-container">
                     <button type="button" onClick={handleSave}>
                         Save
                     </button>

@@ -1,6 +1,8 @@
 .edit-event-container {
-    margin: 0 auto;
-    padding: calc(var(--header-height) + 2rem) 1rem 1rem; /* Add more space above */
+    margin-top: calc(var(--header-height) + 2rem);
+    margin-left: auto;
+    margin-right: auto;
+    padding: 1rem;
     display: flex;
     flex-direction: column;
     max-width: 600px;
@@ -45,6 +47,12 @@
     font-weight: bold;
 }
 
+.edit-event-container form > div {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-start;
+}
+
 .edit-event-container button {
     padding: 0.5rem 1rem;
     font-size: 1rem;
@@ -56,10 +64,9 @@
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.edit-event-container button:disabled {
-    background-color: #cccccc;
-    color: #666666;
-    cursor: not-allowed;
+.edit-event-container button:hover:not(:disabled) {
+    background-color: var(--text-color);
+    color: var(--primary-color);
 }
 
 .edit-event-container button:hover:not(:disabled) {
