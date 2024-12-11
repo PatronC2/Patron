@@ -43,7 +43,7 @@
         "type": "Windows Test",
         "description": "windows test",
         "code_path": "windows/test/client.go",
-        "flags": "-trimpath -ldflags -buildmode=pie",
+        "flags": "-trimpath -ldflags",
         "environment": "GOOS=windows GOARCH=amd64",
         "file_suffix": ".exe",
         "dependencies": [
