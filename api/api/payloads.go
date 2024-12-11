@@ -118,7 +118,7 @@ func CreatePayloadHandler(c *gin.Context) {
 	if body["shellcode"] == "donut" {
 		shellcode_file := concat + ".bin"
 		donutCommand := fmt.Sprintf(
-			"docker run --rm -v %s/payloads:/opt/donut/payloads -w /opt/donut/payloads patron-donut --arch:3 -o %s -i %s",
+			"docker run --rm -v %s/payloads:/opt/donut/payloads -w /opt/donut/payloads patron-donut -f 1 --arch:3 -o %s -i %s",
 			repo_dir,
 			concat,
 			shellcode_file,
