@@ -10,6 +10,7 @@ const EditEvent = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const [event, setEvent] = useState(null);
+    const [scriptContent, setScriptContent] = useState('');
     const [notification, setNotification] = useState('');
     const [notificationType, setNotificationType] = useState('');
     const [error, setError] = useState(null);
@@ -37,7 +38,9 @@ const EditEvent = () => {
                     Authorization: `${auth.accessToken}`,
                 },
             });
-            setEvent(response.data);
+            const eventData = response.data;
+            setEvent(eventData);
+            setScriptContent(atob(eventData.Script));
         } catch (err) {
             setError(err.message);
         }
@@ -45,7 +48,12 @@ const EditEvent = () => {
 
     const handleSave = async () => {
         try {
-            await axios.put(`/api/events/${eventID}`, event, {
+            const updatedEvent = {
+                ...event,
+                Script: btoa(scriptContent),
+            };
+
+            await axios.put(`/api/events/${eventID}`, updatedEvent, {
                 headers: {
                     Authorization: `${auth.accessToken}`,
                 },
@@ -97,6 +105,16 @@ const EditEvent = () => {
                         value={event.Schedule}
                         onChange={(e) => setEvent({ ...event, Schedule: e.target.value })}
                     />
+                </div>
+                <div>
+                    <label htmlFor="scriptContent">Edit Script:</label>
+                    <textarea
+                        id="scriptContent"
+                        value={scriptContent}
+                        onChange={(e) => setScriptContent(e.target.value)}
+                        rows={10}
+                        style={{ width: '100%', fontFamily: 'monospace' }}
+                    ></textarea>
                 </div>
                 <div className="button-container">
                     <button type="button" onClick={handleSave}>
