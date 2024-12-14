@@ -51,11 +51,9 @@ body {
     width: 100%;
     height: 100%;
     background-color: var(--background-color);
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    display: block;
     overflow-x: hidden;
-    overflow-y: auto
+    overflow-y: auto;
 }
 
 .App {
@@ -68,8 +66,8 @@ body {
     padding-top: calc(var(--header-height) + 1rem);
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 1rem;
+    align-items: stretch;
+    padding: 2rem;
     transition: margin-left 0.3s ease-in-out;
 }
 
