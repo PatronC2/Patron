@@ -92,37 +92,13 @@ func UpdateEventHandler(c *gin.Context) {
 		return
 	}
 
-	name := c.PostForm("name")
-	description := c.PostForm("description")
-	schedule := c.PostForm("schedule")
-
-	var scriptContent []byte
-	file, err := c.FormFile("script")
-	if err == nil {
-		src, err := file.Open()
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open script file"})
-			return
-		}
-		defer src.Close()
-
-		scriptContent, err = io.ReadAll(src)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read script file content"})
-			return
-		}
+	var event types.Event
+	if err := c.ShouldBindJSON(&event); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid event data"})
+		return
 	}
 
-	event := types.Event{
-		EventID:     eventID,
-		Name:        name,
-		Description: description,
-		Schedule:    schedule,
-	}
-
-	if scriptContent != nil {
-		event.Script = scriptContent
-	}
+	event.EventID = eventID
 
 	if err := data.UpdateEvent(db, event); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update event"})
