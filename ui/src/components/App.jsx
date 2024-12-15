@@ -15,6 +15,10 @@ import Redirectors from './Redirectors/Redirectors';
 import Profile from './Profile/Profile';
 import Users from './Users/Users';
 import Agent from './Agent/Agent';
+import Actions from './Actions/Actions';
+import Events from './Events/Events';
+import EditEvent from './Events/EditEvent';
+import Triggers from './Triggers/Triggers';
 import { AuthProvider } from '../context/AuthProvider';
 import AuthContext from '../context/AuthProvider';
 
@@ -141,6 +145,46 @@ const MainContent = ({ isLoggedIn, onSuccessfulLogin, isMenuOpen }) => {
           element={
             isLoggedIn ? (
               <Agent isMenuOpen={isMenuOpen} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/actions"
+          element={
+            isLoggedIn ? (
+              <Actions isMenuOpen={isMenuOpen} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/events"
+          element={
+            isLoggedIn ? (
+              <Events isMenuOpen={isMenuOpen} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+            path="/events/edit"
+            element={
+                isLoggedIn ? (
+                    <EditEvent isMenuOpen={isMenuOpen} />
+                ) : (
+                    <Navigate to="/login" />
+                )
+            }
+        />
+        <Route
+          path="/triggers"
+          element={
+            isLoggedIn ? (
+              <Triggers isMenuOpen={isMenuOpen} />
             ) : (
               <Navigate to="/login" />
             )
