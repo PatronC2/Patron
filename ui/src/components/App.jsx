@@ -16,6 +16,7 @@ import Profile from './Profile/Profile';
 import Users from './Users/Users';
 import Agent from './Agent/Agent';
 import Actions from './Actions/Actions';
+import EditAction from './Actions/EditAction';
 import Events from './Events/Events';
 import EditEvent from './Events/EditEvent';
 import Triggers from './Triggers/Triggers';
@@ -159,6 +160,16 @@ const MainContent = ({ isLoggedIn, onSuccessfulLogin, isMenuOpen }) => {
               <Navigate to="/login" />
             )
           }
+        />
+        <Route
+            path="/actions/edit"
+            element={
+                isLoggedIn ? (
+                    <EditAction isMenuOpen={isMenuOpen} />
+                ) : (
+                    <Navigate to="/login" />
+                )
+            }
         />
         <Route
           path="/events"

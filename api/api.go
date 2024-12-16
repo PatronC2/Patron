@@ -92,7 +92,9 @@ func main() {
 	r.GET("/api/events/:eventID", api.Auth(readRoles), api.GetEventHandler)
 
 	r.GET("/api/actions", api.Auth(readRoles), api.ListActionsHandler)
+	r.GET("/api/actions/:actionID", api.Auth(readRoles), api.GetActionHandler)
 	r.POST("/api/actions", api.Auth(writeRoles), api.CreateActionHandler)
+	r.PUT("/api/actions/:actionID", api.Auth(writeRoles), api.UpdateActionHandler)
 	r.DELETE("/api/actions/:actionID", api.Auth(writeRoles), api.DeleteActionHandler)
 
 	r.GET("/api/events/:eventID/triggers", api.Auth(readRoles), api.ListTriggersForEventHandler)

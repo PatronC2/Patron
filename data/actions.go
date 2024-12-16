@@ -27,6 +27,21 @@ func ListActions(db *sql.DB) ([]types.Action, error) {
 	return actions, nil
 }
 
+func GetActionByID(db *sql.DB, eventID int) (types.Action, error) {
+	query := `SELECT "ActionID", "Name", "Description", "File" FROM "actions" WHERE "ActionID" = $1;`
+	var action types.Action
+	err := db.QueryRow(query, eventID).Scan(
+		&action.ActionID,
+		&action.Name,
+		&action.Description,
+		&action.File,
+	)
+	if err != nil {
+		return types.Action{}, err
+	}
+	return action, nil
+}
+
 func CreateAction(db *sql.DB, action types.Action) (int, error) {
 	query := `INSERT INTO "actions" ("Name", "Description", "File") VALUES ($1, $2, $3) RETURNING "ActionID";`
 	var actionID int

@@ -1,0 +1,173 @@
+.actions-container {
+    margin: 0 auto;
+    padding: var(--header-height) 1rem 1rem;
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 1200px;
+    position: relative;
+    transition: margin-left 0.3s ease-in-out;
+}
+
+.actions-container .header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0.5rem 0 0.5rem;
+    background-color: var(--secondary-color);
+    width: 100vw;
+    box-sizing: border-box;
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    z-index: 998;
+    transition: margin-left 0.3s ease-in-out;
+}
+
+.actions-container .header h1 {
+    color: var(--text-color);
+    margin: 0 0 1rem;
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.actions-container .header-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.actions-container .header button {
+    padding: 0.5rem 1rem;
+    margin: 0.5rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 4px;
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.actions-container .header button.active {
+    background-color: var(--background-color);
+    color: var(--secondary-color);
+    font-weight: bold;
+}
+
+.actions-container .header button:hover {
+    background-color: var(--background-color);
+    color: var(--secondary-color);
+}
+
+.actions-container table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 1rem;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    background-color: var(--background-color);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.actions-container table thead {
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    font-weight: bold;
+}
+
+.actions-container table th,
+.actions-container table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+    word-wrap: break-word;
+    box-sizing: border-box;
+}
+
+.actions-container tbody tr:nth-child(odd) {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+.actions-container tbody tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .actions-container tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-color);
+}
+
+[data-theme="light"] .actions-container tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--primary-color);
+}
+
+.actions-container a {
+    color: var(--text-color);
+    text-decoration: underline;
+    transition: color 0.3s ease;
+}
+
+.actions-container a:hover {
+    color: var(--secondary-color);
+}
+
+.actions-container p {
+    text-align: center;
+    margin: 1rem 0;
+    font-size: 1.2rem;
+    color: var(--text-color);
+}
+
+.actions-container .delete-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.actions-container .delete-button:hover {
+    color: var(--secondary-color);
+    background-color: var(--text-color);
+}
+
+.actions-container .notification {
+    margin-top: 1rem;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    color: var(--text-color);
+}
+
+.actions-container .notification.success {
+    background-color: lightgreen;
+}
+
+.actions-container .notification.error {
+    background-color: red;
+}
+
+.actions-container .actions-content {
+    margin: calc(var(--header-height) + 3rem) auto 0;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 1200px;
+    position: relative;
+}
