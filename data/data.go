@@ -129,9 +129,9 @@ func InitDatabase() {
 	KeylogSQL := `
 	CREATE TABLE IF NOT EXISTS "keylog" (
 		"keylogID" SERIAL PRIMARY KEY,
-		"UUID" TEXT,
+		"uuid" TEXT,
 		"Keys" TEXT,
-		FOREIGN KEY ("UUID") REFERENCES "agents" ("UUID")
+		FOREIGN KEY ("uuid") REFERENCES "agents" ("uuid")
 	);
 	`
 	_, err = db.Exec(KeylogSQL)
