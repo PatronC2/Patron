@@ -7,7 +7,7 @@ import (
 )
 
 func ListTriggersByEvent(db *sql.DB, eventID int) ([]types.Trigger, error) {
-	query := `SELECT "ID", "EventID", "ActionID" FROM "triggers" WHERE "EventID" = $1;`
+	query := `SELECT "id", "event_id", "action_id" FROM "triggers" WHERE "event_id" = $1;`
 	rows, err := db.Query(query, eventID)
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func ListTriggersByEvent(db *sql.DB, eventID int) ([]types.Trigger, error) {
 }
 
 func CreateTrigger(db *sql.DB, trigger types.Trigger) (int, error) {
-	query := `INSERT INTO "triggers" ("EventID", "ActionID") VALUES ($1, $2) RETURNING "ID";`
+	query := `INSERT INTO "triggers" ("event_id", "action_id") VALUES ($1, $2) RETURNING "id";`
 	var triggerID int
 	err := db.QueryRow(query, trigger.EventID, trigger.ActionID).Scan(&triggerID)
 	if err != nil {
@@ -38,7 +38,7 @@ func CreateTrigger(db *sql.DB, trigger types.Trigger) (int, error) {
 }
 
 func DeleteTrigger(db *sql.DB, triggerID int) error {
-	query := `DELETE FROM "triggers" WHERE "ID" = $1;`
+	query := `DELETE FROM "triggers" WHERE "id" = $1;`
 	_, err := db.Exec(query, triggerID)
 	return err
 }

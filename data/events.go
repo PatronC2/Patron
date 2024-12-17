@@ -7,7 +7,7 @@ import (
 )
 
 func ListEvents(db *sql.DB) ([]types.Event, error) {
-	query := `SELECT "EventID", "Name", "Description", "Script", "Schedule", "LastRun" FROM "events";`
+	query := `SELECT "event_id", "name", "description", "script", "schedule", "last_run" FROM "events";`
 	rows, err := db.Query(query)
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func ListEvents(db *sql.DB) ([]types.Event, error) {
 }
 
 func GetEventByID(db *sql.DB, eventID int) (types.Event, error) {
-	query := `SELECT "EventID", "Name", "Description", "Script", "Schedule", "LastRun" FROM "events" WHERE "EventID" = $1;`
+	query := `SELECT "event_id", "name", "description", "script", "schedule", "last_run" FROM "events" WHERE "event_id" = $1;`
 	var event types.Event
 	err := db.QueryRow(query, eventID).Scan(
 		&event.EventID,
@@ -45,7 +45,7 @@ func GetEventByID(db *sql.DB, eventID int) (types.Event, error) {
 }
 
 func CreateEvent(db *sql.DB, event types.Event) (int, error) {
-	query := `INSERT INTO "events" ("Name", "Description", "Script", "Schedule") VALUES ($1, $2, $3, $4) RETURNING "EventID";`
+	query := `INSERT INTO "events" ("name", "description", "script", "schedule") VALUES ($1, $2, $3, $4) RETURNING "event_id";`
 	var eventID int
 	err := db.QueryRow(query, event.Name, event.Description, event.Script, event.Schedule).Scan(&eventID)
 	if err != nil {
@@ -55,13 +55,13 @@ func CreateEvent(db *sql.DB, event types.Event) (int, error) {
 }
 
 func UpdateEvent(db *sql.DB, event types.Event) error {
-	query := `UPDATE "events" SET "Name" = $1, "Description" = $2, "Script" = $3, "Schedule" = $4 WHERE "EventID" = $5;`
+	query := `UPDATE "events" SET "name" = $1, "description" = $2, "script" = $3, "schedule" = $4 WHERE "event_id" = $5;`
 	_, err := db.Exec(query, event.Name, event.Description, event.Script, event.Schedule, event.EventID)
 	return err
 }
 
 func DeleteEvent(db *sql.DB, eventID int) error {
-	query := `DELETE FROM "events" WHERE "EventID" = $1;`
+	query := `DELETE FROM "events" WHERE "event_id" = $1;`
 	_, err := db.Exec(query, eventID)
 	return err
 }

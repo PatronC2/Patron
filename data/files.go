@@ -2,50 +2,50 @@ package data
 
 import (
 	"database/sql"
-    "fmt"
-    "path/filepath"
+	"fmt"
+	"path/filepath"
 
-	"github.com/PatronC2/Patron/types"	
-	"github.com/PatronC2/Patron/lib/logger"	
+	"github.com/PatronC2/Patron/lib/logger"
+	"github.com/PatronC2/Patron/types"
 	_ "github.com/lib/pq"
 )
 
 func FetchNextFileTransfer(uuid string) types.FileResponse {
-    var info types.FileResponse
-    query := `
+	var info types.FileResponse
+	query := `
         SELECT 
-            "files"."FileID",
-            "files"."UUID",
-            "files"."Type",
-            "files"."Path",
-            "files"."Content"
+            "files"."file_id",
+            "files"."uuid",
+            "files"."type",
+            "files"."path",
+            "files"."content"
         FROM "files" 
-        INNER JOIN "agents" ON "files"."UUID" = "agents"."UUID" 
-        WHERE "files"."UUID" = $1
-        AND "files"."Status" = 'Pending' 
+        INNER JOIN "agents" ON "files"."uuid" = "agents"."uuid" 
+        WHERE "files"."uuid" = $1
+        AND "files"."status" = 'pending' 
         LIMIT 1;
     `
 
-    row := db.QueryRow(query, uuid)
-    var content []byte
-    err := row.Scan(
-        &info.FileID,
-        &info.AgentID,
-        &info.Type,
-        &info.Path,
-        &content,
-    )
-    if err == sql.ErrNoRows {
-        logger.Logf(logger.Info, "No pending file transfers for agent: %s\n", uuid)
-        return info
-    } else if err != nil {
-        logger.Logf(logger.Error, "Error fetching file transfers for agent: %v\n", err)
-        return info
-    }
+	row := db.QueryRow(query, uuid)
+	var content []byte
+	err := row.Scan(
+		&info.FileID,
+		&info.AgentID,
+		&info.Type,
+		&info.Path,
+		&content,
+	)
+	if err == sql.ErrNoRows {
+		logger.Logf(logger.Info, "No pending file transfers for agent: %s\n", uuid)
+		return info
+	} else if err != nil {
+		logger.Logf(logger.Error, "Error fetching file transfers for agent: %v\n", err)
+		return info
+	}
 
-    info.Chunk = content
-    logger.Logf(logger.Info, "Fetched file transfer %s for agent %s\n", info.FileID, uuid)
-    return info
+	info.Chunk = content
+	logger.Logf(logger.Info, "Fetched file transfer %s for agent %s\n", info.FileID, uuid)
+	return info
 }
 
 func UpdateFileTransfer(fileData types.FileToServer) error {
@@ -53,10 +53,10 @@ func UpdateFileTransfer(fileData types.FileToServer) error {
 	var args []interface{}
 
 	if fileData.Type == "Download" {
-		query = `UPDATE files SET "Status" = $1 WHERE "FileID" = $2 AND "UUID" = $3 AND "Type" = $4`
+		query = `UPDATE files SET "status" = $1 WHERE "file_id" = $2 AND "uuid" = $3 AND "type" = $4`
 		args = append(args, fileData.Status, fileData.FileID, fileData.AgentID, fileData.Type)
 	} else if fileData.Type == "Upload" {
-		query = `UPDATE files SET "Status" = $1, "Content" = $2 WHERE "FileID" = $3 AND "UUID" = $4 AND "Type" = $5`
+		query = `UPDATE files SET "status" = $1, "content" = $2 WHERE "file_id" = $3 AND "uuid" = $4 AND "type" = $5`
 		args = append(args, fileData.Status, fileData.Chunk, fileData.FileID, fileData.AgentID, fileData.Type)
 	} else {
 		return fmt.Errorf("unknown transfer type: %s", fileData.Type)
@@ -72,59 +72,59 @@ func UpdateFileTransfer(fileData types.FileToServer) error {
 }
 
 func ListFilesForUUID(uuid string) ([]types.FileToServer, error) {
-    var files []types.FileToServer
-    query := `
+	var files []types.FileToServer
+	query := `
         SELECT 
-            "FileID",
-            "Path",
-            "Status"
+            "file_id",
+            "path",
+            "status"
         FROM "files"
-        WHERE "UUID" = $1;
+        WHERE "uuid" = $1;
     `
-    rows, err := db.Query(query, uuid)
-    if err != nil {
-        logger.Logf(logger.Error, "Error listing files for UUID %s: %v\n", uuid, err)
-        return nil, err
-    }
-    defer rows.Close()
+	rows, err := db.Query(query, uuid)
+	if err != nil {
+		logger.Logf(logger.Error, "Error listing files for UUID %s: %v\n", uuid, err)
+		return nil, err
+	}
+	defer rows.Close()
 
-    for rows.Next() {
-        var file types.FileToServer
-        err := rows.Scan(&file.FileID, &file.Path, &file.Status)
-        if err != nil {
-            logger.Logf(logger.Error, "Error scanning file for UUID %s: %v\n", uuid, err)
-            return nil, err
-        }
-        files = append(files, file)
-    }
+	for rows.Next() {
+		var file types.FileToServer
+		err := rows.Scan(&file.FileID, &file.Path, &file.Status)
+		if err != nil {
+			logger.Logf(logger.Error, "Error scanning file for UUID %s: %v\n", uuid, err)
+			return nil, err
+		}
+		files = append(files, file)
+	}
 
-    if err = rows.Err(); err != nil {
-        logger.Logf(logger.Error, "Error with result rows for UUID %s: %v\n", uuid, err)
-        return nil, err
-    }
+	if err = rows.Err(); err != nil {
+		logger.Logf(logger.Error, "Error with result rows for UUID %s: %v\n", uuid, err)
+		return nil, err
+	}
 
-    return files, nil
+	return files, nil
 }
 
 func DownloadFile(fileID string) ([]byte, string, error) {
-    var content []byte
-    var path string
-    query := `
-        SELECT "Content", "Path"
+	var content []byte
+	var path string
+	query := `
+        SELECT "content", "path"
         FROM "files"
-        WHERE "FileID" = $1;
+        WHERE "file_id" = $1;
     `
 
-    err := db.QueryRow(query, fileID).Scan(&content, &path)
-    if err == sql.ErrNoRows {
-        logger.Logf(logger.Info, "No file found with FileID: %s\n", fileID)
-        return nil, "", nil
-    } else if err != nil {
-        logger.Logf(logger.Error, "Error downloading file with FileID %s: %v\n", fileID, err)
-        return nil, "", err
-    }
+	err := db.QueryRow(query, fileID).Scan(&content, &path)
+	if err == sql.ErrNoRows {
+		logger.Logf(logger.Info, "No file found with FileID: %s\n", fileID)
+		return nil, "", nil
+	} else if err != nil {
+		logger.Logf(logger.Error, "Error downloading file with FileID %s: %v\n", fileID, err)
+		return nil, "", err
+	}
 
-    return content, filepath.Base(path), nil
+	return content, filepath.Base(path), nil
 }
 
 func UploadFile(path string, uuid string, transfertype string, content []byte) error {
@@ -133,7 +133,7 @@ func UploadFile(path string, uuid string, transfertype string, content []byte) e
 	if transfertype == "Upload" {
 		// Insert file with no content for uploads
 		query := `
-			INSERT INTO "files" ("UUID", "Type", "Path")
+			INSERT INTO "files" ("uuid", "type", "path")
 			VALUES ($1, $2, $3);
 		`
 		_, err := db.Exec(query, uuid, transfertype, path)
@@ -145,7 +145,7 @@ func UploadFile(path string, uuid string, transfertype string, content []byte) e
 	} else if transfertype == "Download" {
 		// Insert file with content for downloads
 		query := `
-			INSERT INTO "files" ("UUID", "Type", "Path", "Content")
+			INSERT INTO "files" ("uuid", "type", "path", "content")
 			VALUES ($1, $2, $3, $4);
 		`
 		_, err := db.Exec(query, uuid, transfertype, path, content)

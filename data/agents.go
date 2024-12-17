@@ -11,7 +11,7 @@ import (
 
 func CreateAgent(uuid, ServerIP, ServerPort, CallBackFreq, CallBackJitter, Ip, User, Hostname, OSType, OSBuild, OSArch, CPUS, MEMORY string) error {
 	CreateAgentSQL := `
-        INSERT INTO "agents" ("UUID", "ServerIP", "ServerPort", "CallBackFreq", "CallBackJitter", "Ip", "User", "Hostname", "OSType", "OSBuild", "OSArch", "CPUS", "MEMORY")
+        INSERT INTO "agents" ("uuid", "server_ip", "server_port", "call_back_freq", "call_back_jitter", "ip", "user", "hostname", "os_type", "os_build", "os_arch", "cpus", "memory")
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`
 
 	_, err := db.Exec(CreateAgentSQL, uuid, ServerIP, ServerPort, CallBackFreq, CallBackJitter, Ip, User, Hostname, OSType, OSBuild, OSArch, CPUS, MEMORY)
@@ -27,21 +27,21 @@ func CreateAgent(uuid, ServerIP, ServerPort, CallBackFreq, CallBackJitter, Ip, U
 func FetchOneAgent(uuid string) (info types.ConfigurationRequest, err error) {
 	query := `
         SELECT 
-            "UUID",
-            "ServerIP",
-            "ServerPort",
-            "CallBackFreq",
-            "CallBackJitter",
-            "Ip",
-            "User",
-            "Hostname",
-			"OSType",
-			"OSArch",
-			"OSBuild",
-			"CPUS",
-			"MEMORY",
-            "Status"
-        FROM "agents_status" WHERE "UUID"=$1
+            "uuid",
+            "server_ip",
+            "server_port",
+            "call_back_freq",
+            "call_back_jitter",
+            "ip",
+            "user",
+            "hostname",
+			"os_type",
+			"os_arch",
+			"os_build",
+			"cpus",
+			"memory",
+            "status"
+        FROM "agents_status" WHERE "uuis"=$1
     `
 
 	err = db.QueryRow(query, uuid).Scan(
@@ -77,8 +77,8 @@ func FetchOne(uuid string) (infoAppend []types.ConfigurationResponse, err error)
 	var info types.ConfigurationResponse
 	FetchSQL := `
 	SELECT 
-		"UUID","ServerIP", "ServerPort","CallBackFreq","CallBackJitter"
-	FROM "agents" WHERE "UUID"=$1
+		"uuid","server_ip", "server_port","call_back_freq","call_back_jitter"
+	FROM "agents" WHERE "uuid"=$1
 	`
 	row, err := db.Query(FetchSQL, uuid)
 	if err != nil {
@@ -100,7 +100,7 @@ func FetchOne(uuid string) (infoAppend []types.ConfigurationResponse, err error)
 }
 
 func UpdateAgentConfig(UUID string, ServerIP string, ServerPort string, CallbackFrequency string, CallbackJitter string) {
-	updateAgentConfigSQL := `UPDATE "agents" SET "ServerIP"= $1, "ServerPort"= $2, "CallBackFreq"= $3, "CallBackJitter"= $4 WHERE "UUID"= $5`
+	updateAgentConfigSQL := `UPDATE "agents" SET "server_ip"= $1, "server_port"= $2, "call_back_freq"= $3, "call_back_jitter"= $4 WHERE "uuid"= $5`
 
 	statement, err := db.Prepare(updateAgentConfigSQL)
 	if err != nil {
@@ -120,8 +120,8 @@ func UpdateAgentConfig(UUID string, ServerIP string, ServerPort string, Callback
 func UpdateAgentCheckIn(uuid string) error {
 	UpdateSQL := `
         UPDATE "agents"
-        SET "LastCallBack" = NOW()
-        WHERE "UUID" = $1`
+        SET "last_ball_back" = NOW()
+        WHERE "uuid" = $1`
 
 	_, err := db.Exec(UpdateSQL, uuid)
 	if err != nil {
@@ -135,9 +135,9 @@ func UpdateAgentCheckIn(uuid string) error {
 
 func UpdateAgentCommand(CommandUUID, Result, Output, uuid string) error {
 	updateAgentCommandSQL := `
-        UPDATE "Commands"
-        SET "Result" = $1, "Output" = $2
-        WHERE "CommandUUID" = $3`
+        UPDATE "commands"
+        SET "result" = $1, "output" = $2
+        WHERE "command_uuid" = $3`
 
 	_, err := db.Exec(updateAgentCommandSQL, Result, Output, CommandUUID)
 	if err != nil {
@@ -153,20 +153,20 @@ func Agents() (agentAppend []types.ConfigurationRequest, err error) {
 	var agents types.ConfigurationRequest
 	FetchSQL := `
 	SELECT 
-		"UUID",
-		"ServerIP", 
-		"ServerPort", 
-		"CallBackFreq",
-		"CallBackJitter",
-		"Ip", 
-		"User", 
-		"Hostname",
-		"OSType",
-		"OSArch",
-		"OSBuild",
-		"CPUS",
-		"MEMORY",
-		"Status"
+        "uuid",
+        "server_ip",
+        "server_port",
+        "call_back_freq",
+        "call_back_jitter",
+        "ip",
+        "user",
+        "hostname",
+		"os_type",
+		"os_arch",
+		"os_build",
+		"cpus",
+		"memory",
+        "status"
 	FROM "agents_status"
 	`
 	row, err := db.Query(FetchSQL)
@@ -216,20 +216,20 @@ func AgentsByIp(Ip string) (agentAppend []types.ConfigurationRequest, err error)
 	var agents types.ConfigurationRequest
 	FetchSQL := `
 	SELECT 
-		"UUID", 
-		"ServerIP",
-		"ServerPort",
-		"CallBackFreq", 
-		"CallBackJitter", 
-		"Ip", 
-		"User", 
-		"Hostname",
-		"OSType",
-		"OSArch",
-		"OSBuild",
-		"CPUS",
-		"MEMORY",
-		"Status"
+        "uuid",
+        "server_ip",
+        "server_port",
+        "call_back_freq",
+        "call_back_jitter",
+        "ip",
+        "user",
+        "hostname",
+		"os_type",
+		"os_arch",
+		"os_build",
+		"cpus",
+		"memory",
+        "status"
 	FROM "agents_status"
 	AND "Ip" = $1
 	`

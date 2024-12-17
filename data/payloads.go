@@ -9,7 +9,7 @@ import (
 )
 
 func CreatePayload(uuid string, name string, description string, ServerIP string, ServerPort string, CallBackFreq string, CallBackJitter string, Concat string) {
-	CreateAgentSQL := `INSERT INTO "Payloads" ("UUID", "Name", "Description", "ServerIP", "ServerPort", "CallbackFrequency", "CallbackJitter", "Concat")
+	CreateAgentSQL := `INSERT INTO "payloads" ("uuid", "name", "description", "server_ip", "server_port", "callback_frequency", "callback_jitter", "concat")
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
 
 	statement, err := db.Prepare(CreateAgentSQL)
@@ -29,16 +29,16 @@ func Payloads() []types.Payload {
 	var payloads types.Payload
 	FetchSQL := `
 	SELECT
-		"PayloadID",
-		"UUID", 
-		"Name",
-		"Description",
-		"ServerIP", 
-		"ServerPort", 
-		"CallbackFrequency", 
-		"CallbackJitter",
-		"Concat" 
-	FROM "Payloads"
+		"payload_id",
+		"uuid", 
+		"name",
+		"description",
+		"server_ip", 
+		"server_port", 
+		"callback_frequency", 
+		"callback_jitter",
+		"concat" 
+	FROM "payloads"
 	WHERE "isDeleted"='0'
 	`
 	row, err := db.Query(FetchSQL)
@@ -66,9 +66,9 @@ func Payloads() []types.Payload {
 
 func DeletePayload(payloadid string) error {
 	DeleteSQL := `
-    UPDATE "Payloads"
-    SET "isDeleted" = 1
-    WHERE "PayloadID" = $1`
+    UPDATE "payloads"
+    SET "is_deleted" = 1
+    WHERE "payload_id" = $1`
 
 	statement, err := db.Prepare(DeleteSQL)
 	if err != nil {
@@ -90,9 +90,9 @@ func DeletePayload(payloadid string) error {
 func GetPayloadConcat(payloadID string) (string, error) {
 	var payloadConcat string
 	FetchNameSQL := `
-    SELECT "Concat"
-    FROM "Payloads"
-    WHERE "PayloadID" = $1 AND "isDeleted" = 0
+    SELECT "concat"
+    FROM "payloads"
+    WHERE "payload_id" = $1 AND "is_deleted" = 0
     `
 
 	err := db.QueryRow(FetchNameSQL, payloadID).Scan(&payloadConcat)

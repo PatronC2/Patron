@@ -3,23 +3,22 @@ package data
 import (
 	"log"
 
-	"github.com/PatronC2/Patron/types"	
-	"github.com/PatronC2/Patron/lib/logger"	
+	"github.com/PatronC2/Patron/lib/logger"
+	"github.com/PatronC2/Patron/types"
 	_ "github.com/lib/pq"
 )
-
 
 func GetRedirectors() (redirectors []types.Redirector, err error) {
 	var data types.Redirector
 	FetchSQL := `
 	SELECT
-		"RedirectorID",
-		"Name",
-		"Description",
-		"ForwardIP",
-		"ForwardPort",
-		"ListenPort",
-		"Status"
+		"redirector_id",
+		"name",
+		"description",
+		"forward_ip",
+		"forward_port",
+		"listen_port",
+		"status"
 	FROM "redirector_status"
 	`
 	rows, err := db.Query(FetchSQL)
@@ -56,34 +55,34 @@ func GetRedirectors() (redirectors []types.Redirector, err error) {
 }
 
 func CreateRedirector(RedirectorID, Name, Description, ForwardIP, ForwardPort, ListenPort string) error {
-    InsertSQL := `
-        INSERT INTO "redirectors" ("RedirectorID", "Name", "Description", "ForwardIP", "ForwardPort", "ListenPort")
+	InsertSQL := `
+        INSERT INTO "redirectors" ("redirector_id", "name", "description", "forward_ip", "forward_port", "listen_port")
         VALUES ($1, $2, $3, $4, $5, $6)
     `
 
-    _, err := db.Exec(InsertSQL, RedirectorID, Name, Description, ForwardIP, ForwardPort, ListenPort)
-    if err != nil {
-        logger.Logf(logger.Error, "Error creating redirector with RedirectorID %s: %v", RedirectorID, err)
-        return err
-    }
+	_, err := db.Exec(InsertSQL, RedirectorID, Name, Description, ForwardIP, ForwardPort, ListenPort)
+	if err != nil {
+		logger.Logf(logger.Error, "Error creating redirector with RedirectorID %s: %v", RedirectorID, err)
+		return err
+	}
 
-    logger.Logf(logger.Info, "Successfully created redirector with RedirectorID %s", RedirectorID)
-    return nil
+	logger.Logf(logger.Info, "Successfully created redirector with RedirectorID %s", RedirectorID)
+	return nil
 }
 
 func SetRedirectorStatus(RedirectorID string) error {
-    UpdateSQL := `
+	UpdateSQL := `
         UPDATE "redirectors"
-        SET "LastReport" = NOW()
-        WHERE "RedirectorID" = $1;
+        SET "last_report" = NOW()
+        WHERE "redirector_id" = $1;
     `
 
-    _, err := db.Exec(UpdateSQL, RedirectorID)
-    if err != nil {
-        logger.Logf(logger.Error, "Error updating redirector status for RedirectorID %s: %v", RedirectorID, err)
-        return err
-    }
+	_, err := db.Exec(UpdateSQL, RedirectorID)
+	if err != nil {
+		logger.Logf(logger.Error, "Error updating redirector status for RedirectorID %s: %v", RedirectorID, err)
+		return err
+	}
 
-    logger.Logf(logger.Info, "Updated redirector status for RedirectorID %s", RedirectorID)
-    return nil
+	logger.Logf(logger.Info, "Updated redirector status for RedirectorID %s", RedirectorID)
+	return nil
 }
