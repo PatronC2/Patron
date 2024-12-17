@@ -142,7 +142,7 @@ func InitDatabase() {
 
 	PayloadSQL := `
 	CREATE TABLE IF NOT EXISTS "payloads" (
-		"payloadID" SERIAL PRIMARY KEY,
+		"payload_id" SERIAL PRIMARY KEY,
 		"uuid" TEXT,
 		"name" TEXT,
 		"description" TEXT,

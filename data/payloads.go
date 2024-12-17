@@ -39,7 +39,7 @@ func Payloads() []types.Payload {
 		"callback_jitter",
 		"concat" 
 	FROM "payloads"
-	WHERE "isDeleted"='0'
+	WHERE "is_deleted"='0'
 	`
 	row, err := db.Query(FetchSQL)
 	if err != nil {

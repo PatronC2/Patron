@@ -41,7 +41,7 @@ func FetchOneAgent(uuid string) (info types.ConfigurationRequest, err error) {
 			"cpus",
 			"memory",
             "status"
-        FROM "agents_status" WHERE "uuis"=$1
+        FROM "agents_status" WHERE "uuid"=$1
     `
 
 	err = db.QueryRow(query, uuid).Scan(
