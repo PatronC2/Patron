@@ -227,7 +227,7 @@ func InitDatabase() {
 		CASE 
 			WHEN "last_report" IS NULL OR "last_report" < NOW() - INTERVAL '10 minutes' THEN 'Offline'
 			ELSE 'Online'
-		END AS "Status"
+		END AS "status"
 	FROM 
 		"redirectors";
 	`
@@ -244,7 +244,7 @@ func InitDatabase() {
 		description TEXT,
 		script BYTEA,
 		schedule TEXT NOT NULL,
-		status TEXT NOT NULL CHECK (Status IN ('NOTRUN', 'RUNNABLE', 'RUNNING', 'COMPLETE')) DEFAULT 'UNKNOWN',
+		status TEXT NOT NULL CHECK (status IN ('NOTRUN', 'RUNNABLE', 'RUNNING', 'COMPLETE')) DEFAULT 'UNKNOWN',
 		lastrun TIMESTAMP
 	);
 	`

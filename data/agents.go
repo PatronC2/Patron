@@ -120,7 +120,7 @@ func UpdateAgentConfig(UUID string, ServerIP string, ServerPort string, Callback
 func UpdateAgentCheckIn(uuid string) error {
 	UpdateSQL := `
         UPDATE "agents"
-        SET "last_ball_back" = NOW()
+        SET "last_call_back" = NOW()
         WHERE "uuid" = $1`
 
 	_, err := db.Exec(UpdateSQL, uuid)
