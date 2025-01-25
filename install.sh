@@ -99,7 +99,7 @@ function setup_proxy_certificate {
         if [ -n "$cert_path" ]; then
             if [[ "$cert_path" =~ ^http ]]; then
                 echo "Downloading certificate from $cert_path..."
-                curl -fsSL -o /tmp/proxy-cert.pem "$cert_path"
+                wget --no-check-certificate -O /tmp/proxy-cert.pem "$cert_path"
                 if [ -f "/tmp/proxy-cert.pem" ]; then
                     cert_path="/tmp/proxy-cert.pem"
                     echo "Certificate downloaded to /tmp/proxy-cert.pem."
