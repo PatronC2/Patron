@@ -76,6 +76,54 @@ function pass_prompt {
    read -p "Enter UI Password: " patronPassword
 }
 
+function set_proxy_variables {
+   read -p "Enter HTTP Proxy (or leave blank if not using a proxy): " http_proxy
+   read -p "Enter HTTPS Proxy (or leave blank if not using a proxy): " https_proxy
+   read -p "Enter NO Proxy (e.g., localhost,127.0.0.1): " no_proxy
+
+   export HTTP_PROXY=${http_proxy:-""}
+   export HTTPS_PROXY=${https_proxy:-""}
+   export NO_PROXY=${no_proxy:-""}
+
+   echo "Using Proxy Settings:"
+   echo "  HTTP_PROXY=$HTTP_PROXY"
+   echo "  HTTPS_PROXY=$HTTPS_PROXY"
+   echo "  NO_PROXY=$NO_PROXY"
+}
+
+function setup_proxy_certificate {
+   if [ -n "$HTTPS_PROXY" ]; then
+      git config http.proxy $HTTP_PROXY
+      git config https.proxy $HTTPS_PROXY
+      echo "You are using a proxy. To ensure secure Git operations, you may need to provide a certificate."
+      read -p "Enter the file location or URL of the proxy CA certificate (or leave blank to skip): " cert_path
+
+      if [ -n "$cert_path" ]; then
+         if [[ "$cert_path" =~ ^http ]]; then
+            echo "Downloading certificate from $cert_path..."
+            wget --no-check-certificate -O /tmp/proxy-cert.pem "$cert_path"
+            if [ -f "/tmp/proxy-cert.pem" ]; then
+               cert_path="/tmp/proxy-cert.pem"
+               echo "Certificate downloaded to /tmp/proxy-cert.pem."
+            else
+               echo "Failed to download certificate from $cert_path. Exiting."
+               exit 1
+            fi
+         elif [ -f "$cert_path" ]; then
+            echo "Using provided certificate file at $cert_path."
+         else
+            echo "Certificate file not found at $cert_path. Exiting."
+            exit 1
+         fi
+
+         echo "Setting Git to use the certificate at $cert_path..."
+         git config --global http.sslCAInfo "$cert_path"
+      else
+         echo "Skipping custom certificate setup."
+      fi
+   fi
+}
+
 function prereq_app_check {
    base64=$(which base64 || echo "not found")
    openssl=$(which openssl || echo "not found")
@@ -194,6 +242,9 @@ shift $((OPTIND-1))
 
 prereq_app_check
 
+set_proxy_variables
+setup_proxy_certificate
+
 # Generate certs
 echo "Generating certs..."
 [ ! -d "$PWD/certs" ] && mkdir certs
@@ -232,17 +283,21 @@ REACT_SERVER_IP=$reactclientip
 HOST=$reactclientip
 PORT=$reactclientport
 REDIRECTOR_PORT=$redirectorport
+HTTP_PROXY=$http_proxy
+HTTPS_PROXY=$https_proxy
+NO_PROXY=$no_proxy
 EOF
 
-echo "Building CLI"
+export $(grep -v '^#' .env | xargs)
 
+echo "Building CLI"
 REPO_URL=https://github.com/PatronC2/PatronCLI.git
 REPO_BRANCH=main
 git clone --branch $REPO_BRANCH $REPO_URL
 cd PatronCLI && ./build.sh && cd ..
+rm -rf PatronCLI
 
 echo "Cooking the Steak..."
-export $(grep -v '^#' .env | xargs)
 docker buildx bake local
 docker compose up -d
 

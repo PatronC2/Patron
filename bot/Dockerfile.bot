@@ -1,5 +1,12 @@
 FROM golang:1.23.3 AS bot-builder
 
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY
+ENV HTTP_PROXY=${HTTP_PROXY}
+ENV HTTPS_PROXY=${HTTPS_PROXY}
+ENV NO_PROXY=${NO_PROXY}
+
 WORKDIR /app
 
 COPY go.mod go.sum ./
@@ -10,6 +17,11 @@ COPY ./bot .
 RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o /app/bot
 
 FROM alpine:latest
+
+ENV HTTP_PROXY=''
+ENV HTTPS_PROXY=''
+ENV NO_PROXY=''
+
 RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 
 WORKDIR /root/

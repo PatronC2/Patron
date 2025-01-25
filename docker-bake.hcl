@@ -62,6 +62,18 @@ variable "PORT" {
   default = "8081"
 }
 
+variable "HTTP_PROXY" {
+  default = ""
+}
+
+variable "HTTPS_PROXY" {
+  default = ""
+}
+
+variable "NO_PROXY" {
+  default = ""
+}
+
 target "nginx-local" {
     dockerfile = "Dockerfile.nginx"
     context = "."
@@ -69,6 +81,9 @@ target "nginx-local" {
     tags = ["${NGINX}:${TAG}"]
     args = {
       REACT_APP_NGINX_PORT = "${REACT_APP_NGINX_PORT}"
+      HTTP_PROXY = "${HTTP_PROXY}"
+      HTTPS_PROXY = "${HTTPS_PROXY}"
+      NO_PROXY = "${NO_PROXY}"
     }
 }
 
@@ -79,6 +94,9 @@ target "postgres-local" {
     tags = ["${POSTGRES}:${TAG}"]
     args = {
       DB_PORT = "${DB_PORT}"
+      HTTP_PROXY = "${HTTP_PROXY}"
+      HTTPS_PROXY = "${HTTPS_PROXY}"
+      NO_PROXY = "${NO_PROXY}"
     }
 }
 
@@ -89,6 +107,9 @@ target "server-local" {
     tags = ["${SERVER}:${TAG}"]
     args = {
       C2SERVER_PORT = "${C2SERVER_PORT}"
+      HTTP_PROXY = "${HTTP_PROXY}"
+      HTTPS_PROXY = "${HTTPS_PROXY}"
+      NO_PROXY = "${NO_PROXY}"
     }
 }
 
@@ -99,6 +120,9 @@ target "api-local" {
     tags = ["${API}:${TAG}"]
     args = {
       WEBSERVER_PORT = "${WEBSERVER_PORT}"
+      HTTP_PROXY = "${HTTP_PROXY}"
+      HTTPS_PROXY = "${HTTPS_PROXY}"
+      NO_PROXY = "${NO_PROXY}"
     }
 }
 
@@ -109,6 +133,9 @@ target "ui-local" {
     tags = ["${UI}:${TAG}"]
     args = {
       PORT = "${PORT}"
+      HTTP_PROXY = "${HTTP_PROXY}"
+      HTTPS_PROXY = "${HTTPS_PROXY}"
+      NO_PROXY = "${NO_PROXY}"
     }
 }
 
@@ -119,6 +146,9 @@ target "redirector-local" {
     tags = ["${REDIRECTOR}:${TAG}"]
     args = {
       REDIRECTOR_PORT = "${REDIRECTOR_PORT}"
+      HTTP_PROXY = "${HTTP_PROXY}"
+      HTTPS_PROXY = "${HTTPS_PROXY}"
+      NO_PROXY = "${NO_PROXY}"
     }
 }
 
@@ -130,6 +160,9 @@ target "bot-local" {
     args = {
       REPO_URL = "https://github.com/PatronC2/PatronCLI.git"
       REPO_BRANCH = "main"
+      HTTP_PROXY = "${HTTP_PROXY}"
+      HTTPS_PROXY = "${HTTPS_PROXY}"
+      NO_PROXY = "${NO_PROXY}"
     }
 }
 
@@ -140,6 +173,9 @@ target "nginx-release" {
     tags = ["${REGISTRY}/${NGINX}:${TAG}"]
     args = {
       REACT_APP_NGINX_PORT = "${REACT_APP_NGINX_PORT}"
+      HTTP_PROXY = "${HTTP_PROXY}"
+      HTTPS_PROXY = "${HTTPS_PROXY}"
+      NO_PROXY = "${NO_PROXY}"
     }
 }
 
@@ -151,6 +187,9 @@ target "postgres-release" {
     args = {
       DB_PORT = "${DB_PORT}"
       DB_USER = "${DB_USER}"
+      HTTP_PROXY = "${HTTP_PROXY}"
+      HTTPS_PROXY = "${HTTPS_PROXY}"
+      NO_PROXY = "${NO_PROXY}"
     }
 }
 
@@ -161,6 +200,9 @@ target "server-release" {
     tags = ["${REGISTRY}/${SERVER}:${TAG}"]
     args = {
       C2SERVER_PORT = "${C2SERVER_PORT}"
+      HTTP_PROXY = "${HTTP_PROXY}"
+      HTTPS_PROXY = "${HTTPS_PROXY}"
+      NO_PROXY = "${NO_PROXY}"
     }
 }
 
@@ -171,6 +213,9 @@ target "api-release" {
     tags = ["${REGISTRY}/${API}:${TAG}"]
     args = {
       WEBSERVER_PORT = "${WEBSERVER_PORT}"
+      HTTP_PROXY = "${HTTP_PROXY}"
+      HTTPS_PROXY = "${HTTPS_PROXY}"
+      NO_PROXY = "${NO_PROXY}"
     }
 }
 
@@ -181,6 +226,9 @@ target "ui-release" {
     tags = ["${REGISTRY}/${UI}:${TAG}"]
     args = {
       PORT = "${PORT}"
+      HTTP_PROXY = "${HTTP_PROXY}"
+      HTTPS_PROXY = "${HTTPS_PROXY}"
+      NO_PROXY = "${NO_PROXY}"
     }
 }
 
@@ -192,6 +240,9 @@ target "bot-release" {
     args = {
       REPO_URL = "https://github.com/PatronC2/PatronCLI.git"
       REPO_BRANCH = "main"
+      HTTP_PROXY = "${HTTP_PROXY}"
+      HTTPS_PROXY = "${HTTPS_PROXY}"
+      NO_PROXY = "${NO_PROXY}"
     }
 }
 
@@ -202,6 +253,9 @@ target "redirector-release" {
     tags = ["${REGISTRY}/${REDIRECTOR}:${TAG}"]
     args = {
       REDIRECTOR_PORT = "${REDIRECTOR_PORT}"
+      HTTP_PROXY = "${HTTP_PROXY}"
+      HTTPS_PROXY = "${HTTPS_PROXY}"
+      NO_PROXY = "${NO_PROXY}"
     }
 }
 
