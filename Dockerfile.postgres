@@ -1,6 +1,11 @@
 FROM postgres:latest
 
 ARG DB_PORT
+
+ENV HTTP_PROXY=''
+ENV HTTPS_PROXY=''
+ENV NO_PROXY=''
+
 ENV POSTGRES_USER=postgres
 
 EXPOSE ${DB_PORT}

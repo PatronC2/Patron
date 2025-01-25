@@ -4,7 +4,7 @@
         "description": "requires root",
         "code_path": "linux/privileged/client.go",
         "flags": "-trimpath -ldflags",
-        "environment": "",
+        "environment": "CGO_ENABLED=0",
         "file_suffix": ""
     },
     "linux/unprivileged": {
@@ -12,7 +12,7 @@
         "description": "linux unprivileged",
         "code_path": "linux/unprivileged/client.go",
         "flags": "-trimpath -ldflags",
-        "environment": "",
+        "environment": "CGO_ENABLED=0",
         "file_suffix": ""
     },
     "windows/unprivileged": {
@@ -20,7 +20,7 @@
         "description": "windows unprivileged",
         "code_path": "windows/unprivileged/client.go",
         "flags": "-trimpath -ldflags",
-        "environment": "GOOS=windows GOARCH=amd64",
+        "environment": "GOOS=windows GOARCH=amd64 CGO_ENABLED=0",
         "file_suffix": ".exe",
         "dependencies": [
             "github.com/TheTitanrain/w32"
@@ -31,7 +31,7 @@
         "description": "windows keylogger",
         "code_path": "windows/privileged/client.go",
         "flags": "-trimpath -ldflags",
-        "environment": "GOOS=windows GOARCH=amd64",
+        "environment": "GOOS=windows GOARCH=amd64 CGO_ENABLED=0",
         "file_suffix": ".exe",
         "dependencies": [
             "github.com/TheTitanrain/w32",

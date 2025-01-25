@@ -62,9 +62,30 @@ variable "PORT" {
   default = "8081"
 }
 
+variable "HTTP_PROXY" {
+  default = ""
+}
+
+variable "HTTPS_PROXY" {
+  default = ""
+}
+
+variable "NO_PROXY" {
+  default = ""
+}
+
+target "_common" {
+    args {
+        HTTP_PROXY   = "${HTTP_PROXY}"
+        HTTPS_PROXY  = "${HTTPS_PROXY}"
+        NO_PROXY     = "${NO_PROXY}"
+    }
+    context = "."
+}
+
 target "nginx-local" {
     dockerfile = "Dockerfile.nginx"
-    context = "."
+    inherits = [ "_common" ]
     output = ["type=docker"]
     tags = ["${NGINX}:${TAG}"]
     args = {
@@ -74,7 +95,7 @@ target "nginx-local" {
 
 target "postgres-local" {
     dockerfile = "Dockerfile.postgres"
-    context = "."
+    inherits = [ "_common" ]
     output = ["type=docker"]
     tags = ["${POSTGRES}:${TAG}"]
     args = {
@@ -84,7 +105,7 @@ target "postgres-local" {
 
 target "server-local" {
     dockerfile = "Dockerfile.server"
-    context = "."
+    inherits = [ "_common" ]
     output = ["type=docker"]
     tags = ["${SERVER}:${TAG}"]
     args = {
@@ -94,7 +115,7 @@ target "server-local" {
 
 target "api-local" {
     dockerfile = "Dockerfile.api"
-    context = "."
+    inherits = [ "_common" ]
     output = ["type=docker"]
     tags = ["${API}:${TAG}"]
     args = {
@@ -104,7 +125,7 @@ target "api-local" {
 
 target "ui-local" {
     dockerfile = "Dockerfile.ui"
-    context = "."
+    inherits = [ "_common" ]
     output = ["type=docker"]
     tags = ["${UI}:${TAG}"]
     args = {
@@ -114,7 +135,7 @@ target "ui-local" {
 
 target "redirector-local" {
     dockerfile = "Dockerfile.redirector"
-    context = "."
+    inherits = [ "_common" ]
     output = ["type=docker"]
     tags = ["${REDIRECTOR}:${TAG}"]
     args = {
@@ -124,7 +145,7 @@ target "redirector-local" {
 
 target "bot-local" {
     dockerfile = "./bot/Dockerfile.bot"
-    context = "."
+    inherits = [ "_common" ]
     output = ["type=docker"]
     tags = ["${BOT}:${TAG}"]
     args = {
@@ -135,7 +156,7 @@ target "bot-local" {
 
 target "nginx-release" {
     dockerfile = "Dockerfile.nginx"
-    context = "."
+    inherits = [ "_common" ]
     output = ["type=registry,output=registry.${REGISTRY}/${NGINX}:${TAG}"]
     tags = ["${REGISTRY}/${NGINX}:${TAG}"]
     args = {
@@ -145,7 +166,7 @@ target "nginx-release" {
 
 target "postgres-release" {
     dockerfile = "Dockerfile.postgres"
-    context = "."
+    inherits = [ "_common" ]
     output = ["type=registry,output=registry.${REGISTRY}/${POSTGRES}:${TAG}"]
     tags = ["${REGISTRY}/${POSTGRES}:${TAG}"]
     args = {
@@ -156,7 +177,7 @@ target "postgres-release" {
 
 target "server-release" {
     dockerfile = "Dockerfile.server"
-    context = "."
+    inherits = [ "_common" ]
     output = ["type=registry,output=registry.${REGISTRY}/${SERVER}:${TAG}"]
     tags = ["${REGISTRY}/${SERVER}:${TAG}"]
     args = {
@@ -166,7 +187,7 @@ target "server-release" {
 
 target "api-release" {
     dockerfile = "Dockerfile.api"
-    context = "."
+    inherits = [ "_common" ]
     output = ["type=registry,output=registry.${REGISTRY}/${API}:${TAG}"]
     tags = ["${REGISTRY}/${API}:${TAG}"]
     args = {
@@ -176,7 +197,7 @@ target "api-release" {
 
 target "ui-release" {
     dockerfile = "Dockerfile.ui"
-    context = "."
+    inherits = [ "_common" ]
     output = ["type=registry,output=registry.${REGISTRY}/${UI}:${TAG}"]
     tags = ["${REGISTRY}/${UI}:${TAG}"]
     args = {
@@ -186,7 +207,7 @@ target "ui-release" {
 
 target "bot-release" {
     dockerfile = "./bot/Dockerfile.bot"
-    context = "."
+    inherits = [ "_common" ]
     output = ["type=registry,output=registry.${REGISTRY}/${BOT}:${TAG}"]
     tags = ["${REGISTRY}/${BOT}:${TAG}"]
     args = {
@@ -197,7 +218,7 @@ target "bot-release" {
 
 target "redirector-release" {
     dockerfile = "Dockerfile.redirector"
-    context = "."
+    inherits = [ "_common" ]
     output = ["type=registry,output=registry.${REGISTRY}/${REDIRECTOR}:${TAG}"]
     tags = ["${REGISTRY}/${REDIRECTOR}:${TAG}"]
     args = {

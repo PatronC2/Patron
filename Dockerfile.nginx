@@ -2,6 +2,10 @@ FROM nginx:alpine
 
 ARG REACT_APP_NGINX_PORT
 
+ENV HTTP_PROXY=''
+ENV HTTPS_PROXY=''
+ENV NO_PROXY=''
+
 EXPOSE ${REACT_APP_NGINX_PORT}
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

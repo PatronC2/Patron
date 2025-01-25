@@ -76,6 +76,21 @@ function pass_prompt {
    read -p "Enter UI Password: " patronPassword
 }
 
+function set_proxy_variables {
+    read -p "Enter HTTP Proxy (or leave blank if not using a proxy): " http_proxy
+    read -p "Enter HTTPS Proxy (or leave blank if not using a proxy): " https_proxy
+    read -p "Enter NO Proxy (e.g., localhost,127.0.0.1): " no_proxy
+
+    export HTTP_PROXY=${http_proxy:-""}
+    export HTTPS_PROXY=${https_proxy:-""}
+    export NO_PROXY=${no_proxy:-""}
+
+    echo "Using Proxy Settings:"
+    echo "  HTTP_PROXY=$HTTP_PROXY"
+    echo "  HTTPS_PROXY=$HTTPS_PROXY"
+    echo "  NO_PROXY=$NO_PROXY"
+}
+
 function prereq_app_check {
    base64=$(which base64 || echo "not found")
    openssl=$(which openssl || echo "not found")
@@ -194,6 +209,8 @@ shift $((OPTIND-1))
 
 prereq_app_check
 
+set_proxy_variables
+
 # Generate certs
 echo "Generating certs..."
 [ ! -d "$PWD/certs" ] && mkdir certs
@@ -232,6 +249,7 @@ REACT_SERVER_IP=$reactclientip
 HOST=$reactclientip
 PORT=$reactclientport
 REDIRECTOR_PORT=$redirectorport
+HTTPS_PROXY=$https_proxy
 EOF
 
 echo "Building CLI"
