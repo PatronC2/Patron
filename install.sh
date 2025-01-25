@@ -91,6 +91,37 @@ function set_proxy_variables {
     echo "  NO_PROXY=$NO_PROXY"
 }
 
+function setup_proxy_certificate {
+    if [ -n "$HTTPS_PROXY" ]; then
+        echo "You are using a proxy. To ensure secure Git operations, you may need to provide a certificate."
+        read -p "Enter the file location or URL of the proxy CA certificate (or leave blank to skip): " cert_path
+
+        if [ -n "$cert_path" ]; then
+            if [[ "$cert_path" =~ ^http ]]; then
+                echo "Downloading certificate from $cert_path..."
+                curl -fsSL -o /tmp/proxy-cert.pem "$cert_path"
+                if [ -f "/tmp/proxy-cert.pem" ]; then
+                    cert_path="/tmp/proxy-cert.pem"
+                    echo "Certificate downloaded to /tmp/proxy-cert.pem."
+                else
+                    echo "Failed to download certificate from $cert_path. Exiting."
+                    exit 1
+                fi
+            elif [ -f "$cert_path" ]; then
+                echo "Using provided certificate file at $cert_path."
+            else
+                echo "Certificate file not found at $cert_path. Exiting."
+                exit 1
+            fi
+
+            echo "Setting Git to use the certificate at $cert_path..."
+            git config --global http.sslCAInfo "$cert_path"
+        else
+            echo "Skipping custom certificate setup."
+        fi
+    fi
+}
+
 function prereq_app_check {
    base64=$(which base64 || echo "not found")
    openssl=$(which openssl || echo "not found")
@@ -210,6 +241,7 @@ shift $((OPTIND-1))
 prereq_app_check
 
 set_proxy_variables
+setup_proxy_certificate
 
 # Generate certs
 echo "Generating certs..."
