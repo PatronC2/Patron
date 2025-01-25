@@ -15,6 +15,14 @@
         "environment": "CGO_ENABLED=0",
         "file_suffix": ""
     },
+    "linux/socks5": {
+        "type": "Linux SOCKS5",
+        "description": "linux socks",
+        "code_path": "linux/socks/client.go",
+        "flags": "-trimpath -ldflags",
+        "environment": "CGO_ENABLED=0",
+        "file_suffix": ""   
+    },
     "windows/unprivileged": {
         "type": "Windows Original",
         "description": "windows unprivileged",
