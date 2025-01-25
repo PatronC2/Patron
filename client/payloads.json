@@ -5,20 +5,15 @@
         "code_path": "linux/privileged/client.go",
         "flags": "-trimpath -ldflags",
         "environment": "CGO_ENABLED=0",
-        "file_suffix": ""
+        "file_suffix": "",
+        "dependencies":[
+            "github.com/armon/go-socks5"
+        ]
     },
     "linux/unprivileged": {
         "type": "Linux Original",
         "description": "linux unprivileged",
         "code_path": "linux/unprivileged/client.go",
-        "flags": "-trimpath -ldflags",
-        "environment": "CGO_ENABLED=0",
-        "file_suffix": ""
-    },
-    "linux/socks5": {
-        "type": "Linux SOCKS5",
-        "description": "linux socks",
-        "code_path": "linux/socks/client.go",
         "flags": "-trimpath -ldflags",
         "environment": "CGO_ENABLED=0",
         "file_suffix": "",
@@ -34,7 +29,8 @@
         "environment": "GOOS=windows GOARCH=amd64 CGO_ENABLED=0",
         "file_suffix": ".exe",
         "dependencies": [
-            "github.com/TheTitanrain/w32"
+            "github.com/TheTitanrain/w32",
+            "github.com/armon/go-socks5"
         ]
     },
     "windows/privileged": {
@@ -46,7 +42,8 @@
         "file_suffix": ".exe",
         "dependencies": [
             "github.com/TheTitanrain/w32",
-            "github.com/kardianos/service"
+            "github.com/kardianos/service",
+            "github.com/armon/go-socks5"
         ]
     }
 }

