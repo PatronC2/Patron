@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"log"
 
-	"github.com/PatronC2/Patron/types"	
-	"github.com/PatronC2/Patron/lib/logger"	
+	"github.com/PatronC2/Patron/lib/logger"
+	"github.com/PatronC2/Patron/types"
 	_ "github.com/lib/pq"
 )
 
@@ -19,7 +19,7 @@ func GetAgentCommands(uuid string) (infoAppend []types.AgentCommands, err error)
 		"CommandUUID", 
 		"Output"
 	FROM "Commands"
-	WHERE "UUID"= $1 AND "CommandType" = 'shell'
+	WHERE "UUID"= $1
 	ORDER BY "CommandID" asc;
 	`
 	row, err := db.Query(FetchSQL, uuid)
@@ -42,8 +42,8 @@ func GetAgentCommands(uuid string) (infoAppend []types.AgentCommands, err error)
 }
 
 func FetchNextCommand(uuid string) types.CommandResponse {
-    var info types.CommandResponse
-    query := `
+	var info types.CommandResponse
+	query := `
         SELECT 
             "Commands"."UUID", 
             "Commands"."CommandType", 
@@ -56,23 +56,23 @@ func FetchNextCommand(uuid string) types.CommandResponse {
         LIMIT 1;
     `
 
-    row := db.QueryRow(query, uuid)
-    err := row.Scan(
-        &info.AgentID,
-        &info.CommandType,
-        &info.Command,
-        &info.CommandID,
-    )
-    if err == sql.ErrNoRows {
-        logger.Logf(logger.Info, "No commands available for agent: %s\n", uuid)
-        return info
-    } else if err != nil {
-        logger.Logf(logger.Error, "Error fetching command for agent: %v\n", err)
-        return info
-    }
+	row := db.QueryRow(query, uuid)
+	err := row.Scan(
+		&info.AgentID,
+		&info.CommandType,
+		&info.Command,
+		&info.CommandID,
+	)
+	if err == sql.ErrNoRows {
+		logger.Logf(logger.Info, "No commands available for agent: %s\n", uuid)
+		return info
+	} else if err != nil {
+		logger.Logf(logger.Error, "Error fetching command for agent: %v\n", err)
+		return info
+	}
 
-    logger.Logf(logger.Info, "Fetched command %s for agent %s\n", info.Command, uuid)
-    return info
+	logger.Logf(logger.Info, "Fetched command %s for agent %s\n", info.Command, uuid)
+	return info
 }
 
 func SendAgentCommand(uuid string, result string, CommandType string, Command string, CommandUUID string) {
@@ -93,5 +93,3 @@ func SendAgentCommand(uuid string, result string, CommandType string, Command st
 	}
 	logger.Logf(logger.Info, "Agent %s Reveived New Command \n", uuid)
 }
-
-

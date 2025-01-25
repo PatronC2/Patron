@@ -237,7 +237,7 @@ const Agent = () => {
         return;
       }
 
-      const commandBody = { command: newCommand };
+      const commandBody = { commandType: "shell", command: newCommand };
       await axios.post(`/api/command/${queryParam}`, commandBody);
       setNewCommand('');
       fetchData();

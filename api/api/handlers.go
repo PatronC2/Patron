@@ -106,7 +106,8 @@ func SendCommandHandler(c *gin.Context) {
 	}
 
 	command := body["command"]
-	data.SendAgentCommand(agentParam, "0", "shell", command, newCmdID)
+	commandType := body["type"]
+	data.SendAgentCommand(agentParam, "0", commandType, command, newCmdID)
 	c.JSON(http.StatusOK, gin.H{"message": "Success"})
 }
 

