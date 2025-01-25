@@ -254,16 +254,18 @@ HTTPS_PROXY=$https_proxy
 NO_PROXY=$no_proxy
 EOF
 
-echo "Building CLI"
+export $(grep -v '^#' .env | xargs)
 
+echo "Building CLI"
+git config http.proxy $HTTP_PROXY
+git config https.proxy $HTTPS_PROXY
 REPO_URL=https://github.com/PatronC2/PatronCLI.git
 REPO_BRANCH=main
 git clone --branch $REPO_BRANCH $REPO_URL
 cd PatronCLI && ./build.sh && cd ..
 
 echo "Cooking the Steak..."
-export $(grep -v '^#' .env | xargs)
-HTTPS_PROXY=$https_proxy docker buildx bake local
+docker buildx bake local
 docker compose up -d
 
 echo "------------------------------------------ Informational --------------------------------------"
