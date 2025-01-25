@@ -291,8 +291,6 @@ EOF
 export $(grep -v '^#' .env | xargs)
 
 echo "Building CLI"
-git config http.proxy $HTTP_PROXY
-git config https.proxy $HTTPS_PROXY
 REPO_URL=https://github.com/PatronC2/PatronCLI.git
 REPO_BRANCH=main
 git clone --branch $REPO_BRANCH $REPO_URL
