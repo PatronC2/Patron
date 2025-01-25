@@ -94,14 +94,18 @@ daemon_file="/etc/docker/daemon.json"
 desired_config='{"ipv6": true, "fixed-cidr-v6": "2001:db8:1::/64"}'
 
 if [ -f "$daemon_file" ]; then
-    current_config=$(cat "$daemon_file" | jq -c .)
-    if [ "$current_config" != "$desired_config" ]; then
-        echo "$desired_config" > "$daemon_file"
+    current_config=$(jq -c . < "$daemon_file" 2>/dev/null || echo "{}")
+    normalized_desired_config=$(echo "$desired_config" | jq -c .)
+
+    if [ "$current_config" != "$normalized_desired_config" ]; then
+        echo "Updating Docker daemon.json..."
+        echo "$normalized_desired_config" > "$daemon_file"
         systemctl restart docker
     else
         echo "Docker daemon.json already configured as desired. Skipping update and restart."
     fi
 else
+    echo "Creating Docker daemon.json with desired configuration..."
     echo "$desired_config" > "$daemon_file"
     systemctl restart docker
 fi
