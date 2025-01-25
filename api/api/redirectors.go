@@ -122,13 +122,13 @@ docker run -d \
 	-p $external_redirector_port:$redirector_port \
 	-e MAIN_SERVER_IP="%s" \
 	-e MAIN_SERVER_PORT="%s" \
-	-e FORWARDER_PORT="%s" \
+	-e FORWARDER_PORT="$redirector_port" \
 	-e LINKING_KEY="$linking_key" \
 	-e API_IP="$api_ip" \
 	-e API_PORT="$api_port" \
 	-v ./logs:/app/logs \
 	patron-redirector
-`, newRedirectorID, api_ip, api_port, redirector_port, body["ListenPort"], body["ForwardIP"], body["ForwardPort"], body["ListenPort"])
+`, newRedirectorID, api_ip, api_port, redirector_port, body["ListenPort"], body["ForwardIP"], body["ForwardPort"])
 
 		logger.Logf(logger.Info, "Running command: %s", commandString)
 		cmd := exec.Command("sh", "-c", commandString)
