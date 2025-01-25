@@ -249,7 +249,9 @@ REACT_SERVER_IP=$reactclientip
 HOST=$reactclientip
 PORT=$reactclientport
 REDIRECTOR_PORT=$redirectorport
+HTTP_PROXY=$http_proxy
 HTTPS_PROXY=$https_proxy
+NO_PROXY=$no_proxy
 EOF
 
 echo "Building CLI"
@@ -261,7 +263,7 @@ cd PatronCLI && ./build.sh && cd ..
 
 echo "Cooking the Steak..."
 export $(grep -v '^#' .env | xargs)
-docker buildx bake local
+HTTPS_PROXY=$https_proxy docker buildx bake local
 docker compose up -d
 
 echo "------------------------------------------ Informational --------------------------------------"
