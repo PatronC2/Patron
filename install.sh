@@ -295,6 +295,7 @@ REPO_URL=https://github.com/PatronC2/PatronCLI.git
 REPO_BRANCH=main
 git clone --branch $REPO_BRANCH $REPO_URL
 cd PatronCLI && ./build.sh && cd ..
+rm -rf PatronCLI
 
 echo "Cooking the Steak..."
 docker buildx bake local
