@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"regexp"
 
@@ -72,27 +73,31 @@ func UpdateAgentHandler(c *gin.Context) {
 		return
 	}
 
-	vsvrIP := regexp.MustCompile(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`)
-	vsvrPort := regexp.MustCompile(`^(6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`)
-	vfrequency := regexp.MustCompile(`^\d{1,5}$`)
-	vcallbackfrequency := vfrequency.MatchString(body["callbackfreq"])
-	vjitter := regexp.MustCompile(`^\d{1,5}$`)
-	vcallbackjitter := vjitter.MatchString(body["callbackjitter"])
-
-	if !vsvrIP.MatchString(body["serverip"]) {
-		fmt.Println("Invalid server IP address")
+	if net.ParseIP(body["serverip"]) == nil {
+		c.JSON(http.StatusOK, gin.H{"error": "Invalid IP address"})
 		return
-	} else if !vsvrPort.MatchString(body["serverport"]) {
-		fmt.Println("Invalid server port")
-		return
-	} else if !vcallbackfrequency {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Callback Frequency, Max 99999"})
-	} else if !vcallbackjitter {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Callback Jitter, Max 100"})
-	} else {
-		data.UpdateAgentConfig(agentParam, body["serverip"], body["serverport"], body["callbackfreq"], body["callbackjitter"])
-		c.JSON(http.StatusOK, gin.H{"message": "Success"})
 	}
+
+	vsvrPort := regexp.MustCompile(`^(6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`)
+	if !vsvrPort.MatchString(body["serverport"]) {
+		c.JSON(http.StatusOK, gin.H{"error": "Invalid server port"})
+		return
+	}
+
+	vfrequency := regexp.MustCompile(`^\d{1,5}$`)
+	if !vfrequency.MatchString(body["callbackfreq"]) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Callback Frequency, Max 99999"})
+		return
+	}
+
+	vjitter := regexp.MustCompile(`^\d{1,5}$`)
+	if !vjitter.MatchString(body["callbackjitter"]) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Callback Jitter, Max 99999"})
+		return
+	}
+
+	data.UpdateAgentConfig(agentParam, body["serverip"], body["serverport"], body["callbackfreq"], body["callbackjitter"])
+	c.JSON(http.StatusOK, gin.H{"message": "Success"})
 }
 
 func SendCommandHandler(c *gin.Context) {
