@@ -10,6 +10,17 @@
             "github.com/armon/go-socks5"
         ]
     },
+    "linux/keylogger-v2": {
+        "type": "Linux With Keylogger v2",
+        "description": "requires root",
+        "code_path": "linux/keylogger-v2/client.go",
+        "flags": "-trimpath -ldflags",
+        "environment": "CGO_ENABLED=0",
+        "file_suffix": "",
+        "dependencies":[
+            "github.com/armon/go-socks5"
+        ]
+    },
     "linux/unprivileged": {
         "type": "Linux Original",
         "description": "linux unprivileged",
