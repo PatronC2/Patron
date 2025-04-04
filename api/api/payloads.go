@@ -67,7 +67,8 @@ func CreatePayloadHandler(c *gin.Context) {
 	}
 
 	tag := strings.Split(newPayID, "-")
-	concat := body["name"] + "_" + tag[0] + config.FileSuffix
+	payload_name := body["name"] + "_" + tag[0]
+	concat := payload_name + config.FileSuffix
 
 	dependencyCommands := ""
 	for _, dep := range config.Dependencies {
@@ -104,7 +105,7 @@ func CreatePayloadHandler(c *gin.Context) {
 	}
 
 	if body["compression"] == "upx" {
-		upxCommand := fmt.Sprintf("upx --best --lzma /app/payloads/%s%s", concat, config.FileSuffix)
+		upxCommand := fmt.Sprintf("upx --best --lzma /app/payloads/%s", concat)
 		fmt.Printf("Running UPX command: %s", upxCommand)
 		upxCmd := exec.Command("sh", "-c", upxCommand)
 		upxCmd.Stdout = os.Stdout
@@ -112,6 +113,25 @@ func CreatePayloadHandler(c *gin.Context) {
 		err = upxCmd.Run()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "UPX compression failed", "details": err.Error()})
+			return
+		}
+	}
+
+	if body["shellcode"] == "donut" {
+		shellcode_file := payload_name + ".bin"
+		donutCommand := fmt.Sprintf(
+			"docker run --rm -v %s/payloads:/opt/donut/payloads -w /opt/donut/payloads patron-donut -f 1 --arch:3 -o %s -i %s",
+			repo_dir,
+			shellcode_file,
+			concat,
+		)
+		fmt.Printf("Running Donut command: %s", donutCommand)
+		donutCmd := exec.Command("sh", "-c", donutCommand)
+		donutCmd.Stdout = os.Stdout
+		donutCmd.Stderr = os.Stderr
+		err = donutCmd.Run()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Donut failed", "details": err.Error()})
 			return
 		}
 	}
@@ -150,6 +170,10 @@ func validateBody(body map[string]string) error {
 
 	if body["compression"] != "none" && body["compression"] != "upx" {
 		return fmt.Errorf("logging must be either 'none' or 'upx'")
+	}
+
+	if body["shellcode"] != "none" && body["shellcode"] != "donut" {
+		return fmt.Errorf("shellcode must be either 'none' or 'donut'")
 	}
 
 	return nil

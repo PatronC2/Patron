@@ -20,6 +20,7 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
         callbackjitter: '80',
         logging: 'false',
         compression: 'none',
+        shellcode: 'none'
     });
     const [availableTypes, setAvailableTypes] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -212,6 +213,18 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
                     >
                         <option value="none">None</option>
                         <option value="upx">UPX</option>
+                    </select>
+                </div>
+                <div>
+                    <label htmlFor="shellcode">Gernerate Shellcode?:</label>
+                    <select
+                        id="shellcode"
+                        name="shellcode"
+                        value={formData.shellcode}
+                        onChange={handleChange}
+                    >
+                        <option value="none">None</option>
+                        <option value="donut">Donut</option>
                     </select>
                 </div>
                 <button type="submit" disabled={loading}>
