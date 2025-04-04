@@ -13,7 +13,6 @@ import (
 	"github.com/google/uuid"
 )
 
-
 func GetRedirectorsHandler(c *gin.Context) {
 	redirectors, err := data.GetRedirectors()
 	if err != nil {
@@ -24,10 +23,10 @@ func GetRedirectorsHandler(c *gin.Context) {
 }
 
 func CreateRedirectorHandler(c *gin.Context) {
-	api_ip			:= os.Getenv("REACT_APP_NGINX_IP")
-	api_port		:= os.Getenv("REACT_APP_NGINX_PORT")
+	api_ip := os.Getenv("REACT_APP_NGINX_IP")
+	api_port := os.Getenv("REACT_APP_NGINX_PORT")
 	// redirector_port is static, we can use docker networking to set the host port at runtime
-	redirector_port	:= os.Getenv("REDIRECTOR_PORT")
+	redirector_port := os.Getenv("REDIRECTOR_PORT")
 
 	newRedirectorID := uuid.New().String()
 	var body map[string]string
@@ -36,9 +35,9 @@ func CreateRedirectorHandler(c *gin.Context) {
 		return
 	}
 
-	vForwardIP, _	:= regexp.MatchString(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`, body["ForwardIP"])	
-	vForwardPort, _	:= regexp.MatchString(`^(6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`, body["ForwardPort"])
-	vListenPort, _	:= regexp.MatchString(`^(6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`, body["ListenPort"])
+	vForwardIP, _ := regexp.MatchString(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`, body["ForwardIP"])
+	vForwardPort, _ := regexp.MatchString(`^(6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`, body["ForwardPort"])
+	vListenPort, _ := regexp.MatchString(`^(6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`, body["ListenPort"])
 
 	if !vForwardIP {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ForwardIP"})
@@ -91,9 +90,25 @@ else
 	sudo docker --version
 fi
 
-echo '{"ipv6": true, "fixed-cidr-v6": "2001:db8:1::/64"}" > /etc/docker/daemon.json '
+daemon_file="/etc/docker/daemon.json"
+desired_config='{"ipv6": true, "fixed-cidr-v6": "2001:db8:1::/64"}'
 
-systemctl restart docker
+if [ -f "$daemon_file" ]; then
+    current_config=$(jq -c . < "$daemon_file" 2>/dev/null || echo "{}")
+    normalized_desired_config=$(echo "$desired_config" | jq -c .)
+
+    if [ "$current_config" != "$normalized_desired_config" ]; then
+        echo "Updating Docker daemon.json..."
+        echo "$normalized_desired_config" > "$daemon_file"
+        systemctl restart docker
+    else
+        echo "Docker daemon.json already configured as desired. Skipping update and restart."
+    fi
+else
+    echo "Creating Docker daemon.json with desired configuration..."
+    echo "$desired_config" > "$daemon_file"
+    systemctl restart docker
+fi
 
 if [ -x "$wget" ]; then
     echo "wget Check OK"
@@ -107,13 +122,13 @@ docker run -d \
 	-p $external_redirector_port:$redirector_port \
 	-e MAIN_SERVER_IP="%s" \
 	-e MAIN_SERVER_PORT="%s" \
-	-e FORWARDER_PORT="%s" \
+	-e FORWARDER_PORT="$redirector_port" \
 	-e LINKING_KEY="$linking_key" \
 	-e API_IP="$api_ip" \
 	-e API_PORT="$api_port" \
 	-v ./logs:/app/logs \
 	patron-redirector
-`, newRedirectorID, api_ip, api_port, redirector_port, body["ListenPort"], body["ForwardIP"], body["ForwardPort"], body["ListenPort"])
+`, newRedirectorID, api_ip, api_port, redirector_port, body["ListenPort"], body["ForwardIP"], body["ForwardPort"])
 
 		logger.Logf(logger.Info, "Running command: %s", commandString)
 		cmd := exec.Command("sh", "-c", commandString)
@@ -142,5 +157,5 @@ func RedirectorStatusHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error"})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"message": "Success"})
-	}	
+	}
 }

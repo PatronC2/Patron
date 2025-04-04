@@ -39,6 +39,7 @@ func loadConfigurations(filePath string) (types.PayloadConfigurations, error) {
 func CreatePayloadHandler(c *gin.Context) {
 	publickey := os.Getenv("PUBLIC_KEY")
 	repo_dir := os.Getenv("REPO_DIR")
+	docker_https_proxy := os.Getenv("DOCKER_HTTPS_PROXY")
 
 	configs, err := loadConfigurations("payloads.json")
 	if err != nil {
@@ -75,10 +76,11 @@ func CreatePayloadHandler(c *gin.Context) {
 	}
 
 	commandString := fmt.Sprintf(
-		"docker run --rm -v %s:/build -w /build golang:1.22.3 sh -c '"+
+		"docker run --rm -v %s:/build -w /build -e HTTPS_PROXY=%s golang:1.23.3 sh -c '"+
 			"%s env %s go build %s \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s -X main.LoggingEnabled=%s\" "+
 			"-o /build/payloads/%s /build/client/%s'",
 		repo_dir,
+		docker_https_proxy,
 		dependencyCommands,
 		config.Environment,
 		config.Flags,

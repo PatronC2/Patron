@@ -4,27 +4,45 @@
         "description": "requires root",
         "code_path": "linux/privileged/client.go",
         "flags": "-trimpath -ldflags",
-        "environment": "",
-        "file_suffix": ""
+        "environment": "CGO_ENABLED=0",
+        "file_suffix": "",
+        "dependencies":[
+            "github.com/armon/go-socks5"
+        ]
+    },
+    "linux/keylogger-v2": {
+        "type": "Linux With Keylogger v2",
+        "description": "requires root",
+        "code_path": "linux/keylogger-v2/client.go",
+        "flags": "-trimpath -ldflags",
+        "environment": "CGO_ENABLED=0",
+        "file_suffix": "",
+        "dependencies":[
+            "github.com/armon/go-socks5"
+        ]
     },
     "linux/unprivileged": {
         "type": "Linux Original",
         "description": "linux unprivileged",
         "code_path": "linux/unprivileged/client.go",
         "flags": "-trimpath -ldflags",
-        "environment": "",
-        "file_suffix": ""
+        "environment": "CGO_ENABLED=0",
+        "file_suffix": "",
+        "dependencies":[
+            "github.com/armon/go-socks5"
+        ]
     },
     "windows/unprivileged": {
         "type": "Windows Original",
         "description": "windows unprivileged",
         "code_path": "windows/unprivileged/client.go",
         "flags": "-trimpath -ldflags",
-        "environment": "GOOS=windows GOARCH=amd64",
+        "environment": "GOOS=windows GOARCH=amd64 CGO_ENABLED=0",
         "file_suffix": ".exe",
         "dependencies": [
             "github.com/TheTitanrain/w32",
-            "github.com/kardianos/service"
+            "github.com/kardianos/service",
+            "github.com/armon/go-socks5"
         ]
     },
     "windows/privileged": {
@@ -32,11 +50,12 @@
         "description": "windows keylogger",
         "code_path": "windows/privileged/client.go",
         "flags": "-trimpath -ldflags",
-        "environment": "GOOS=windows GOARCH=amd64",
+        "environment": "GOOS=windows GOARCH=amd64 CGO_ENABLED=0",
         "file_suffix": ".exe",
         "dependencies": [
             "github.com/TheTitanrain/w32",
-            "github.com/kardianos/service"
+            "github.com/kardianos/service",
+            "github.com/armon/go-socks5"
         ]
     },
     "windows/test": {
