@@ -3,10 +3,10 @@ package logger
 
 import (
 	"fmt"
-	"strings"	
 	"io"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -56,10 +56,11 @@ var MapTypesToPrefix = map[logType]string{
 }
 
 var (
-	enabled = true // Whether logging is enabled
-	logFile *os.File
-	logger  *log.Logger
-	mu      sync.Mutex
+	enabled                 = true
+	currentLogLevel logType = Info
+	logFile         *os.File
+	logger          *log.Logger
+	mu              sync.Mutex
 )
 
 // EnableLogging enables or disables logging globally.
@@ -67,6 +68,29 @@ func EnableLogging(flag bool) {
 	mu.Lock()
 	defer mu.Unlock()
 	enabled = flag
+}
+
+// SetLogLevel sets the current minimum log level to show
+func SetLogLevel(level logType) {
+	mu.Lock()
+	defer mu.Unlock()
+	currentLogLevel = level
+}
+
+// SetLogLevelByName sets the log level using a string (e.g., "info", "error").
+func SetLogLevelByName(level string) {
+	switch strings.ToLower(level) {
+	case "debug":
+		SetLogLevel(Debug)
+	case "info":
+		SetLogLevel(Info)
+	case "warning":
+		SetLogLevel(Warning)
+	case "error":
+		SetLogLevel(Error)
+	default:
+		SetLogLevel(Info)
+	}
 }
 
 // SetLogFile sets the file to which logs will be written.
@@ -83,8 +107,13 @@ func SetLogFile(filename string) error {
 		return err
 	}
 
+	logFile = file
 	logger = log.New(io.MultiWriter(os.Stdout, file), "", log.LstdFlags)
 	return nil
+}
+
+func shouldLog(level logType) bool {
+	return level <= currentLogLevel
 }
 
 // Log a timestamped message with a given logType.
@@ -92,7 +121,7 @@ func Log(messageType logType, messages ...string) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	if enabled {
+	if enabled && shouldLog(messageType) {
 		fmt.Printf("%s (%s) - %s\n",
 			MapTypesToPrefix[messageType],
 			time.Now().Format(time.RFC3339),
@@ -101,68 +130,50 @@ func Log(messageType logType, messages ...string) {
 	}
 }
 
-// `Log()` that functions like `fmt.Printf()`.
+// Logf functions like fmt.Printf for a given logType.
 func Logf(messageType logType, format string, data ...interface{}) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	if enabled {
+	if enabled && shouldLog(messageType) {
 		logString := fmt.Sprintf("%s (%s) - %s",
 			MapTypesToPrefix[messageType],
 			time.Now().Format(time.RFC3339),
 			MapTypesToColor[messageType].Sprintf(format, data...),
-		)		
-		// // Print to console and log file
-		// fmt.Println(logString1)
-
+		)
 		if logger != nil {
 			logger.Print(logString)
 		}
 	}
 }
 
-// `Log()` without a timestamp.
+// LogPlain logs a message without a timestamp.
 func LogPlain(messageType logType, messages ...string) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	if enabled {
+	if enabled && shouldLog(messageType) {
 		fmt.Printf("%s %s\n", MapTypesToPrefix[messageType], MapTypesToColor[messageType].Sprint(strings.Join(messages, " ")))
 	}
 }
 
-// Return the `log()` string instead of printing it.
+// LogReturn returns the formatted log string instead of printing it.
 func LogReturn(messageType logType, messages ...string) string {
 	mu.Lock()
 	defer mu.Unlock()
 
-	if enabled {
+	if enabled && shouldLog(messageType) {
 		return fmt.Sprintf("%s (%s) - %s",
 			MapTypesToPrefix[messageType],
 			time.Now().Format(time.RFC3339),
 			MapTypesToColor[messageType].Sprint(strings.Join(messages, " ")),
 		)
-	} else{
+	} else {
 		return ""
 	}
 }
 
-// func LogRaw(messageType logType, messages ...interface{}) string {
-// 	mu.Lock()
-// 	defer mu.Unlock()
-
-// 	if enabled {
-// 		return fmt.Sprintf("%s (%s) - %v",
-// 			MapTypesToPrefix[messageType],
-// 			time.Now().Format(time.RFC3339),
-// 			MapTypesToColor[messageType].Sprint(strings.Join(messages, " ")),
-// 		)
-// 	} else {
-// 		return
-// 	}
-// }
-
-// Log the error string
+// LogError logs the provided error as an error message.
 func LogError(err error) {
 	Log(Error, err.Error())
 }

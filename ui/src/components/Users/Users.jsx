@@ -3,6 +3,7 @@ import axios from '../../api/axios';
 import AuthContext from '../../context/AuthProvider';
 import NewUserForm from './NewUser';
 import ChangePasswordForm from './ModifyUser';
+import LogLevelSettings from './LogLevelSettings';
 import './Users.css';
 
 const Users = () => {
@@ -118,6 +119,18 @@ const Users = () => {
                     >
                         Create New User
                     </button>
+                    <button
+                        className={activeTab === 'server_settings' ? 'active' : ''}
+                        onClick={() => handleTabChange('server_settings')}
+                    >
+                        Server Settings
+                    </button>
+                    <button
+                        className={activeTab === 'api_settings' ? 'active' : ''}
+                        onClick={() => handleTabChange('api_settings')}
+                    >
+                        API Settings
+                    </button>
                 </div>
             </div>
             {activeTab === 'current_users' ? (
@@ -155,9 +168,12 @@ const Users = () => {
                     <h2>Edit User: {selectedUser.Username}</h2>
                     <ChangePasswordForm username={selectedUser.Username} setActiveTab={setActiveTab} />
                 </div>
+            ) : activeTab === 'server_settings' ? (
+                <LogLevelSettings appName="server" />
+            ) : activeTab === 'api_settings' ? (
+                <LogLevelSettings appName="api" />
             ) : (
-                <div>
-                </div>
+                <div></div>
             )}
             {notification && (
                 <div className={`notification ${notificationType}`}>
