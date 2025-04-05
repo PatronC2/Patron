@@ -142,7 +142,12 @@ function prereq_app_check {
    else
       echo "Docker is not installed. Checking if I can install it for you."
       if which apt-get &>/dev/null; then
-         sudo ./install-docker-ubuntu.sh || { echo "Failed to install Docker on Ubuntu."; exit 1; }
+         echo "Attempting to install Docker on Ubuntu..."
+         HTTP_PROXY="$HTTP_PROXY" HTTPS_PROXY="$HTTPS_PROXY" http_proxy="$HTTP_PROXY" https_proxy="$HTTPS_PROXY" NO_PROXY="$NO_PROXY" \
+         ./install-docker-ubuntu.sh || {
+            echo "Failed to install Docker on Ubuntu.";
+            exit 1;
+         }
       else
          echo "Error: Can't install Docker for you. Please install it manually."
          exit 1
