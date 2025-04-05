@@ -30,3 +30,28 @@ func SetLogLevel(appName string, level string) error {
 	_, err := db.Exec(query, appName, level)
 	return err
 }
+
+func GetLogFileMaxSize(app string) (int64, error) {
+	var size int64
+	query := `
+		SELECT log_file_max_size
+		FROM configs
+		WHERE application = $1
+	`
+	err := db.QueryRow(query, app).Scan(&size)
+	if err == sql.ErrNoRows {
+		return 0, nil
+	}
+	return size, err
+}
+
+func SetLogFileMaxSize(appName string, size int64) error {
+	query := `
+        INSERT INTO configs (application, log_file_max_size)
+        VALUES ($1, $2)
+        ON CONFLICT (application)
+        DO UPDATE SET log_file_max_size = EXCLUDED.log_file_max_size;
+    `
+	_, err := db.Exec(query, appName, size)
+	return err
+}

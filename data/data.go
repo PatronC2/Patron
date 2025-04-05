@@ -240,7 +240,8 @@ func InitDatabase() {
 	ConfigSQL := `
 	CREATE TABLE IF NOT EXISTS configs (
 		application TEXT PRIMARY KEY,
-		log_level TEXT
+		log_level TEXT,
+		log_file_max_size BIGINT
 	);
 	`
 	_, err = db.Exec(ConfigSQL)
@@ -248,10 +249,10 @@ func InitDatabase() {
 		log.Fatal(err.Error())
 	}
 	insertDefaults := `
-	INSERT INTO configs (application, log_level)
+	INSERT INTO configs (application, log_level, log_file_max_size)
 	VALUES 
-		('api', 'info'),
-		('server', 'info')
+		('api', 'info', 10485760),
+		('server', 'info', 10485760)
 	ON CONFLICT (application) DO NOTHING;
 	`
 	_, err = db.Exec(insertDefaults)

@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/PatronC2/Patron/data"
+	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -93,7 +94,7 @@ func CreatePayloadHandler(c *gin.Context) {
 		config.CodePath,
 	)
 
-	fmt.Printf("Running build command: %s", commandString)
+	logger.Logf(logger.Debug, "Running build command: %s", commandString)
 	cmd := exec.Command("sh", "-c", commandString)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -105,7 +106,7 @@ func CreatePayloadHandler(c *gin.Context) {
 
 	if body["compression"] == "upx" {
 		upxCommand := fmt.Sprintf("upx --best --lzma /app/payloads/%s%s", concat, config.FileSuffix)
-		fmt.Printf("Running UPX command: %s", upxCommand)
+		logger.Logf(logger.Debug, "Running UPX command: %s", upxCommand)
 		upxCmd := exec.Command("sh", "-c", upxCommand)
 		upxCmd.Stdout = os.Stdout
 		upxCmd.Stderr = os.Stderr

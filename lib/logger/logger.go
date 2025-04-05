@@ -177,3 +177,55 @@ func LogReturn(messageType logType, messages ...string) string {
 func LogError(err error) {
 	Log(Error, err.Error())
 }
+
+func TruncateLogFileIfTooLarge(maxBytes int64) error {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if logFile == nil {
+		return fmt.Errorf("log file not initialized")
+	}
+
+	info, err := logFile.Stat()
+	if err != nil {
+		return err
+	}
+
+	if info.Size() <= maxBytes {
+		return nil
+	}
+
+	offset := info.Size() / 2
+	filePath := logFile.Name()
+
+	logFile.Close()
+
+	readFile, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer readFile.Close()
+
+	_, err = readFile.Seek(offset, io.SeekStart)
+	if err != nil {
+		return err
+	}
+
+	remaining, err := io.ReadAll(readFile)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(filePath, remaining, 0644)
+	if err != nil {
+		return err
+	}
+
+	logFile, err = os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	logger = log.New(io.MultiWriter(os.Stdout, logFile), "", log.LstdFlags)
+
+	return nil
+}

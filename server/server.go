@@ -104,7 +104,9 @@ func Refresh(appName string) {
 		defer ticker.Stop()
 
 		for range ticker.C {
+			logger.Logf(logger.Info, "Refreshing settings")
 			refreshLogLevel(appName)
+			refreshLogTruncation(appName)
 		}
 	}()
 }
@@ -122,6 +124,20 @@ func refreshLogLevel(appName string) {
 	} else {
 		logger.SetLogLevelByName(level)
 		logger.Logf(logger.Debug, "Log level for '%s' set to '%s'", appName, level)
+	}
+}
+
+func refreshLogTruncation(app string) {
+	size, err := data.GetLogFileMaxSize(app)
+	if err != nil {
+		logger.Logf(logger.Error, "Failed to get log size limit: %v", err)
+		return
+	}
+	if size > 0 {
+		err := logger.TruncateLogFileIfTooLarge(size)
+		if err != nil {
+			logger.Logf(logger.Error, "Failed to truncate log file: %v", err)
+		}
 	}
 }
 
