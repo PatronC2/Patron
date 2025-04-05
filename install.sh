@@ -272,10 +272,11 @@ docker rm "$CID" > /dev/null
 chmod +x "$INSTALL_PATH/$BINARY_NAME"
 echo "✅ Installed $BINARY_NAME to $INSTALL_PATH"
 
-echo "Pulling redirector container"
+echo "Pulling redirector image"
 TAG="latest"
 IMAGE="patronc2/redirector:$TAG"
-echo "✅ Fetched redirector container"
+docker pull $IMAGE
+echo "✅ Fetched redirector image"
 
 echo "Starting Patron C2"
 docker compose up -d

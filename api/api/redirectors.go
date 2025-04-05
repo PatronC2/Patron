@@ -46,7 +46,7 @@ func CreateRedirectorHandler(c *gin.Context) {
 	} else if !vListenPort {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ListenPort"})
 	} else {
-		commandString := "docker save -o /app/payloads/redirector.tar redirector"
+		commandString := "docker save -o /app/payloads/redirector.tar patronc2/redirector"
 		script := fmt.Sprintf(`#!/bin/bash -xe
 
 linking_key="%s"
@@ -127,7 +127,7 @@ docker run -d \
 	-e API_IP="$api_ip" \
 	-e API_PORT="$api_port" \
 	-v ./logs:/app/logs \
-	redirector
+	patronc2/redirector
 `, newRedirectorID, api_ip, api_port, redirector_port, body["ListenPort"], body["ForwardIP"], body["ForwardPort"])
 
 		logger.Logf(logger.Info, "Running command: %s", commandString)
