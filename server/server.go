@@ -6,12 +6,13 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
 
 	"github.com/PatronC2/Patron/data"
+	"github.com/PatronC2/Patron/lib/common"
+	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/server/handlers"
 	"github.com/PatronC2/Patron/types"
-	"github.com/PatronC2/Patron/lib/logger"
-	"github.com/PatronC2/Patron/lib/common"
 )
 
 func (s *Server) handleConnection(conn net.Conn) {
@@ -76,16 +77,16 @@ func (s *Server) Start() {
 func NewServer() *Server {
 	common.RegisterGobTypes()
 
-    return &Server{
-        handlers: map[types.RequestType]Handler{
-            types.ConfigurationRequestType:		&handlers.ConfigurationHandler{},
-			types.CommandRequestType:			&handlers.CommandHandler{},
-			types.CommandStatusRequestType:		&handlers.CommandStatusHandler{},
-			types.KeysRequestType:				&handlers.KeysHandler{},
-			types.FileRequestType:				&handlers.FileRequestHandler{},
-			types.FileToServerType:				&handlers.FileToServerHandler{},
-        },
-    }
+	return &Server{
+		handlers: map[types.RequestType]Handler{
+			types.ConfigurationRequestType: &handlers.ConfigurationHandler{},
+			types.CommandRequestType:       &handlers.CommandHandler{},
+			types.CommandStatusRequestType: &handlers.CommandStatusHandler{},
+			types.KeysRequestType:          &handlers.KeysHandler{},
+			types.FileRequestType:          &handlers.FileRequestHandler{},
+			types.FileToServerType:         &handlers.FileToServerHandler{},
+		},
+	}
 }
 
 func Init() {
@@ -94,6 +95,49 @@ func Init() {
 	err := logger.SetLogFile("logs/server.log")
 	if err != nil {
 		log.Fatalf("Error setting log file: %v\n", err)
+	}
+}
+
+func Refresh(appName string) {
+	go func() {
+		ticker := time.NewTicker(60 * time.Second)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			logger.Logf(logger.Info, "Refreshing settings")
+			refreshLogLevel(appName)
+			refreshLogTruncation(appName)
+		}
+	}()
+}
+
+func refreshLogLevel(appName string) {
+	level, err := data.GetLogLevel(appName)
+	if err != nil {
+		logger.Logf(logger.Error, "Failed to load log level from DB: %v", err)
+		return
+	}
+
+	if level == "" {
+		logger.Logf(logger.Warning, "No log level found for '%s' — defaulting to 'info'", appName)
+		logger.SetLogLevel(logger.Info)
+	} else {
+		logger.SetLogLevelByName(level)
+		logger.Logf(logger.Debug, "Log level for '%s' set to '%s'", appName, level)
+	}
+}
+
+func refreshLogTruncation(app string) {
+	size, err := data.GetLogFileMaxSize(app)
+	if err != nil {
+		logger.Logf(logger.Error, "Failed to get log size limit: %v", err)
+		return
+	}
+	if size > 0 {
+		err := logger.TruncateLogFileIfTooLarge(size)
+		if err != nil {
+			logger.Logf(logger.Error, "Failed to truncate log file: %v", err)
+		}
 	}
 }
 
@@ -107,9 +151,11 @@ type Server struct {
 }
 
 func main() {
+	appName := "server"
 	Init()
 	data.OpenDatabase()
 	data.InitDatabase()
+	Refresh(appName)
 	server := NewServer()
 	server.Start()
 }

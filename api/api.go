@@ -1,11 +1,12 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/PatronC2/Patron/api/api"
 	"github.com/PatronC2/Patron/data"
@@ -14,16 +15,9 @@ import (
 )
 
 func main() {
+	appName := "api"
 
-	enableLogging := true
-	logger.EnableLogging(enableLogging)
-	// Set the log file
-	logFileName := "logs/api.log"
-	err := logger.SetLogFile(logFileName)
-	if err != nil {
-		fmt.Printf("Error setting log file: %v\n", err)
-		return
-	}
+	Init()
 
 	logger.Logf(logger.Info, "Starting API Server\n")
 
@@ -40,6 +34,9 @@ func main() {
 
 	// Apply CORS middleware
 	r.Use(CORS())
+
+	// Start up config refresher
+	Refresh(appName)
 
 	// host payloads server
 	workDir, _ := os.Getwd()
@@ -58,6 +55,10 @@ func main() {
 	r.POST("/api/admin/users", api.Auth(adminRoles), api.CreateUserHandler)
 	r.DELETE("/api/admin/users/:username", api.Auth(adminRoles), api.DeleteUserByUsernameHandler)
 	r.PUT("/api/admin/users/:username", api.Auth(adminRoles), api.UpdateUserHandler)
+	r.GET("/api/admin/logging", api.Auth(adminRoles), api.GetLogLevelHandler)
+	r.PUT("/api/admin/logging", api.Auth(adminRoles), api.SetLogLevelHandler)
+	r.GET("/api/admin/log-size", api.Auth(adminRoles), api.GetLogFileSizeHandler)
+	r.PUT("/api/admin/log-size", api.Auth(adminRoles), api.SetLogFileSizeHandler)
 
 	// POST / DELETE requests to non-admin areas use Auth(writeRoles)
 	r.POST("/api/updateagent/:agt", api.Auth(writeRoles), api.UpdateAgentHandler)
@@ -113,6 +114,59 @@ func FileServer(r *gin.Engine, path string, root http.FileSystem) {
 		path += "/"
 	}
 	r.StaticFS(path, root)
+}
+
+func Init() {
+	enableLogging := true
+	logger.EnableLogging(enableLogging)
+
+	err := logger.SetLogFile("logs/api.log")
+	if err != nil {
+		log.Fatalf("Error setting log file: %v\n", err)
+	}
+}
+
+func Refresh(appName string) {
+	go func() {
+		ticker := time.NewTicker(60 * time.Second)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			logger.Logf(logger.Info, "Refreshing settings")
+			refreshLogLevel(appName)
+			refreshLogTruncation(appName)
+		}
+	}()
+}
+
+func refreshLogLevel(appName string) {
+	level, err := data.GetLogLevel(appName)
+	if err != nil {
+		logger.Logf(logger.Error, "Failed to load log level from DB: %v", err)
+		return
+	}
+
+	if level == "" {
+		logger.Logf(logger.Warning, "No log level found for '%s' — defaulting to 'info'", appName)
+		logger.SetLogLevel(logger.Info)
+	} else {
+		logger.SetLogLevelByName(level)
+		logger.Logf(logger.Debug, "Log level for '%s' set to '%s'", appName, level)
+	}
+}
+
+func refreshLogTruncation(app string) {
+	size, err := data.GetLogFileMaxSize(app)
+	if err != nil {
+		logger.Logf(logger.Error, "Failed to get log size limit: %v", err)
+		return
+	}
+	if size > 0 {
+		err := logger.TruncateLogFileIfTooLarge(size)
+		if err != nil {
+			logger.Logf(logger.Error, "Failed to truncate log file: %v", err)
+		}
+	}
 }
 
 func CORS() gin.HandlerFunc {

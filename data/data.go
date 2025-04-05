@@ -237,4 +237,28 @@ func InitDatabase() {
 	}
 	logger.Logf(logger.Info, "Redirectors table initialized\n")
 
+	ConfigSQL := `
+	CREATE TABLE IF NOT EXISTS configs (
+		application TEXT PRIMARY KEY,
+		log_level TEXT,
+		log_file_max_size BIGINT
+	);
+	`
+	_, err = db.Exec(ConfigSQL)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	insertDefaults := `
+	INSERT INTO configs (application, log_level, log_file_max_size)
+	VALUES 
+		('api', 'info', 10485760),
+		('server', 'info', 10485760)
+	ON CONFLICT (application) DO NOTHING;
+	`
+	_, err = db.Exec(insertDefaults)
+	if err != nil {
+		log.Fatal(err)
+	}
+	logger.Logf(logger.Info, "configs table initialized\n")
+
 }

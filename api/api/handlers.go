@@ -1,12 +1,12 @@
 package api
 
 import (
-	"fmt"
 	"net"
 	"net/http"
 	"regexp"
 
 	"github.com/PatronC2/Patron/data"
+	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -37,7 +37,7 @@ func GetGroupAgentsByIP(c *gin.Context) {
 func GetOneAgentByUUID(c *gin.Context) {
 	// Get agents by UUID
 	uuid := c.Param("agt")
-	fmt.Println("Trying to find agent", uuid)
+	logger.Logf(logger.Debug, "Trying to find agent %v", uuid)
 	agents, err := data.FetchOneAgent(uuid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agent"})
@@ -54,7 +54,7 @@ func GetOneAgentByUUID(c *gin.Context) {
 func GetAgentCommandsByUUID(c *gin.Context) {
 	// Get agents by UUID
 	uuid := c.Param("agt")
-	fmt.Println("Trying to find agent", uuid)
+	logger.Logf(logger.Debug, "Trying to find agent %v", uuid)
 	agents, err := data.GetAgentCommands(uuid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agent"})

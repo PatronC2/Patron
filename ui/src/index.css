@@ -22,6 +22,8 @@ html {
     --secondary-color: #9e1717;
     --status-online: green;
     --status-offline: red;
+    --success-color: lightgreen;
+    --error-color: red;
     --header-height: 94px
 }
 
@@ -34,6 +36,8 @@ html {
     --secondary-color: #9e1717;
     --status-online: green;
     --status-offline: red;
+    --success-color: #278f2f;
+    --error-color: #c92a2a;
 }
 
 html, body {
