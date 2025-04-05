@@ -161,8 +161,6 @@ function prereq_app_check {
       echo "Docker is not installed. Checking if I can install it for you."
       if which apt-get &>/dev/null; then
          sudo ./install-docker-ubuntu.sh || { echo "Failed to install Docker on Ubuntu."; exit 1; }
-      elif which yum &>/dev/null; then
-         sudo ./install-docker-rh.sh || { echo "Failed to install Docker on Red Hat."; exit 1; }
       else
          echo "Error: Can't install Docker for you. Please install it manually."
          exit 1
@@ -250,7 +248,7 @@ echo "Generating certs..."
 [ ! -d "$PWD/certs" ] && mkdir certs
 rm -rf certs/server.key certs/server.pem
 openssl ecparam -genkey -name prime256v1 -out certs/server.key
-openssl req -new -x509 -key certs/server.key -out certs/server.pem -days 3650 -subj "/C=US/ST=Maryland/L=Towson/O=Case Studies/OU=Offensive Op/CN=example.com"
+openssl req -new -x509 -key certs/server.key -out certs/server.pem -days 3650 -subj "/C=US/ST=Example/L=Example/O=Example/OU=Example/CN=example.com"
 
 # Set environment variables
 echo "Setting environment variables..."
@@ -290,17 +288,30 @@ EOF
 
 export $(grep -v '^#' .env | xargs)
 
-echo "Building CLI"
-REPO_URL=https://github.com/PatronC2/PatronCLI.git
-REPO_BRANCH=main
-git clone --branch $REPO_BRANCH $REPO_URL
-cd PatronCLI && ./build.sh && cd ..
-rm -rf PatronCLI
+echo "Installing Patron CLI"
+PLATFORM=${1:-linux}
+TAG=${2:-latest}
+INSTALL_PATH=${3:-/usr/bin}
+IMAGE="patronc2/cli:$PLATFORM-$TAG"
+BINARY_NAME="patron"
+[ "$PLATFORM" = "windows" ] && BINARY_NAME="patron.exe"
 
-echo "Cooking the Steak..."
+echo "Pulling $IMAGE..."
+docker pull $IMAGE
+
+CID=$(docker create $IMAGE)
+echo "Copying $BINARY_NAME to $INSTALL_PATH"
+docker cp "$CID:/$BINARY_NAME" "$INSTALL_PATH/$BINARY_NAME"
+docker rm "$CID" > /dev/null
+
+chmod +x "$INSTALL_PATH/$BINARY_NAME"
+echo "✅ Installed $BINARY_NAME to $INSTALL_PATH"
+
 docker compose up -d
 
 echo "------------------------------------------ Informational --------------------------------------"
+echo ""
+echo "✅ Patron C2 Install successful"
 echo ""
 echo "Visit https://$nginxip:$nginxport for Web"
 echo ""
