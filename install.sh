@@ -226,9 +226,10 @@ fi
 shift $((OPTIND-1))
 
 set_proxy_variables
-configure_docker_proxy
 
 prereq_app_check
+
+configure_docker_proxy
 
 # Generate certs
 echo "Generating certs..."
