@@ -1,37 +1,9 @@
 variable "TAG" {
-  default = "latest"
+  default = "snapshot"
 }
 
 variable "REGISTRY" {
-  default = "hub.docker.com"
-}
-
-variable "NGINX" {
-  default = "patron-nginx"
-}
-
-variable "POSTGRES" {
-  default = "patron-postgres"
-}
-
-variable "SERVER" {
-  default = "patron-server"
-}
-
-variable "API" {
-  default = "patron-api"
-}
-
-variable "BOT" {
-  default = "patron-bot"
-}
-
-variable "UI" {
-  default = "patron-ui"
-}
-
-variable "REDIRECTOR" {
-  default = "patron-redirector"
+  default = "patronc2"
 }
 
 variable "WEBSERVER_PORT" {
@@ -74,195 +46,190 @@ variable "NO_PROXY" {
   default = ""
 }
 
+target "ui-base" {
+  dockerfile = "Dockerfile.ui"
+  context = "."
+  args = {
+    PORT = "${PORT}"
+    HTTP_PROXY = "${HTTP_PROXY}"
+    HTTPS_PROXY = "${HTTPS_PROXY}"
+    NO_PROXY = "${NO_PROXY}"
+  }
+  tags = [
+    "${REGISTRY}/ui:${TAG}",
+    "${REGISTRY}/ui:latest"
+  ]
+}
+
+target "nginx-base" {
+  dockerfile = "Dockerfile.nginx"
+  context = "."
+  args = {
+    REACT_APP_NGINX_PORT = "${REACT_APP_NGINX_PORT}"
+    HTTP_PROXY = "${HTTP_PROXY}"
+    HTTPS_PROXY = "${HTTPS_PROXY}"
+   NO_PROXY = "${NO_PROXY}"
+  }
+  tags = [
+    "${REGISTRY}/nginx:${TAG}",
+    "${REGISTRY}/nginx:latest"
+  ]
+}
+
+target "redirector-base" {
+  dockerfile = "Dockerfile.redirector"
+  context = "."
+  args = {
+    REDIRECTOR_PORT = "${REDIRECTOR_PORT}"
+    HTTP_PROXY = "${HTTP_PROXY}"
+    HTTPS_PROXY = "${HTTPS_PROXY}"
+    NO_PROXY = "${NO_PROXY}"
+  }
+  tags = [
+    "${REGISTRY}/redirector:${TAG}",
+    "${REGISTRY}/redirector:latest"
+  ]
+}
+
+target "server-base" {
+  dockerfile = "Dockerfile.server"
+  context = "."
+  args = {
+    C2SERVER_PORT = "${C2SERVER_PORT}"
+    HTTP_PROXY = "${HTTP_PROXY}"
+    HTTPS_PROXY = "${HTTPS_PROXY}"
+    NO_PROXY = "${NO_PROXY}"
+  }
+  tags = [
+    "${REGISTRY}/server:${TAG}",
+    "${REGISTRY}/server:latest"
+  ]
+}
+
+target "postgres-base" {
+  dockerfile = "Dockerfile.postgres"
+  context = "."
+  args = {
+    DB_PORT = "${DB_PORT}"
+    HTTP_PROXY = "${HTTP_PROXY}"
+    HTTPS_PROXY = "${HTTPS_PROXY}"
+    NO_PROXY = "${NO_PROXY}"
+  }
+  tags = [
+    "${REGISTRY}/postgres:${TAG}",
+    "${REGISTRY}/postgres:latest"
+  ]
+}
+
+target "api-base" {
+  dockerfile = "Dockerfile.api"
+  context = "."
+  args = {
+    WEBSERVER_PORT = "${WEBSERVER_PORT}"
+    HTTP_PROXY = "${HTTP_PROXY}"
+    HTTPS_PROXY = "${HTTPS_PROXY}"
+    NO_PROXY = "${NO_PROXY}"
+  }
+  tags = [
+    "${REGISTRY}/api:${TAG}",
+    "${REGISTRY}/api:latest"
+  ]
+}
+
+target "bot-base" {
+  dockerfile = "./bot/Dockerfile.bot"
+  context = "."
+  args = {
+    REPO_URL = "https://github.com/PatronC2/PatronCLI.git"
+    REPO_BRANCH = "main"
+    HTTP_PROXY = "${HTTP_PROXY}"
+    HTTPS_PROXY = "${HTTPS_PROXY}"
+    NO_PROXY = "${NO_PROXY}"
+  }
+  tags = [
+    "${REGISTRY}/bot:${TAG}",
+    "${REGISTRY}/bot:latest"
+  ]
+}
+
 target "nginx-local" {
-    dockerfile = "Dockerfile.nginx"
-    context = "."
-    output = ["type=docker"]
-    tags = ["${NGINX}:${TAG}"]
-    args = {
-      REACT_APP_NGINX_PORT = "${REACT_APP_NGINX_PORT}"
-      HTTP_PROXY = "${HTTP_PROXY}"
-      HTTPS_PROXY = "${HTTPS_PROXY}"
-      NO_PROXY = "${NO_PROXY}"
-    }
+  inherits = ["nginx-base"]
+  output = ["type=docker"]
 }
 
 target "postgres-local" {
-    dockerfile = "Dockerfile.postgres"
-    context = "."
-    output = ["type=docker"]
-    tags = ["${POSTGRES}:${TAG}"]
-    args = {
-      DB_PORT = "${DB_PORT}"
-      HTTP_PROXY = "${HTTP_PROXY}"
-      HTTPS_PROXY = "${HTTPS_PROXY}"
-      NO_PROXY = "${NO_PROXY}"
-    }
-}
-
-target "server-local" {
-    dockerfile = "Dockerfile.server"
-    context = "."
-    output = ["type=docker"]
-    tags = ["${SERVER}:${TAG}"]
-    args = {
-      C2SERVER_PORT = "${C2SERVER_PORT}"
-      HTTP_PROXY = "${HTTP_PROXY}"
-      HTTPS_PROXY = "${HTTPS_PROXY}"
-      NO_PROXY = "${NO_PROXY}"
-    }
+  inherits = ["postgres-base"]
+  output = ["type=docker"]
 }
 
 target "api-local" {
-    dockerfile = "Dockerfile.api"
-    context = "."
-    output = ["type=docker"]
-    tags = ["${API}:${TAG}"]
-    args = {
-      WEBSERVER_PORT = "${WEBSERVER_PORT}"
-      HTTP_PROXY = "${HTTP_PROXY}"
-      HTTPS_PROXY = "${HTTPS_PROXY}"
-      NO_PROXY = "${NO_PROXY}"
-    }
+  inherits = ["api-base"]
+  output = ["type=docker"]
 }
 
 target "ui-local" {
-    dockerfile = "Dockerfile.ui"
-    context = "."
-    output = ["type=docker"]
-    tags = ["${UI}:${TAG}"]
-    args = {
-      PORT = "${PORT}"
-      HTTP_PROXY = "${HTTP_PROXY}"
-      HTTPS_PROXY = "${HTTPS_PROXY}"
-      NO_PROXY = "${NO_PROXY}"
-    }
+  inherits = ["ui-base"]
+  output = ["type=docker"]
+}
+
+target "server-local" {
+  inherits = ["server-base"]
+  output = ["type=docker"]
 }
 
 target "redirector-local" {
-    dockerfile = "Dockerfile.redirector"
-    context = "."
-    output = ["type=docker"]
-    tags = ["${REDIRECTOR}:${TAG}"]
-    args = {
-      REDIRECTOR_PORT = "${REDIRECTOR_PORT}"
-      HTTP_PROXY = "${HTTP_PROXY}"
-      HTTPS_PROXY = "${HTTPS_PROXY}"
-      NO_PROXY = "${NO_PROXY}"
-    }
+  inherits = ["redirector-base"]
+  output = ["type=docker"]
 }
 
 target "bot-local" {
-    dockerfile = "./bot/Dockerfile.bot"
-    context = "."
-    output = ["type=docker"]
-    tags = ["${BOT}:${TAG}"]
-    args = {
-      REPO_URL = "https://github.com/PatronC2/PatronCLI.git"
-      REPO_BRANCH = "main"
-      HTTP_PROXY = "${HTTP_PROXY}"
-      HTTPS_PROXY = "${HTTPS_PROXY}"
-      NO_PROXY = "${NO_PROXY}"
-    }
+  inherits = ["bot-base"]
+  output = ["type=docker"]
 }
 
 target "nginx-release" {
-    dockerfile = "Dockerfile.nginx"
-    context = "."
-    output = ["type=registry,output=registry.${REGISTRY}/${NGINX}:${TAG}"]
-    tags = ["${REGISTRY}/${NGINX}:${TAG}"]
-    args = {
-      REACT_APP_NGINX_PORT = "${REACT_APP_NGINX_PORT}"
-      HTTP_PROXY = "${HTTP_PROXY}"
-      HTTPS_PROXY = "${HTTPS_PROXY}"
-      NO_PROXY = "${NO_PROXY}"
-    }
+  inherits = ["nginx-base"]
+  output = ["type=registry"]
 }
 
 target "postgres-release" {
-    dockerfile = "Dockerfile.postgres"
-    context = "."
-    output = ["type=registry,output=registry.${REGISTRY}/${POSTGRES}:${TAG}"]
-    tags = ["${REGISTRY}/${POSTGRES}:${TAG}"]
-    args = {
-      DB_PORT = "${DB_PORT}"
-      DB_USER = "${DB_USER}"
-      HTTP_PROXY = "${HTTP_PROXY}"
-      HTTPS_PROXY = "${HTTPS_PROXY}"
-      NO_PROXY = "${NO_PROXY}"
-    }
-}
-
-target "server-release" {
-    dockerfile = "Dockerfile.server"
-    context = "."
-    output = ["type=registry,output=registry.${REGISTRY}/${SERVER}:${TAG}"]
-    tags = ["${REGISTRY}/${SERVER}:${TAG}"]
-    args = {
-      C2SERVER_PORT = "${C2SERVER_PORT}"
-      HTTP_PROXY = "${HTTP_PROXY}"
-      HTTPS_PROXY = "${HTTPS_PROXY}"
-      NO_PROXY = "${NO_PROXY}"
-    }
+  inherits = ["postgres-base"]
+  output = ["type=registry"]
 }
 
 target "api-release" {
-    dockerfile = "Dockerfile.api"
-    context = "."
-    output = ["type=registry,output=registry.${REGISTRY}/${API}:${TAG}"]
-    tags = ["${REGISTRY}/${API}:${TAG}"]
-    args = {
-      WEBSERVER_PORT = "${WEBSERVER_PORT}"
-      HTTP_PROXY = "${HTTP_PROXY}"
-      HTTPS_PROXY = "${HTTPS_PROXY}"
-      NO_PROXY = "${NO_PROXY}"
-    }
+  inherits = ["api-base"]
+  output = ["type=registry"]
 }
 
 target "ui-release" {
-    dockerfile = "Dockerfile.ui"
-    context = "."
-    output = ["type=registry,output=registry.${REGISTRY}/${UI}:${TAG}"]
-    tags = ["${REGISTRY}/${UI}:${TAG}"]
-    args = {
-      PORT = "${PORT}"
-      HTTP_PROXY = "${HTTP_PROXY}"
-      HTTPS_PROXY = "${HTTPS_PROXY}"
-      NO_PROXY = "${NO_PROXY}"
-    }
+  inherits = ["ui-base"]
+  output = ["type=registry"]
 }
 
-target "bot-release" {
-    dockerfile = "./bot/Dockerfile.bot"
-    context = "."
-    output = ["type=registry,output=registry.${REGISTRY}/${BOT}:${TAG}"]
-    tags = ["${REGISTRY}/${BOT}:${TAG}"]
-    args = {
-      REPO_URL = "https://github.com/PatronC2/PatronCLI.git"
-      REPO_BRANCH = "main"
-      HTTP_PROXY = "${HTTP_PROXY}"
-      HTTPS_PROXY = "${HTTPS_PROXY}"
-      NO_PROXY = "${NO_PROXY}"
-    }
+target "server-release" {
+  inherits = ["server-base"]
+  output = ["type=registry"]
 }
 
 target "redirector-release" {
-    dockerfile = "Dockerfile.redirector"
-    context = "."
-    output = ["type=registry,output=registry.${REGISTRY}/${REDIRECTOR}:${TAG}"]
-    tags = ["${REGISTRY}/${REDIRECTOR}:${TAG}"]
-    args = {
-      REDIRECTOR_PORT = "${REDIRECTOR_PORT}"
-      HTTP_PROXY = "${HTTP_PROXY}"
-      HTTPS_PROXY = "${HTTPS_PROXY}"
-      NO_PROXY = "${NO_PROXY}"
-    }
+  inherits = ["redirector-base"]
+  output = ["type=registry"]
+}
+
+target "bot-release" {
+  inherits = ["bot-base"]
+  output = ["type=registry"]
 }
 
 group "local" {
     targets = ["nginx-local", "postgres-local", "api-local", "ui-local", "server-local", "redirector-local", "bot-local"]
 }
 
-group "default" {
+group "release" {
     targets = ["nginx-release", "postgres-local", "api-release", "ui-release", "server-release", "redirector-release", "bot-release"]
+}
+
+group "default" {
+    targets = ["local"]
 }

@@ -32,6 +32,17 @@ Options:
   -h    Show this help message
 ```
 
+# Install in airgapped environment
+
+* Set the git proxy
+  * `git config --global http.proxy http://my-user:my-pass@proxy-ip:proxy-port`
+  * `git config --global https.proxy http://my-user:my-pass@proxy-ip:proxy-port`
+* Set git proxy certificate (if needed)
+  * Get the proxy certificate, i.e. `wget --no-check-certificate -O /tmp/proxy-cert.pem https://proxy-ip/my-cert.pem`
+  * `git config --global http.sslCAInfo /tmp/proxy-cert.pem`
+* Clone the repository
+  * `git clone https://github.com/PatronC2/Patron.git`
+
 # Bugs
 
 # Creating Discord bot

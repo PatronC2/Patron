@@ -298,7 +298,6 @@ cd PatronCLI && ./build.sh && cd ..
 rm -rf PatronCLI
 
 echo "Cooking the Steak..."
-docker buildx bake local
 docker compose up -d
 
 echo "------------------------------------------ Informational --------------------------------------"
