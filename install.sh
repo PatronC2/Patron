@@ -231,12 +231,44 @@ prereq_app_check
 
 configure_docker_proxy
 
-# Generate certs
-echo "Generating certs..."
-[ ! -d "$PWD/certs" ] && mkdir certs
-rm -rf certs/server.key certs/server.pem
-openssl ecparam -genkey -name prime256v1 -out certs/server.key
-openssl req -new -x509 -key certs/server.key -out certs/server.pem -days 3650 -subj "/C=US/ST=Example/L=Example/O=Example/OU=Example/CN=example.com"
+function generate_certificates {
+  echo "Generating TLS certificate for Patron..."
+
+  # Prompt for certificate details with defaults
+  read -p "Country (C) [US]: " cert_country
+  cert_country=${cert_country:-US}
+
+  read -p "State (ST) [Maryland]: " cert_state
+  cert_state=${cert_state:-Maryland}
+
+  read -p "City (L) [Towson]: " cert_city
+  cert_city=${cert_city:-Towson}
+
+  read -p "Organization (O) [PatronC2]: " cert_org
+  cert_org=${cert_org:-PatronC2}
+
+  read -p "Organizational Unit (OU) [OffensiveOps]: " cert_ou
+  cert_ou=${cert_ou:-OffensiveOps}
+
+  read -p "Common Name (CN, e.g. domain.com) [patronc2.net]: " cert_cn
+  cert_cn=${cert_cn:-patronc2.net}
+
+  echo "Creating certs..."
+  mkdir -p certs
+  rm -f certs/server.key certs/server.pem
+
+  openssl ecparam -genkey -name prime256v1 -out certs/server.key
+
+  openssl req -new -x509 \
+    -key certs/server.key \
+    -out certs/server.pem \
+    -days 3650 \
+    -subj "/C=$cert_country/ST=$cert_state/L=$cert_city/O=$cert_org/OU=$cert_ou/CN=$cert_cn"
+
+  echo "✅ Certificate generated and saved to certs/server.pem"
+}
+
+generate_certificates
 
 # Set environment variables
 echo "Setting environment variables..."
