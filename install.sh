@@ -225,10 +225,10 @@ fi
 # Shift the processed options
 shift $((OPTIND-1))
 
-prereq_app_check
-
 set_proxy_variables
 configure_docker_proxy
+
+prereq_app_check
 
 # Generate certs
 echo "Generating certs..."
