@@ -4,40 +4,40 @@ import (
 	"log"
 
 	"github.com/PatronC2/Patron/helper"
-	"github.com/PatronC2/Patron/types"	
-	"github.com/PatronC2/Patron/lib/logger"	
+	"github.com/PatronC2/Patron/lib/logger"
+	"github.com/PatronC2/Patron/types"
 	_ "github.com/lib/pq"
 )
 
 func CreateKeys(uuid string) error {
-    CreateKeysSQL := `
+	CreateKeysSQL := `
         INSERT INTO "Keylog" ("UUID", "Keys")
         VALUES ($1, $2)`
 
-    _, err := db.Exec(CreateKeysSQL, uuid, "")
-    if err != nil {
-        logger.Logf(logger.Error, "Error creating keylog entry in DB for UUID %s: %v", uuid, err)
-        return err
-    }
+	_, err := db.Exec(CreateKeysSQL, uuid, "")
+	if err != nil {
+		logger.Logf(logger.Error, "Error creating keylog entry in DB for UUID %s: %v", uuid, err)
+		return err
+	}
 
-    logger.Logf(logger.Info, "New keylog entry created for agent %s", uuid)
-    return nil
+	logger.Logf(logger.Info, "New keylog entry created for agent %s", uuid)
+	return nil
 }
 
 func UpdateAgentKeys(UUID, Keys string) error {
-    updateAgentKeylogSQL := `
+	updateAgentKeylogSQL := `
         UPDATE "Keylog"
         SET "Keys" = "Keys" || $1
         WHERE "UUID" = $2
     `
-    _, err := db.Exec(updateAgentKeylogSQL, Keys, UUID)
-    if err != nil {
-        logger.Logf(logger.Error, "Error updating keys for agent with UUID %s: %v", UUID, err)
-        return err
-    }
+	_, err := db.Exec(updateAgentKeylogSQL, Keys, UUID)
+	if err != nil {
+		logger.Logf(logger.Error, "Error updating keys for agent with UUID %s: %v", UUID, err)
+		return err
+	}
 
-    logger.Logf(logger.Info, "Successfully updated keys for agent with UUID %s", UUID)
-    return nil
+	logger.Logf(logger.Info, "Successfully updated keys for agent with UUID %s", UUID)
+	return nil
 }
 
 func Keylog(uuid string) []types.KeysRequest {
