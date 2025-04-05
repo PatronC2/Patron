@@ -289,12 +289,11 @@ EOF
 export $(grep -v '^#' .env | xargs)
 
 echo "Installing Patron CLI"
-PLATFORM=${1:-linux}
-TAG=${2:-latest}
-INSTALL_PATH=${3:-/usr/bin}
+PLATFORM="linux"
+TAG="latest"
+INSTALL_PATH="/usr/bin"
 IMAGE="patronc2/cli:$PLATFORM-$TAG"
 BINARY_NAME="patron"
-[ "$PLATFORM" = "windows" ] && BINARY_NAME="patron.exe"
 
 echo "Pulling $IMAGE..."
 docker pull $IMAGE
@@ -307,6 +306,12 @@ docker rm "$CID" > /dev/null
 chmod +x "$INSTALL_PATH/$BINARY_NAME"
 echo "✅ Installed $BINARY_NAME to $INSTALL_PATH"
 
+echo "Pulling redirector container"
+TAG="latest"
+IMAGE="patronc2/redirector:$TAG"
+echo "✅ Fetched redirector container"
+
+echo "Starting Patron C2"
 docker compose up -d
 
 echo "------------------------------------------ Informational --------------------------------------"
