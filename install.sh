@@ -91,11 +91,34 @@ function set_proxy_variables {
    echo "  NO_PROXY=$NO_PROXY"
 }
 
+function configure_docker_proxy {
+    if [[ -n "$HTTP_PROXY" || -n "$HTTPS_PROXY" ]]; then
+        echo "🔧 Configuring Docker systemd proxy..."
+
+        mkdir -p /etc/systemd/system/docker.service.d
+
+        cat <<EOF > /etc/systemd/system/docker.service.d/http-proxy.conf
+[Service]
+Environment="HTTP_PROXY=$HTTP_PROXY"
+Environment="HTTPS_PROXY=$HTTPS_PROXY"
+Environment="NO_PROXY=$NO_PROXY"
+EOF
+
+        echo "🔄 Reloading systemd and restarting Docker..."
+        systemctl daemon-reexec
+        systemctl daemon-reload
+        systemctl restart docker
+
+        echo "✅ Docker proxy settings applied."
+    else
+        echo "ℹ️ No proxy settings provided — skipping Docker systemd proxy config."
+    fi
+}
+
 function prereq_app_check {
    base64=$(which base64 || echo "not found")
    openssl=$(which openssl || echo "not found")
    docker=$(which docker || echo "not found")
-   make=$(which make || echo "not found")
 
    # Check base64
    if [ -x "$base64" ]; then
@@ -110,14 +133,6 @@ function prereq_app_check {
       echo "openssl Check OK"
    else
       echo "Error: openssl is not installed"
-      exit 1
-   fi
-
-   # Check make
-   if [ -x "$make" ]; then
-      echo "make Check OK"
-   else
-      echo "Error: make is not installed"
       exit 1
    fi
 
@@ -208,6 +223,7 @@ shift $((OPTIND-1))
 prereq_app_check
 
 set_proxy_variables
+configure_docker_proxy
 
 # Generate certs
 echo "Generating certs..."
