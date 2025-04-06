@@ -1,6 +1,5 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/PatronC2/Patron?style=flat&logo=github)
-![Lines of code](https://img.shields.io/tokei/lines/github/PatronC2/Patron?style=flat&logo=github)
-![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/PatronC2/Patron&logo=github)
+![GitHub repo size](https://img.shields.io/github/repo-size/PatronC2/Patron)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/PatronC2/Patron?style=flat&logo=go)
 
 # Patron
@@ -20,7 +19,7 @@ A Command and Control Framework made in Go.
 # Install
 
 * Run `git clone https://github.com/PatronC2/Patron.git`
-* Run `./install.sh -d -p -s <your-ip>` for fresh install
+* Run `./install.sh -dps <your-ip>` for fresh install
 
 ```
 Options:
@@ -42,8 +41,11 @@ Options:
   * `git config --global http.sslCAInfo /tmp/proxy-cert.pem`
 * Clone the repository
   * `git clone https://github.com/PatronC2/Patron.git`
-
-# Bugs
+* Run the installer
+  * No discord bot
+    *  `./install.sh -dps <the-server-ipv4-address>`
+  * With discord bot (see below)
+    * `./install.sh -dpbs <the-server-ipv4-address>`
 
 # Creating Discord bot
 * Go to discord dev portal
@@ -53,10 +55,10 @@ Options:
 * Set Installation Contexts to User Install and Guild Install
 * grab token (reset token, save for later)
 * generate url to add to server, with permissions like `https://discord.com/oauth2/authorize?client_id=<your-client-id>&permissions=8&scope=bot+applications.commands&permissions=139586766912`
-* * go to oauth2 -> url generator (check bot)
-* * check (read messages/view Channels, send messages, embed links, send messages in thread) #VERY IMPORTANT
-* * copy and open url in new tab
-* * add bot to each server
+* go to oauth2 -> url generator (check bot)
+* check (read messages/view Channels, send messages, embed links, send messages in thread) #VERY IMPORTANT
+* copy and open url in new tab
+* add bot to each server
 
 # Credits
 
