@@ -6,6 +6,7 @@
 
 A Command and Control Framework made in Go.
 
+[Documentation on readthedocs](https://patron.readthedocs.io/)
 
 # Features
 
