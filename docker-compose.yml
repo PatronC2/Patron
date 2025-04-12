@@ -1,9 +1,6 @@
 services:
   patron_c2_server:
-    image: patron-server
-    build:
-      context: .
-      dockerfile: Dockerfile.server
+    image: patronc2/server
     environment:
       DB_HOST: patron_c2_postgres
       DB_PORT: ${DB_PORT}
@@ -26,10 +23,7 @@ services:
         condition: service_healthy
 
   patron_c2_api:
-    image: patron-api
-    build:
-      context: .
-      dockerfile: Dockerfile.api
+    image: patronc2/api
     environment:
       DB_HOST: patron_c2_postgres
       DB_PORT: ${DB_PORT}
@@ -60,10 +54,7 @@ services:
         condition: service_healthy
 
   patron_c2_frontend:
-    image: patron-ui
-    build:
-      context: .
-      dockerfile: Dockerfile.ui
+    image: patronc2/ui
     working_dir: /app
     restart: always
     volumes:
@@ -78,10 +69,7 @@ services:
         condition: service_healthy
 
   patron_c2_postgres:
-    image: patron-postgres
-    build:
-      context: .
-      dockerfile: Dockerfile.postgres
+    image: patronc2/postgres
     restart: always
     environment:
       POSTGRES_USER: ${DB_USER}
@@ -95,10 +83,7 @@ services:
       - internal_c2_network
 
   patron_c2_nginx:
-    image: patron-nginx
-    build:
-      context: .
-      dockerfile: Dockerfile.nginx
+    image: patronc2/nginx
     restart: always
     volumes:
       - ./nginx/conf.d/default.conf.template:/etc/nginx/templates/default.conf.template
@@ -117,10 +102,7 @@ services:
         condition: service_healthy
 
   patron_c2_bot:
-    image: patron-bot
-    build:
-      context: .
-      dockerfile: ./bot/Dockerfile.bot
+    image: patronc2/bot
     environment:
       - PATRON_IP=${REACT_APP_NGINX_IP}
       - PATRON_PORT=${REACT_APP_NGINX_PORT}

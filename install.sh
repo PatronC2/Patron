@@ -91,44 +91,34 @@ function set_proxy_variables {
    echo "  NO_PROXY=$NO_PROXY"
 }
 
-function setup_proxy_certificate {
-   if [ -n "$HTTPS_PROXY" ]; then
-      git config http.proxy $HTTP_PROXY
-      git config https.proxy $HTTPS_PROXY
-      echo "You are using a proxy. To ensure secure Git operations, you may need to provide a certificate."
-      read -p "Enter the file location or URL of the proxy CA certificate (or leave blank to skip): " cert_path
+function configure_docker_proxy {
+    if [[ -n "$HTTP_PROXY" || -n "$HTTPS_PROXY" ]]; then
+        echo "🔧 Configuring Docker systemd proxy..."
 
-      if [ -n "$cert_path" ]; then
-         if [[ "$cert_path" =~ ^http ]]; then
-            echo "Downloading certificate from $cert_path..."
-            wget --no-check-certificate -O /tmp/proxy-cert.pem "$cert_path"
-            if [ -f "/tmp/proxy-cert.pem" ]; then
-               cert_path="/tmp/proxy-cert.pem"
-               echo "Certificate downloaded to /tmp/proxy-cert.pem."
-            else
-               echo "Failed to download certificate from $cert_path. Exiting."
-               exit 1
-            fi
-         elif [ -f "$cert_path" ]; then
-            echo "Using provided certificate file at $cert_path."
-         else
-            echo "Certificate file not found at $cert_path. Exiting."
-            exit 1
-         fi
+        mkdir -p /etc/systemd/system/docker.service.d
 
-         echo "Setting Git to use the certificate at $cert_path..."
-         git config --global http.sslCAInfo "$cert_path"
-      else
-         echo "Skipping custom certificate setup."
-      fi
-   fi
+        cat <<EOF > /etc/systemd/system/docker.service.d/http-proxy.conf
+[Service]
+Environment="HTTP_PROXY=$HTTP_PROXY"
+Environment="HTTPS_PROXY=$HTTPS_PROXY"
+Environment="NO_PROXY=$NO_PROXY"
+EOF
+
+        echo "🔄 Reloading systemd and restarting Docker..."
+        systemctl daemon-reexec
+        systemctl daemon-reload
+        systemctl restart docker
+
+        echo "✅ Docker proxy settings applied."
+    else
+        echo "ℹ️ No proxy settings provided — skipping Docker systemd proxy config."
+    fi
 }
 
 function prereq_app_check {
    base64=$(which base64 || echo "not found")
    openssl=$(which openssl || echo "not found")
    docker=$(which docker || echo "not found")
-   make=$(which make || echo "not found")
 
    # Check base64
    if [ -x "$base64" ]; then
@@ -146,23 +136,18 @@ function prereq_app_check {
       exit 1
    fi
 
-   # Check make
-   if [ -x "$make" ]; then
-      echo "make Check OK"
-   else
-      echo "Error: make is not installed"
-      exit 1
-   fi
-
    # Check docker
    if [ -x "$docker" ]; then
       echo "Docker Check OK"
    else
       echo "Docker is not installed. Checking if I can install it for you."
       if which apt-get &>/dev/null; then
-         sudo ./install-docker-ubuntu.sh || { echo "Failed to install Docker on Ubuntu."; exit 1; }
-      elif which yum &>/dev/null; then
-         sudo ./install-docker-rh.sh || { echo "Failed to install Docker on Red Hat."; exit 1; }
+         echo "Attempting to install Docker on Ubuntu..."
+         HTTP_PROXY="$HTTP_PROXY" HTTPS_PROXY="$HTTPS_PROXY" http_proxy="$HTTP_PROXY" https_proxy="$HTTPS_PROXY" NO_PROXY="$NO_PROXY" \
+         ./install-docker-ubuntu.sh || {
+            echo "Failed to install Docker on Ubuntu.";
+            exit 1;
+         }
       else
          echo "Error: Can't install Docker for you. Please install it manually."
          exit 1
@@ -240,17 +225,50 @@ fi
 # Shift the processed options
 shift $((OPTIND-1))
 
+set_proxy_variables
+
 prereq_app_check
 
-set_proxy_variables
-setup_proxy_certificate
+configure_docker_proxy
 
-# Generate certs
-echo "Generating certs..."
-[ ! -d "$PWD/certs" ] && mkdir certs
-rm -rf certs/server.key certs/server.pem
-openssl ecparam -genkey -name prime256v1 -out certs/server.key
-openssl req -new -x509 -key certs/server.key -out certs/server.pem -days 3650 -subj "/C=US/ST=Maryland/L=Towson/O=Case Studies/OU=Offensive Op/CN=example.com"
+function generate_certificates {
+  echo "Generating TLS certificate for Patron..."
+
+  # Prompt for certificate details with defaults
+  read -p "Country (C) [US]: " cert_country
+  cert_country=${cert_country:-US}
+
+  read -p "State (ST) [Maryland]: " cert_state
+  cert_state=${cert_state:-Maryland}
+
+  read -p "City (L) [Towson]: " cert_city
+  cert_city=${cert_city:-Towson}
+
+  read -p "Organization (O) [PatronC2]: " cert_org
+  cert_org=${cert_org:-PatronC2}
+
+  read -p "Organizational Unit (OU) [OffensiveOps]: " cert_ou
+  cert_ou=${cert_ou:-OffensiveOps}
+
+  read -p "Common Name (CN, e.g. domain.com) [patronc2.net]: " cert_cn
+  cert_cn=${cert_cn:-patronc2.net}
+
+  echo "Creating certs..."
+  mkdir -p certs
+  rm -f certs/server.key certs/server.pem
+
+  openssl ecparam -genkey -name prime256v1 -out certs/server.key
+
+  openssl req -new -x509 \
+    -key certs/server.key \
+    -out certs/server.pem \
+    -days 3650 \
+    -subj "/C=$cert_country/ST=$cert_state/L=$cert_city/O=$cert_org/OU=$cert_ou/CN=$cert_cn"
+
+  echo "✅ Certificate generated and saved to certs/server.pem"
+}
+
+generate_certificates
 
 # Set environment variables
 echo "Setting environment variables..."
@@ -290,18 +308,36 @@ EOF
 
 export $(grep -v '^#' .env | xargs)
 
-echo "Building CLI"
-REPO_URL=https://github.com/PatronC2/PatronCLI.git
-REPO_BRANCH=main
-git clone --branch $REPO_BRANCH $REPO_URL
-cd PatronCLI && ./build.sh && cd ..
-rm -rf PatronCLI
+echo "Installing Patron CLI"
+PLATFORM="linux"
+TAG="latest"
+INSTALL_PATH="/usr/bin"
+IMAGE="patronc2/cli:$PLATFORM-$TAG"
+BINARY_NAME="patron"
 
-echo "Cooking the Steak..."
-docker buildx bake local
+echo "Pulling $IMAGE..."
+docker pull $IMAGE
+
+CID=$(docker create $IMAGE)
+echo "Copying $BINARY_NAME to $INSTALL_PATH"
+docker cp "$CID:/$BINARY_NAME" "$INSTALL_PATH/$BINARY_NAME"
+docker rm "$CID" > /dev/null
+
+chmod +x "$INSTALL_PATH/$BINARY_NAME"
+echo "✅ Installed $BINARY_NAME to $INSTALL_PATH"
+
+echo "Pulling redirector image"
+TAG="latest"
+IMAGE="patronc2/redirector:$TAG"
+docker pull $IMAGE
+echo "✅ Fetched redirector image"
+
+echo "Starting Patron C2"
 docker compose up -d
 
 echo "------------------------------------------ Informational --------------------------------------"
+echo ""
+echo "✅ Patron C2 Install successful"
 echo ""
 echo "Visit https://$nginxip:$nginxport for Web"
 echo ""
