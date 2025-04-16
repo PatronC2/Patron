@@ -45,45 +45,48 @@ func InitDatabase() {
 
 	AgentSQL := `
 	CREATE TABLE IF NOT EXISTS "agents" (
-		"AgentID" SERIAL PRIMARY KEY,
-		"UUID" TEXT NOT NULL UNIQUE,
-		"ServerIP" TEXT NOT NULL DEFAULT 'Unknown',
-		"ServerPort" TEXT NOT NULL DEFAULT 'Unknown',
-		"CallBackFreq" TEXT NOT NULL DEFAULT 'Unknown',
-		"CallBackJitter" TEXT NOT NULL DEFAULT 'Unknown',
-		"Ip" TEXT NOT NULL DEFAULT 'Unknown',
-		"User" TEXT NOT NULL DEFAULT 'Unknown',
-		"Hostname" TEXT NOT NULL DEFAULT 'Unknown',
-		"OSType" TEXT NOT NULL DEFAULT 'Unknown',
-		"OSArch" TEXT NOT NULL DEFAULT 'Unknown',
-		"OSBuild" TEXT NOT NULL DEFAULT 'Unkown',
-		"CPUS" TEXT NOT NULL DEFAULT 'Unknown',
-		"MEMORY" TEXT NOT NULL DEFAULT 'Unknown',
-		"LastCallBack" TIMESTAMP
+		agent_id SERIAL PRIMARY KEY,
+		uuid TEXT NOT NULL UNIQUE,
+		server_ip TEXT NOT NULL DEFAULT 'Unknown',
+		server_port TEXT NOT NULL DEFAULT 'Unknown',
+		callback_freq TEXT NOT NULL DEFAULT 'Unknown',
+		callback_jitter TEXT NOT NULL DEFAULT 'Unknown',
+		ip TEXT NOT NULL DEFAULT 'Unknown',
+		agent_user TEXT NOT NULL DEFAULT 'Unknown',
+		hostname TEXT NOT NULL DEFAULT 'Unknown',
+		os_type TEXT NOT NULL DEFAULT 'Unknown',
+		os_arch TEXT NOT NULL DEFAULT 'Unknown',
+		os_build TEXT NOT NULL DEFAULT 'Unkown',
+		cpus TEXT NOT NULL DEFAULT 'Unknown',
+		memory TEXT NOT NULL DEFAULT 'Unknown',
+		last_callback TIMESTAMP,
+		next_callback TIMESTAMP
 	);
 	CREATE OR REPLACE VIEW agents_status AS
 	SELECT 
-		"AgentID",
-		"UUID",
-		"ServerIP",
-		"ServerPort",
-		"CallBackFreq",
-		"CallBackJitter",
-		"Ip",
-		"User",
-		"Hostname",
-		"OSType",
-		"OSArch",
-		"OSBuild",
-		"CPUS",
-		"MEMORY",
-		"LastCallBack",
+		agent_id,
+		uuid,
+		server_ip,
+		server_port,
+		callback_freq,
+		callback_jitter,
+		ip,
+		agent_user
+		hostname,
+		os_type,
+		os_arch,
+		os_build,
+		cpus,
+		memory,
+		last_callback,
+		next_callback,
 		CASE 
-			WHEN "LastCallBack" IS NULL OR "LastCallBack" < NOW() - INTERVAL '1 second' * 2 * CAST("CallBackFreq" AS INTEGER) THEN 'Offline'
+			WHEN next_callback IS NULL OR next_callback < NOW() - INTERVAL '5 seconds'
+				THEN 'Offline'
 			ELSE 'Online'
-		END AS "Status"
+		END AS status
 	FROM 
-		"agents";
+		agents;
 	`
 	_, err := db.Exec(AgentSQL)
 	if err != nil {
