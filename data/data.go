@@ -103,7 +103,7 @@ func InitDatabase() {
 		"Command" TEXT,
 		"CommandUUID" TEXT,
 		"Output" TEXT DEFAULT 'Pending',
-		FOREIGN KEY ("UUID") REFERENCES "agents" ("UUID")
+		FOREIGN KEY ("UUID") REFERENCES "agents" ("uuid")
 	);
 	`
 	_, err = db.Exec(CommandSQL)
@@ -120,7 +120,7 @@ func InitDatabase() {
 		"Path" TEXT,
 		"Content" BYTEA,
 		"Status" TEXT DEFAULT 'Pending',
-		FOREIGN KEY ("UUID") REFERENCES "agents" ("UUID")
+		FOREIGN KEY ("UUID") REFERENCES "agents" ("uuid")
 	);
 	`
 	_, err = db.Exec(FilesSQL)
@@ -134,7 +134,7 @@ func InitDatabase() {
 		"KeylogID" SERIAL PRIMARY KEY,
 		"UUID" TEXT,
 		"Keys" TEXT,
-		FOREIGN KEY ("UUID") REFERENCES "agents" ("UUID")
+		FOREIGN KEY ("UUID") REFERENCES "agents" ("uuid")
 	);
 	`
 	_, err = db.Exec(KeylogSQL)
@@ -182,7 +182,7 @@ func InitDatabase() {
 		"NoteID" SERIAL PRIMARY KEY,
 		"UUID" TEXT NOT NULL,
 		"Note" TEXT,
-		FOREIGN KEY ("UUID") REFERENCES "agents" ("UUID"),
+		FOREIGN KEY ("UUID") REFERENCES "agents" ("uuid"),
 		UNIQUE ("UUID")
 	);
 	`
@@ -198,7 +198,7 @@ func InitDatabase() {
 		"UUID" TEXT NOT NULL,
 		"Key" TEXT NOT NULL,
 		"Value" TEXT,
-		FOREIGN KEY ("UUID") REFERENCES "agents" ("UUID"),
+		FOREIGN KEY ("UUID") REFERENCES "agents" ("uuid"),
 		UNIQUE ("UUID", "Key")
 	);
 	`
