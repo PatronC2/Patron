@@ -71,7 +71,7 @@ func InitDatabase() {
 		callback_freq,
 		callback_jitter,
 		ip,
-		agent_user
+		agent_user,
 		hostname,
 		os_type,
 		os_arch,

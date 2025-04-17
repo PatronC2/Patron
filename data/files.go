@@ -20,7 +20,7 @@ func FetchNextFileTransfer(uuid string) types.FileResponse {
             "files"."Path",
             "files"."Content"
         FROM "files" 
-        INNER JOIN "agents" ON "files"."UUID" = "agents"."UUID" 
+        INNER JOIN "agents" ON "files"."UUID" = agents.uuid 
         WHERE "files"."UUID" = $1
         AND "files"."Status" = 'Pending' 
         LIMIT 1;
