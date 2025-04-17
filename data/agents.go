@@ -145,7 +145,7 @@ func UpdateAgentCheckIn(confreq types.ConfigurationRequest) error {
         SET last_callback = NOW(), next_callback = $1
         WHERE uuid = $2`
 
-	_, err := db.Exec(UpdateSQL, confreq.NextCallback, confreq.AgentID)
+	_, err := db.Exec(UpdateSQL, confreq.NextCallback.UTC(), confreq.AgentID)
 	if err != nil {
 		logger.Logf(logger.Error, "Error updating agent check-in for UUID %s: %v", confreq.AgentID, err)
 		return err

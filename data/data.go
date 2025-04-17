@@ -59,8 +59,8 @@ func InitDatabase() {
 		os_build TEXT NOT NULL DEFAULT 'Unkown',
 		cpus TEXT NOT NULL DEFAULT 'Unknown',
 		memory TEXT NOT NULL DEFAULT 'Unknown',
-		last_callback TIMESTAMP,
-		next_callback TIMESTAMP
+		last_callback TIMESTAMPTZ,
+		next_callback TIMESTAMPTZ
 	);
 	CREATE OR REPLACE VIEW agents_status AS
 	SELECT 
@@ -216,7 +216,7 @@ func InitDatabase() {
 		"ForwardIP" TEXT,
 		"ForwardPort" TEXT,
 		"ListenPort" TEXT NOT NULL,
-		"LastReport" TIMESTAMP
+		"LastReport" TIMESTAMPTZ
 	);
 	CREATE OR REPLACE VIEW redirector_status AS
 	SELECT 

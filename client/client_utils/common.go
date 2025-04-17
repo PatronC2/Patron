@@ -153,7 +153,7 @@ func CalculateNextCallbackTime(callbackFrequency string, callbackJitter string) 
 
 	finalInterval := baseTime - (jitterPercent * baseTime) + 2*variance
 
-	return time.Now().Add(time.Duration(finalInterval * float64(time.Second)))
+	return time.Now().UTC().Add(time.Duration(finalInterval * float64(time.Second)))
 }
 
 func GetOSInfo() (string, string, string, string, string) {
