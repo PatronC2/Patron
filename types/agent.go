@@ -1,5 +1,7 @@
 package types
 
+import "time"
+
 // Defining request and response types
 type RequestType string
 type ResponseType string
@@ -35,22 +37,23 @@ type Response struct {
 
 // ConfigurationRequest is sent by agent to start a callback
 type ConfigurationRequest struct {
-	AgentID           string `json:"uuid"`
-	Username          string `json:"username"`
-	Hostname          string `json:"hostname"`
-	OSType            string `json:"ostype"`
-	OSArch            string `json:"arch"`
-	OSBuild           string `json:"osbuild"`
-	CPUS              string `json:"cpus"`
-	MEMORY            string `json:"memory"`
-	AgentIP           string `json:"agentip"`
-	ServerIP          string `json:"serverip"`
-	ServerPort        string `json:"serverport"`
-	CallbackFrequency string `json:"callbackfrequency"`
-	CallbackJitter    string `json:"callbackjitter"`
-	MasterKey         string `json:"masterkey"`
-	Status            string `json:"status"`
-	Tags              []Tag  `json:"tags"`
+	AgentID           string    `json:"uuid"`
+	Username          string    `json:"username"`
+	Hostname          string    `json:"hostname"`
+	OSType            string    `json:"ostype"`
+	OSArch            string    `json:"arch"`
+	OSBuild           string    `json:"osbuild"`
+	CPUS              string    `json:"cpus"`
+	MEMORY            string    `json:"memory"`
+	AgentIP           string    `json:"agentip"`
+	ServerIP          string    `json:"serverip"`
+	ServerPort        string    `json:"serverport"`
+	CallbackFrequency string    `json:"callbackfrequency"`
+	CallbackJitter    string    `json:"callbackjitter"`
+	MasterKey         string    `json:"masterkey"`
+	Status            string    `json:"status"`
+	Tags              []Tag     `json:"tags"`
+	NextCallback      time.Time `json:"nextcallback"`
 }
 
 // ConfigurationResponse is sent back to agent after a ConfigurationRequest

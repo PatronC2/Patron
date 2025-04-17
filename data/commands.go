@@ -50,7 +50,7 @@ func FetchNextCommand(uuid string) types.CommandResponse {
             "Commands"."Command", 
             "Commands"."CommandUUID"
         FROM "Commands" 
-        INNER JOIN "agents" ON "Commands"."UUID" = "agents"."UUID" 
+        INNER JOIN "agents" ON "Commands"."UUID" = agents.uuid 
         WHERE "Commands"."UUID" = $1 
         AND "Commands"."Result" = '0' 
         LIMIT 1;

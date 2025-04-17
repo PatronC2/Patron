@@ -24,7 +24,7 @@ func validateOrCreateAgent(c types.ConfigurationRequest) (types.ConfigurationRes
 
 	if fetch.AgentID == "" && c.MasterKey == "MASTERKEY" {
 		logger.Logf(logger.Info, "Registering new agent: %v", c.AgentID)
-		data.CreateAgent(c.AgentID, c.ServerIP, c.ServerPort, c.CallbackFrequency, c.CallbackJitter, c.AgentIP, c.Username, c.Hostname, c.OSType, c.OSBuild, c.OSArch, c.CPUS, c.MEMORY)
+		data.CreateAgent(c.AgentID, c.ServerIP, c.ServerPort, c.CallbackFrequency, c.CallbackJitter, c.AgentIP, c.Username, c.Hostname, c.OSType, c.OSBuild, c.OSArch, c.CPUS, c.MEMORY, c.NextCallback)
 		data.CreateKeys(c.AgentID)
 		fetch, err = data.FetchOneAgent(c.AgentID)
 		if err != nil {
@@ -60,7 +60,7 @@ func (h *ConfigurationHandler) Handle(request types.Request, conn net.Conn) type
 		}
 	}
 
-	err := data.UpdateAgentCheckIn(configReq.AgentID)
+	err := data.UpdateAgentCheckIn(configReq)
 	if err != nil {
 		logger.Logf(logger.Error, "Could not update last callback for %v, %v", configReq.AgentID, err)
 	}

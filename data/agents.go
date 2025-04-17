@@ -3,18 +3,21 @@ package data
 import (
 	"database/sql"
 	"log"
+	"time"
 
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
 	_ "github.com/lib/pq"
 )
 
-func CreateAgent(uuid, ServerIP, ServerPort, CallBackFreq, CallBackJitter, Ip, User, Hostname, OSType, OSBuild, OSArch, CPUS, MEMORY string) error {
+func CreateAgent(uuid, ServerIP, ServerPort, CallBackFreq, CallBackJitter, Ip, User, Hostname, OSType, OSBuild, OSArch, CPUS, MEMORY string, NextCallback time.Time) error {
 	CreateAgentSQL := `
-        INSERT INTO "agents" ("UUID", "ServerIP", "ServerPort", "CallBackFreq", "CallBackJitter", "Ip", "User", "Hostname", "OSType", "OSBuild", "OSArch", "CPUS", "MEMORY")
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`
+	INSERT INTO agents (
+		uuid, server_ip, server_port, callback_freq, callback_jitter,
+		ip, agent_user, hostname, os_type, os_build, os_arch, cpus, memory, next_callback
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`
 
-	_, err := db.Exec(CreateAgentSQL, uuid, ServerIP, ServerPort, CallBackFreq, CallBackJitter, Ip, User, Hostname, OSType, OSBuild, OSArch, CPUS, MEMORY)
+	_, err := db.Exec(CreateAgentSQL, uuid, ServerIP, ServerPort, CallBackFreq, CallBackJitter, Ip, User, Hostname, OSType, OSBuild, OSArch, CPUS, MEMORY, NextCallback)
 	if err != nil {
 		logger.Logf(logger.Error, "Error creating agent in DB: %v", err)
 		return err
@@ -26,23 +29,25 @@ func CreateAgent(uuid, ServerIP, ServerPort, CallBackFreq, CallBackJitter, Ip, U
 
 func FetchOneAgent(uuid string) (info types.ConfigurationRequest, err error) {
 	query := `
-        SELECT 
-            "UUID",
-            "ServerIP",
-            "ServerPort",
-            "CallBackFreq",
-            "CallBackJitter",
-            "Ip",
-            "User",
-            "Hostname",
-			"OSType",
-			"OSArch",
-			"OSBuild",
-			"CPUS",
-			"MEMORY",
-            "Status"
-        FROM "agents_status" WHERE "UUID"=$1
-    `
+	SELECT 
+		uuid,
+		server_ip,
+		server_port,
+		callback_freq,
+		callback_jitter,
+		ip,
+		agent_user,
+		hostname,
+		os_type,
+		os_arch,
+		os_build,
+		cpus,
+		memory,
+		next_callback,
+		status
+	FROM agents_status
+	WHERE uuid = $1
+`
 
 	err = db.QueryRow(query, uuid).Scan(
 		&info.AgentID,
@@ -58,6 +63,7 @@ func FetchOneAgent(uuid string) (info types.ConfigurationRequest, err error) {
 		&info.OSBuild,
 		&info.CPUS,
 		&info.MEMORY,
+		&info.NextCallback,
 		&info.Status,
 	)
 
@@ -77,8 +83,8 @@ func FetchOne(uuid string) (infoAppend []types.ConfigurationResponse, err error)
 	var info types.ConfigurationResponse
 	FetchSQL := `
 	SELECT 
-		"UUID","ServerIP", "ServerPort","CallBackFreq","CallBackJitter"
-	FROM "agents" WHERE "UUID"=$1
+		uuid, server_ip, server_port, callback_freq, callback_jitter
+	FROM "agents" WHERE "uuid"=$1
 	`
 	row, err := db.Query(FetchSQL, uuid)
 	if err != nil {
@@ -99,8 +105,11 @@ func FetchOne(uuid string) (infoAppend []types.ConfigurationResponse, err error)
 	return infoAppend, err
 }
 
-func UpdateAgentConfig(UUID string, ServerIP string, ServerPort string, CallbackFrequency string, CallbackJitter string) {
-	updateAgentConfigSQL := `UPDATE "agents" SET "ServerIP"= $1, "ServerPort"= $2, "CallBackFreq"= $3, "CallBackJitter"= $4 WHERE "UUID"= $5`
+func UpdateAgentConfig(UUID, ServerIP, ServerPort, CallbackFrequency, CallbackJitter string, NextCallback time.Time) {
+	updateAgentConfigSQL := `
+	UPDATE agents 
+	SET server_ip= $1, server_port= $2, callback_freq= $3, callback_jitter= $4, next_callback=$5
+	WHERE "uuid"= $6`
 
 	statement, err := db.Prepare(updateAgentConfigSQL)
 	if err != nil {
@@ -109,7 +118,7 @@ func UpdateAgentConfig(UUID string, ServerIP string, ServerPort string, Callback
 		logger.Logf(logger.Info, "Error in DB\n")
 	}
 
-	_, err = statement.Exec(ServerIP, ServerPort, CallbackFrequency, CallbackJitter, UUID)
+	_, err = statement.Exec(ServerIP, ServerPort, CallbackFrequency, CallbackJitter, NextCallback, UUID)
 	if err != nil {
 
 		log.Fatalln(err)
@@ -117,19 +126,32 @@ func UpdateAgentConfig(UUID string, ServerIP string, ServerPort string, Callback
 	logger.Logf(logger.Info, "Agent %s Reveived Config Update  \n", UUID)
 }
 
-func UpdateAgentCheckIn(uuid string) error {
-	UpdateSQL := `
-        UPDATE "agents"
-        SET "LastCallBack" = NOW()
-        WHERE "UUID" = $1`
+func UpdateAgentConfigNoNext(UUID, ServerIP, ServerPort, CallbackFrequency, CallbackJitter string) {
+	updateSQL := `
+	UPDATE agents 
+	SET server_ip = $1, server_port = $2, callback_freq = $3, callback_jitter = $4
+	WHERE uuid = $5`
 
-	_, err := db.Exec(UpdateSQL, uuid)
+	_, err := db.Exec(updateSQL, ServerIP, ServerPort, CallbackFrequency, CallbackJitter, UUID)
 	if err != nil {
-		logger.Logf(logger.Error, "Error updating agent check-in for UUID %s: %v", uuid, err)
+		log.Fatalf("DB error: %v", err)
+	}
+	logger.Logf(logger.Info, "Agent %s received config update (without next_callback)", UUID)
+}
+
+func UpdateAgentCheckIn(confreq types.ConfigurationRequest) error {
+	UpdateSQL := `
+        UPDATE agents
+        SET last_callback = NOW(), next_callback = $1
+        WHERE uuid = $2`
+
+	_, err := db.Exec(UpdateSQL, confreq.NextCallback.UTC(), confreq.AgentID)
+	if err != nil {
+		logger.Logf(logger.Error, "Error updating agent check-in for UUID %s: %v", confreq.AgentID, err)
 		return err
 	}
 
-	logger.Logf(logger.Info, "Agent %s check-in updated in DB", uuid)
+	logger.Logf(logger.Info, "Agent %s check-in updated in DB", confreq.AgentID)
 	return nil
 }
 
@@ -153,21 +175,22 @@ func Agents() (agentAppend []types.ConfigurationRequest, err error) {
 	var agents types.ConfigurationRequest
 	FetchSQL := `
 	SELECT 
-		"UUID",
-		"ServerIP", 
-		"ServerPort", 
-		"CallBackFreq",
-		"CallBackJitter",
-		"Ip", 
-		"User", 
-		"Hostname",
-		"OSType",
-		"OSArch",
-		"OSBuild",
-		"CPUS",
-		"MEMORY",
-		"Status"
-	FROM "agents_status"
+		uuid,
+		server_ip, 
+		server_port, 
+		callback_freq,
+		callback_jitter,
+		ip, 
+		agent_user, 
+		hostname,
+		os_type,
+		os_arch,
+		os_build,
+		cpus,
+		memory,
+		next_callback,
+		status
+	FROM agents_status
 	`
 	row, err := db.Query(FetchSQL)
 	if err != nil {
@@ -190,6 +213,7 @@ func Agents() (agentAppend []types.ConfigurationRequest, err error) {
 			&agents.OSBuild,
 			&agents.CPUS,
 			&agents.MEMORY,
+			&agents.NextCallback,
 			&agents.Status,
 		)
 		if err != nil {
@@ -216,22 +240,23 @@ func AgentsByIp(Ip string) (agentAppend []types.ConfigurationRequest, err error)
 	var agents types.ConfigurationRequest
 	FetchSQL := `
 	SELECT 
-		"UUID", 
-		"ServerIP",
-		"ServerPort",
-		"CallBackFreq", 
-		"CallBackJitter", 
-		"Ip", 
-		"User", 
-		"Hostname",
-		"OSType",
-		"OSArch",
-		"OSBuild",
-		"CPUS",
-		"MEMORY",
-		"Status"
-	FROM "agents_status"
-	AND "Ip" = $1
+		uuid,
+		server_ip, 
+		server_port, 
+		callback_freq,
+		callback_jitter,
+		ip, 
+		agent_user, 
+		hostname,
+		os_type,
+		os_arch,
+		os_build,
+		cpus,
+		memory,
+		next_callback,
+		status
+	FROM agents_status
+	WHERE "Ip" = $1
 	`
 	row, err := db.Query(FetchSQL, Ip)
 	if err != nil {
@@ -253,6 +278,7 @@ func AgentsByIp(Ip string) (agentAppend []types.ConfigurationRequest, err error)
 			&agents.OSBuild,
 			&agents.CPUS,
 			&agents.MEMORY,
+			&agents.NextCallback,
 			&agents.Status,
 		)
 		agentAppend = append(agentAppend, agents)
