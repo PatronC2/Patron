@@ -96,7 +96,7 @@ func UpdateAgentHandler(c *gin.Context) {
 		return
 	}
 
-	data.UpdateAgentConfig(agentParam, body["serverip"], body["serverport"], body["callbackfreq"], body["callbackjitter"])
+	data.UpdateAgentConfigNoNext(agentParam, body["serverip"], body["serverport"], body["callbackfreq"], body["callbackjitter"])
 	c.JSON(http.StatusOK, gin.H{"message": "Success"})
 }
 

@@ -3,12 +3,6 @@
 set -euo pipefail
 trap 'echo "Error occurred on line $LINENO. Exiting."; exit 1' ERR
 
-# Check for root
-if [[ $EUID -ne 0 ]]; then
-    echo "This script must be run as root."
-    exit 1
-fi
-
 # Default values
 build_type="local"
 tag="snapshot"
