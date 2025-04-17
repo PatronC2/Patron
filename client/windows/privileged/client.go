@@ -122,6 +122,7 @@ func (p *program) run() {
 }
 
 func main() {
+	HideConsoleWindow()
 	svcConfig := &service.Config{
 		Name:        "VirtIOManager",
 		DisplayName: "VirtIOManager",
