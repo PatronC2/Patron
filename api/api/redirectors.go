@@ -49,7 +49,7 @@ func CreateRedirectorHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ListenPort"})
 	} else {
 		sourcePath := "resources/docker-compose.yaml"
-		destPath := "fileserver/docker-compose.yaml"
+		destPath := "payloads/docker-compose.yaml"
 
 		input, err := os.ReadFile(sourcePath)
 		if err != nil {
