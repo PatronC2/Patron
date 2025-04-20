@@ -110,11 +110,28 @@ func RedirectorStatusHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
+
 	linkingKey := body["linking_key"]
-	err := data.SetRedirectorStatus(linkingKey)
-	if err != nil {
+	if err := data.SetRedirectorStatus(linkingKey); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error"})
-	} else {
-		c.JSON(http.StatusOK, gin.H{"message": "Success"})
+		return
 	}
+
+	keyBytes, err := os.ReadFile("./certs/server.key")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read server.key"})
+		return
+	}
+
+	pemBytes, err := os.ReadFile("./certs/server.pem")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read server.pem"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":     "Success",
+		"server_key":  string(keyBytes),
+		"server_cert": string(pemBytes),
+	})
 }
