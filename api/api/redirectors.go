@@ -48,6 +48,22 @@ func CreateRedirectorHandler(c *gin.Context) {
 	} else if !vListenPort {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ListenPort"})
 	} else {
+		sourcePath := "resources/docker-compose.yaml"
+		destPath := "fileserver/docker-compose.yaml"
+
+		input, err := os.ReadFile(sourcePath)
+		if err != nil {
+			logger.Logf(logger.Error, "Failed to read docker-compose.yaml: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read docker-compose template"})
+			return
+		}
+
+		if err := os.WriteFile(destPath, input, 0644); err != nil {
+			logger.Logf(logger.Error, "Failed to write docker-compose.yaml: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to copy docker-compose template"})
+			return
+		}
+
 		commandString := "docker save -o /app/payloads/redirector.tar patronc2/redirector"
 		tmpl, err := template.ParseFiles("resources/redirector_install.sh.tmpl")
 		if err != nil {

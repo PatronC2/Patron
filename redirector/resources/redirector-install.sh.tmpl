@@ -1,12 +1,12 @@
 #!/bin/bash -xe
 
-linking_key="{{.LinkingKey}}"
-api_ip="{{.ApiIP}}"
-api_port="{{.ApiPort}}"
-# This is the port set when the app was compiled. Do not change.
-redirector_port="{{.RedirectorPort}}"
-# This port can be freely changed to change the port that the redirector listens on.
-external_redirector_port="{{.ExternalPort}}"
+export FORWARD_IP="{{.ForwardIP}}"
+export FORWARD_PORT="{{.ForwardPort}}"
+export REDIRECTOR_PORT={{.RedirectorPort}}
+export EXTERNAL_PORT={{.ExternalPort}}
+export LINKING_KEY="{{.LinkingKey}}"
+export API_IP="{{.ApiIP}}"
+export API_PORT="{{.ApiPort}}"
 tar_file="redirector.tar"
 
 rm -f $tar_file
@@ -67,15 +67,7 @@ else
 	apt install -y wget
 fi
 
-wget --no-check-certificate https://$api_ip:$api_port/fileserver/$tar_file
+wget --no-check-certificate https://$API_IP:$API_PORT/fileserver/docker-compose.yaml -O docker-compose.yaml
+wget --no-check-certificate https://$API_IP:$API_PORT/fileserver/$tar_file
 docker load -i $tar_file
-docker run -d \
-	-p $external_redirector_port:$redirector_port \
-	-e MAIN_SERVER_IP="{{.ForwardIP}}" \
-	-e MAIN_SERVER_PORT="{{.ForwardPort}}" \
-	-e FORWARDER_PORT="$redirector_port" \
-	-e LINKING_KEY="$linking_key" \
-	-e API_IP="$api_ip" \
-	-e API_PORT="$api_port" \
-	-v ./logs:/app/logs \
-	patronc2/redirector
+docker compose up -d
