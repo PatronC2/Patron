@@ -49,7 +49,7 @@ func CreateRedirectorHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ListenPort"})
 	} else {
 		commandString := "docker save -o /app/payloads/redirector.tar patronc2/redirector"
-		tmpl, err := template.ParseFiles("templates/redirector_install.sh.tmpl")
+		tmpl, err := template.ParseFiles("resources/redirector_install.sh.tmpl")
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load template"})
 			return
