@@ -227,7 +227,7 @@ group "local" {
 }
 
 group "release" {
-    targets = ["nginx-release", "postgres-local", "api-release", "ui-release", "server-release", "redirector-release", "bot-release"]
+    targets = ["nginx-release", "postgres-release", "api-release", "ui-release", "server-release", "redirector-release", "bot-release"]
 }
 
 group "default" {

@@ -25,7 +25,6 @@ ENV NO_PROXY=''
 RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 WORKDIR /app
 COPY --from=build /app/app ./
-COPY certs /app/certs
 EXPOSE ${REDIRECTOR_PORT}
 
 # Command to run the API

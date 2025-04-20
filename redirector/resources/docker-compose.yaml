@@ -1,0 +1,15 @@
+services:
+  redirector:
+    image: patronc2/redirector
+    ports:
+      - "${EXTERNAL_PORT}:${REDIRECTOR_PORT}"
+    environment:
+      MAIN_SERVER_IP: "${FORWARD_IP}"
+      MAIN_SERVER_PORT: "${FORWARD_PORT}"
+      FORWARDER_PORT: "${REDIRECTOR_PORT}"
+      LINKING_KEY: "${LINKING_KEY}"
+      API_IP: "${API_IP}"
+      API_PORT: "${API_PORT}"
+    volumes:
+      - ./logs:/app/logs
+    restart: always
