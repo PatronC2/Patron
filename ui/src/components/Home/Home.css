@@ -1,7 +1,8 @@
 .table-container {
     width: 100%;
     overflow-x: auto;
-    align-self: stretch;
+    overflow-y: auto;
+    max-height: 60vh;
     box-sizing: border-box;
 }
 
