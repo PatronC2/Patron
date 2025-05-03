@@ -2,7 +2,8 @@ package data
 
 import (
 	"database/sql"
-	"log"
+	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/PatronC2/Patron/lib/logger"
@@ -88,7 +89,7 @@ func FetchOne(uuid string) (infoAppend []types.ConfigurationResponse, err error)
 	`
 	row, err := db.Query(FetchSQL, uuid)
 	if err != nil {
-		log.Fatal(err)
+		logger.Logf(logger.Error, "Error fetching one agent, %v", err)
 	}
 	defer row.Close()
 	for row.Next() {
@@ -114,14 +115,12 @@ func UpdateAgentConfig(UUID, ServerIP, ServerPort, CallbackFrequency, CallbackJi
 	statement, err := db.Prepare(updateAgentConfigSQL)
 	if err != nil {
 
-		log.Fatalln(err)
-		logger.Logf(logger.Info, "Error in DB\n")
+		logger.Logf(logger.Error, "Error in DB\n")
 	}
 
 	_, err = statement.Exec(ServerIP, ServerPort, CallbackFrequency, CallbackJitter, NextCallback, UUID)
 	if err != nil {
-
-		log.Fatalln(err)
+		logger.Logf(logger.Error, "Error updating agent config from Server: %v", err)
 	}
 	logger.Logf(logger.Info, "Agent %s Reveived Config Update  \n", UUID)
 }
@@ -134,7 +133,7 @@ func UpdateAgentConfigNoNext(UUID, ServerIP, ServerPort, CallbackFrequency, Call
 
 	_, err := db.Exec(updateSQL, ServerIP, ServerPort, CallbackFrequency, CallbackJitter, UUID)
 	if err != nil {
-		log.Fatalf("DB error: %v", err)
+		logger.Logf(logger.Error, "Error updating agent config from API: %v", err)
 	}
 	logger.Logf(logger.Info, "Agent %s received config update (without next_callback)", UUID)
 }
@@ -171,69 +170,99 @@ func UpdateAgentCommand(CommandUUID, Result, Output, uuid string) error {
 	return nil
 }
 
-func Agents() (agentAppend []types.ConfigurationRequest, err error) {
-	var agents types.ConfigurationRequest
-	FetchSQL := `
+func Agents() ([]types.ConfigurationRequest, error) {
+	query := `
 	SELECT 
-		uuid,
-		server_ip, 
-		server_port, 
-		callback_freq,
-		callback_jitter,
-		ip, 
-		agent_user, 
-		hostname,
-		os_type,
-		os_arch,
-		os_build,
-		cpus,
-		memory,
-		next_callback,
-		status
-	FROM agents_status
+		a.uuid,
+		a.server_ip,
+		a.server_port,
+		a.callback_freq,
+		a.callback_jitter,
+		a.ip,
+		a.agent_user,
+		a.hostname,
+		a.os_type,
+		a.os_arch,
+		a.os_build,
+		a.cpus,
+		a.memory,
+		a.next_callback,
+		a.status,
+		t."TagID",
+		t."Key",
+		t."Value"
+	FROM agents_status a
+	LEFT JOIN tags t ON a.uuid = t."UUID"
 	`
-	row, err := db.Query(FetchSQL)
+
+	rows, err := db.Query(query)
 	if err != nil {
-		log.Fatal(err)
+		logger.Logf(logger.Error, "Agents query failed: %v", err)
+		return nil, fmt.Errorf("query failed: %w", err)
 	}
-	defer row.Close()
+	defer rows.Close()
 
-	for row.Next() {
-		err := row.Scan(
-			&agents.AgentID,
-			&agents.ServerIP,
-			&agents.ServerPort,
-			&agents.CallbackFrequency,
-			&agents.CallbackJitter,
-			&agents.AgentIP,
-			&agents.Username,
-			&agents.Hostname,
-			&agents.OSType,
-			&agents.OSArch,
-			&agents.OSBuild,
-			&agents.CPUS,
-			&agents.MEMORY,
-			&agents.NextCallback,
-			&agents.Status,
+	agentMap := make(map[string]*types.ConfigurationRequest)
+
+	for rows.Next() {
+		var (
+			uuid, serverIP, serverPort, callbackFreq, callbackJitter, ip, agentUser, hostname string
+			osType, osArch, osBuild, cpus, memory                                             string
+			nextCallback                                                                      time.Time
+			status                                                                            string
+			tagID, tagKey, tagValue                                                           sql.NullString
 		)
+
+		err := rows.Scan(&uuid, &serverIP, &serverPort, &callbackFreq, &callbackJitter, &ip, &agentUser,
+			&hostname, &osType, &osArch, &osBuild, &cpus, &memory, &nextCallback, &status,
+			&tagID, &tagKey, &tagValue)
 		if err != nil {
-			log.Println("Error scanning agent row:", err)
-			return nil, err
+			logger.Logf(logger.Error, "Error scanning row from Agents: %v", err)
+			continue
 		}
 
-		tags, err := GetAgentTags(agents.AgentID)
-		if err != nil {
-			log.Println("Error fetching tags for agent:", agents.AgentID, err)
-			return nil, err
+		if _, exists := agentMap[uuid]; !exists {
+			agentMap[uuid] = &types.ConfigurationRequest{
+				AgentID:           uuid,
+				ServerIP:          serverIP,
+				ServerPort:        serverPort,
+				CallbackFrequency: callbackFreq,
+				CallbackJitter:    callbackJitter,
+				AgentIP:           ip,
+				Username:          agentUser,
+				Hostname:          hostname,
+				OSType:            osType,
+				OSArch:            osArch,
+				OSBuild:           osBuild,
+				CPUS:              cpus,
+				MEMORY:            memory,
+				NextCallback:      nextCallback,
+				Status:            status,
+				Tags:              []types.Tag{},
+			}
 		}
 
-		agentWithTags := agents
-		agentWithTags.Tags = tags
-
-		agentAppend = append(agentAppend, agentWithTags)
+		if tagID.Valid && tagKey.Valid && tagValue.Valid {
+			tagIDInt, err := strconv.Atoi(tagID.String)
+			if err != nil {
+				logger.Logf(logger.Error, "Invalid TagID for agent %s: %v", uuid, err)
+			} else {
+				agentMap[uuid].Tags = append(agentMap[uuid].Tags, types.Tag{
+					TagID: tagIDInt,
+					Key:   tagKey.String,
+					Value: tagValue.String,
+				})
+			}
+		}
 	}
-	logger.Logf(logger.Info, "Agents: %+v", agentAppend)
-	return agentAppend, err
+
+	// Flatten map into slice
+	var agentList []types.ConfigurationRequest
+	for _, agent := range agentMap {
+		agentList = append(agentList, *agent)
+	}
+
+	return agentList, nil
 }
 
 func AgentsByIp(Ip string) (agentAppend []types.ConfigurationRequest, err error) {
@@ -260,7 +289,7 @@ func AgentsByIp(Ip string) (agentAppend []types.ConfigurationRequest, err error)
 	`
 	row, err := db.Query(FetchSQL, Ip)
 	if err != nil {
-		log.Fatal(err)
+		logger.Logf(logger.Error, "Error getting Agents by IP: %v", err)
 	}
 	defer row.Close()
 	for row.Next() {
