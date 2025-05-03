@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/dgrijalva/jwt-go"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type JWTClaim struct {
@@ -15,6 +16,19 @@ type User struct {
 	Username     string `db:"username"`
 	PasswordHash string `db:"password_hash"`
 	Role         string `db:"role"`
+}
+
+func (u *User) SetPassword(password string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	u.PasswordHash = string(hash)
+	return nil
+}
+
+func (u *User) CheckPassword(password string) error {
+	return bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
 }
 
 type UserCreationRequest struct {
