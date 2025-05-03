@@ -23,10 +23,7 @@ func main() {
 
 	api.InitAuth()
 
-	// For regular patron functions
 	data.OpenDatabase()
-	// admin api functions
-	api.OpenDatabase()
 	api.CreateAdminUser()
 
 	gin.SetMode(gin.ReleaseMode)
