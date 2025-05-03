@@ -7,6 +7,7 @@ import './Home.css';
 const Home = ({ isMenuOpen }) => {
     const { auth } = useContext(AuthContext);
     const [data, setData] = useState([]);
+    const [metrics, setMetrics] = useState({ onlineCount: '0', offlineCount: '0' });
     const [error, setError] = useState(null);
     const [hostnameFilter, setHostnameFilter] = useState('');
     const [ipFilter, setIpFilter] = useState('');
@@ -24,14 +25,24 @@ const Home = ({ isMenuOpen }) => {
         }
     };
 
+    const fetchMetrics = async () => {
+        try {
+            const response = await axios.get('/api/agentsmetrics');
+            setMetrics(response.data.data || { onlineCount: '0', offlineCount: '0' });
+        } catch (err) {
+            console.error('Failed to fetch agent metrics:', err.message);
+        }
+    };    
+
     useEffect(() => {
         fetchData();
-        const interval = setInterval(fetchData, 10000);
+        fetchMetrics();
+        const interval = setInterval(() => {
+            fetchData();
+            fetchMetrics();
+        }, 10000);
         return () => clearInterval(interval);
-    }, []);
-
-    const onlineCount = data.filter((item) => item.status === 'Online').length;
-    const offlineCount = data.filter((item) => item.status === 'Offline').length;
+    }, []);    
 
     const filteredData = data.filter(
         (item) =>
@@ -57,11 +68,11 @@ const Home = ({ isMenuOpen }) => {
           <div className="status-boxes">
               <div className="status-box online">
                   <p>Online</p>
-                  <h2>{onlineCount}</h2>
+                  <h2>{metrics.onlineCount}</h2>
               </div>
               <div className="status-box offline">
                   <p>Offline</p>
-                  <h2>{offlineCount}</h2>
+                  <h2>{metrics.offlineCount}</h2>
               </div>
           </div>
   

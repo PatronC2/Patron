@@ -69,7 +69,7 @@ func FetchOneAgent(uuid string) (info types.ConfigurationRequest, err error) {
 	)
 
 	if err == sql.ErrNoRows {
-		logger.Logf(logger.Info, "No agent found with UUID: %s", uuid)
+		logger.Logf(logger.Error, "No agent found with UUID: %s", uuid)
 		return info, nil
 	} else if err != nil {
 		logger.Logf(logger.Error, "Error fetching agent with UUID: %s - %v", uuid, err)
@@ -89,7 +89,7 @@ func FetchOne(uuid string) (infoAppend []types.ConfigurationResponse, err error)
 	`
 	row, err := db.Query(FetchSQL, uuid)
 	if err != nil {
-		logger.Logf(logger.Error, "Error fetching one agent, %v", err)
+		logger.Logf(logger.Error, "Error Fetching one agent: %v", err)
 	}
 	defer row.Close()
 	for row.Next() {
@@ -114,13 +114,12 @@ func UpdateAgentConfig(UUID, ServerIP, ServerPort, CallbackFrequency, CallbackJi
 
 	statement, err := db.Prepare(updateAgentConfigSQL)
 	if err != nil {
-
-		logger.Logf(logger.Error, "Error in DB\n")
+		logger.Logf(logger.Error, "Error while updating agent config: %v", err)
 	}
 
 	_, err = statement.Exec(ServerIP, ServerPort, CallbackFrequency, CallbackJitter, NextCallback, UUID)
 	if err != nil {
-		logger.Logf(logger.Error, "Error updating agent config from Server: %v", err)
+		logger.Logf(logger.Error, "Error while updating agent config: %v", err)
 	}
 	logger.Logf(logger.Info, "Agent %s Reveived Config Update  \n", UUID)
 }
@@ -133,7 +132,7 @@ func UpdateAgentConfigNoNext(UUID, ServerIP, ServerPort, CallbackFrequency, Call
 
 	_, err := db.Exec(updateSQL, ServerIP, ServerPort, CallbackFrequency, CallbackJitter, UUID)
 	if err != nil {
-		logger.Logf(logger.Error, "Error updating agent config from API: %v", err)
+		logger.Logf(logger.Error, "Error while updating agent config: %v", err)
 	}
 	logger.Logf(logger.Info, "Agent %s received config update (without next_callback)", UUID)
 }
@@ -197,7 +196,7 @@ func Agents() ([]types.ConfigurationRequest, error) {
 
 	rows, err := db.Query(query)
 	if err != nil {
-		logger.Logf(logger.Error, "Agents query failed: %v", err)
+		logger.Logf(logger.Error, "Error while getting agents: %v", err)
 		return nil, fmt.Errorf("query failed: %w", err)
 	}
 	defer rows.Close()
@@ -289,7 +288,7 @@ func AgentsByIp(Ip string) (agentAppend []types.ConfigurationRequest, err error)
 	`
 	row, err := db.Query(FetchSQL, Ip)
 	if err != nil {
-		logger.Logf(logger.Error, "Error getting Agents by IP: %v", err)
+		logger.Logf(logger.Error, "Error fetching agents by ip: %v", err)
 	}
 	defer row.Close()
 	for row.Next() {
@@ -313,4 +312,42 @@ func AgentsByIp(Ip string) (agentAppend []types.ConfigurationRequest, err error)
 		agentAppend = append(agentAppend, agents)
 	}
 	return agentAppend, err
+}
+
+func GetAgentsMetrics() (agentsMetrics types.AgentMetrics, err error) {
+	metricsSQL := `
+	SELECT status, COUNT(*) AS count
+	FROM agents_status
+	WHERE status IN ('Online', 'Offline')
+	GROUP BY status;
+	`
+	rows, err := db.Query(metricsSQL)
+	if err != nil {
+		logger.Logf(logger.Error, "Error fetching agents metrics: %v", err)
+	}
+
+	agentsMetrics.OnlineCount = "0"
+	agentsMetrics.OfflineCount = "0"
+
+	for rows.Next() {
+		var status string
+		var count int
+
+		if err := rows.Scan(&status, &count); err != nil {
+			return agentsMetrics, fmt.Errorf("failed to scan row: %w", err)
+		}
+
+		switch status {
+		case "Online":
+			agentsMetrics.OnlineCount = strconv.Itoa(count)
+		case "Offline":
+			agentsMetrics.OfflineCount = strconv.Itoa(count)
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return agentsMetrics, fmt.Errorf("row iteration error: %w", err)
+	}
+
+	return agentsMetrics, nil
 }
