@@ -22,6 +22,16 @@ func GetAgentsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": agents})
 }
 
+func GetAgentsMetricsHandler(c *gin.Context) {
+	metrics, err := data.GetAgentsMetrics()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agents metrics"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": metrics})
+}
+
 func GetGroupAgentsByIP(c *gin.Context) {
 	// Get agents by IP
 	ip := c.Param("ip")

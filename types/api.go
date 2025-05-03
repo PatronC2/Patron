@@ -60,4 +60,7 @@ type RedirectorTemplateData struct {
 	ForwardPort    string
 }
 
-
+type AgentMetrics struct {
+	OnlineCount  string `json:"onlineCount"`
+	OfflineCount string `json:"offlineCount"`
+}
