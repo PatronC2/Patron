@@ -71,6 +71,7 @@ func main() {
 
 	// GET requests to non-admin areas use Auth(readRoles)
 	r.GET("/api/agents", api.Auth(readRoles), api.GetAgentsHandler)
+	r.GET("/api/agents/search", api.Auth(readRoles), api.FilterAgentsHandler)
 	r.GET("/api/agentsmetrics", api.Auth(readRoles), api.GetAgentsMetricsHandler)
 	r.GET("/api/groupagents/:ip", api.Auth(readRoles), api.GetGroupAgentsByIP)
 	r.GET("/api/agent/:agt", api.Auth(readRoles), api.GetOneAgentByUUID)

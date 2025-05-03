@@ -4,6 +4,7 @@ import (
 	"net"
 	"net/http"
 	"regexp"
+	"strconv"
 
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/lib/logger"
@@ -20,6 +21,54 @@ func GetAgentsHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": agents})
+}
+
+func FilterAgentsHandler(c *gin.Context) {
+	filters := make(map[string]string)
+
+	// Basic filters
+	if status := c.Query("status"); status != "" {
+		filters["status"] = status
+	}
+	if hostname := c.Query("hostname"); hostname != "" {
+		filters["hostname"] = hostname
+	}
+	if ip := c.Query("ip"); ip != "" {
+		filters["ip"] = ip
+	}
+
+	// Tag filters
+	tagFilters := c.QueryArray("tag")
+	logic := c.DefaultQuery("logic", "or")
+	sort := c.DefaultQuery("sort", "") // optional sort query
+
+	// Pagination
+	limitStr := c.DefaultQuery("limit", "100")
+	offsetStr := c.DefaultQuery("offset", "0")
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit < 1 {
+		limit = 100
+	}
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil || offset < 0 {
+		offset = 0
+	}
+
+	agents, total, nextOffset, err := data.FilterAgents(filters, tagFilters, logic, limit, offset, sort)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to filter agents",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":       agents,
+		"totalCount": total,
+		"nextOffset": nextOffset,
+	})
 }
 
 func GetAgentsMetricsHandler(c *gin.Context) {
