@@ -114,21 +114,12 @@ func UpdateAgentConfig(UUID, ServerIP, ServerPort, CallbackFrequency, CallbackJi
 
 	statement, err := db.Prepare(updateAgentConfigSQL)
 	if err != nil {
-<<<<<<< HEAD
 		logger.Logf(logger.Error, "Error while updating agent config: %v", err)
-=======
-
-		logger.Logf(logger.Error, "Error in DB\n")
->>>>>>> 74aaae75e8e330bee143755ee22ea6297ea06174
 	}
 
 	_, err = statement.Exec(ServerIP, ServerPort, CallbackFrequency, CallbackJitter, NextCallback, UUID)
 	if err != nil {
-<<<<<<< HEAD
 		logger.Logf(logger.Error, "Error while updating agent config: %v", err)
-=======
-		logger.Logf(logger.Error, "Error updating agent config from Server: %v", err)
->>>>>>> 74aaae75e8e330bee143755ee22ea6297ea06174
 	}
 	logger.Logf(logger.Info, "Agent %s Reveived Config Update  \n", UUID)
 }
@@ -141,11 +132,7 @@ func UpdateAgentConfigNoNext(UUID, ServerIP, ServerPort, CallbackFrequency, Call
 
 	_, err := db.Exec(updateSQL, ServerIP, ServerPort, CallbackFrequency, CallbackJitter, UUID)
 	if err != nil {
-<<<<<<< HEAD
 		logger.Logf(logger.Error, "Error while updating agent config: %v", err)
-=======
-		logger.Logf(logger.Error, "Error updating agent config from API: %v", err)
->>>>>>> 74aaae75e8e330bee143755ee22ea6297ea06174
 	}
 	logger.Logf(logger.Info, "Agent %s received config update (without next_callback)", UUID)
 }
@@ -209,12 +196,8 @@ func Agents() ([]types.ConfigurationRequest, error) {
 
 	rows, err := db.Query(query)
 	if err != nil {
-<<<<<<< HEAD
 		logger.Logf(logger.Error, "Error while getting agents: %v", err)
-=======
-		logger.Logf(logger.Error, "Agents query failed: %v", err)
 		return nil, fmt.Errorf("query failed: %w", err)
->>>>>>> 74aaae75e8e330bee143755ee22ea6297ea06174
 	}
 	defer rows.Close()
 
@@ -233,16 +216,6 @@ func Agents() ([]types.ConfigurationRequest, error) {
 			&hostname, &osType, &osArch, &osBuild, &cpus, &memory, &nextCallback, &status,
 			&tagID, &tagKey, &tagValue)
 		if err != nil {
-<<<<<<< HEAD
-			logger.Logf(logger.Error, "Error scanning agent row: %v", err)
-			return nil, err
-		}
-
-		tags, err := GetAgentTags(agents.AgentID)
-		if err != nil {
-			logger.Logf(logger.Error, "Error fetching tags for agent: %v", err)
-			return nil, err
-=======
 			logger.Logf(logger.Error, "Error scanning row from Agents: %v", err)
 			continue
 		}
@@ -266,7 +239,6 @@ func Agents() ([]types.ConfigurationRequest, error) {
 				Status:            status,
 				Tags:              []types.Tag{},
 			}
->>>>>>> 74aaae75e8e330bee143755ee22ea6297ea06174
 		}
 
 		if tagID.Valid && tagKey.Valid && tagValue.Valid {
@@ -316,11 +288,7 @@ func AgentsByIp(Ip string) (agentAppend []types.ConfigurationRequest, err error)
 	`
 	row, err := db.Query(FetchSQL, Ip)
 	if err != nil {
-<<<<<<< HEAD
 		logger.Logf(logger.Error, "Error fetching agents by ip: %v", err)
-=======
-		logger.Logf(logger.Error, "Error getting Agents by IP: %v", err)
->>>>>>> 74aaae75e8e330bee143755ee22ea6297ea06174
 	}
 	defer row.Close()
 	for row.Next() {
