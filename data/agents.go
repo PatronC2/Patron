@@ -292,8 +292,8 @@ func FilterAgents(filters map[string]string, tagFilters []string, logic string, 
 		conditions = append(conditions, fmt.Sprintf("a.hostname ILIKE $%d", len(args)))
 	}
 	if v := filters["ip"]; v != "" {
-		args = append(args, v)
-		conditions = append(conditions, fmt.Sprintf("a.ip = $%d", len(args)))
+		args = append(args, "%"+v+"%")
+		conditions = append(conditions, fmt.Sprintf("a.ip LIKE $%d", len(args)))
 	}
 	if v := filters["status"]; v != "" {
 		args = append(args, v)

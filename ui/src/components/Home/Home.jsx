@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
+import qs from 'qs';
 import axios from '../../api/axios';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../../context/AuthProvider';
@@ -56,7 +57,10 @@ const Home = ({ isMenuOpen }) => {
             };
             const tags = tagConditions.filter(tc => tc.key && tc.value).map(tc => `${tc.key}:${tc.value}`);
             if (tags.length > 0) params.tag = tags;
-            const response = await axios.get('/api/agents/search', { params });
+            const response = await axios.get('/api/agents/search', {
+                params,
+                paramsSerializer: params => qs.stringify(params, { arrayFormat: 'repeat' })
+            });
             setAgents(response.data.data || []);
             setTotalCount(response.data.totalCount || 0);
         } catch (err) {

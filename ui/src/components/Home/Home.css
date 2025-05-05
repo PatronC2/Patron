@@ -176,3 +176,11 @@
     gap: 0.5rem;
     margin: 1rem 0;
 }
+
+.sticky-pagination {
+    position: sticky;
+    bottom: 0;
+    background-color: var(--background-color);
+    padding: 1rem 0;
+    z-index: 2;
+}
