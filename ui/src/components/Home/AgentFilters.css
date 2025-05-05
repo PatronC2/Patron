@@ -1,0 +1,49 @@
+.filters-side-panel {
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background-color: var(--background-color);
+    max-width: 300px;
+    width: 100%;
+    position: sticky;
+    top: calc(var(--header-height) + 16rem);
+}
+
+
+.filters-side-panel .tag-condition {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.filters-side-panel .tag-condition select {
+    flex: 1;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border-color);
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+.filters-side-panel .tag-condition button {
+    background-color: var(--error-color);
+    color: white;
+    border: none;
+    padding: 0.4rem 0.6rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.filters-side-panel button[type="button"] {
+    padding: 0.5rem;
+    font-size: 1rem;
+    border-radius: 0.4rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+

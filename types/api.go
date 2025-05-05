@@ -78,3 +78,8 @@ type AgentMetrics struct {
 	OnlineCount  string `json:"onlineCount"`
 	OfflineCount string `json:"offlineCount"`
 }
+
+type TagKeyValues struct {
+	Key    string   `json:"key"`
+	Values []string `json:"values"`
+}

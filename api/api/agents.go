@@ -260,3 +260,12 @@ func DeleteTagHandler(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "deleted tag successfully"})
 	}
 }
+
+func GetTagKeyValuesHandler(c *gin.Context) {
+	result, err := data.GetTagKeyValues()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve tag keys and values"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"tags": result})
+}
