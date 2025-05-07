@@ -1,10 +1,3 @@
-.table-container {
-    width: 100%;
-    overflow-x: auto;
-    align-self: stretch;
-    box-sizing: border-box;
-}
-
 .home-container table {
     width: 100%;
     border-collapse: collapse;
@@ -72,21 +65,6 @@
     border: 1px solid var(--border-color);
 }
 
-.home-container .home-header {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.home-container .home-header h1 {
-    margin: 0;
-    font-size: 2rem;
-    text-align: center;
-    color: var(--text-color);
-}
-
 .home-container {
     width: 100%;
     max-width: 1200px;
@@ -96,8 +74,6 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    max-height: calc(100vh - var(--header-height) - 3rem);
-    overflow-y: auto;
 }
 
 .home-container .status-boxes {
@@ -140,4 +116,71 @@
 .home-container .status-box h2 {
     margin: 0;
     font-size: 2rem;
+}
+
+.home-container.horizontal-layout {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 2rem;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.table-wrapper {
+    flex: 1;
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+}
+
+.table-container {
+    width: 100%;
+    flex-grow: 1;
+    overflow-y: auto;
+    max-height: 60vh;
+    box-sizing: border-box;
+}
+
+.centered-table {
+    display: flex;
+    justify-content: center;
+}
+
+.main-content-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.header-wrapper {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 1rem;
+    padding-top: var(--header-height);
+}
+
+.agents-title {
+    font-size: 2rem;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
+.sticky-pagination {
+    position: sticky;
+    bottom: 0;
+    background-color: var(--background-color);
+    padding: 1rem 0;
+    z-index: 2;
 }

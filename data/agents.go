@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/PatronC2/Patron/lib/logger"
@@ -170,6 +171,12 @@ func UpdateAgentCommand(CommandUUID, Result, Output, uuid string) error {
 }
 
 func Agents() ([]types.ConfigurationRequest, error) {
+	/* DEPRECATED
+	USE FilterAgents() INSTEAD!
+	This function slams the DB, network, and user's browser
+	This was fine when only dealing with <50 agents
+	Remains until PatronCLI is updated to use the new function.
+	*/
 	query := `
 	SELECT 
 		a.uuid,
@@ -262,6 +269,126 @@ func Agents() ([]types.ConfigurationRequest, error) {
 	}
 
 	return agentList, nil
+}
+
+func FilterAgents(filters map[string]string, tagFilters []string, logic string, limit, offset int, sort string) ([]types.ConfigurationRequest, int, int, error) {
+	baseSelect := `
+		SELECT 
+			a.uuid, a.server_ip, a.server_port, a.callback_freq, a.callback_jitter,
+			a.ip, a.agent_user, a.hostname, a.os_type, a.os_arch, a.os_build,
+			a.cpus, a.memory, a.next_callback, a.status
+		FROM agents_status a`
+
+	var (
+		args          []interface{}
+		conditions    []string
+		tagConditions []string
+		joinTags      bool
+	)
+
+	// Process basic filters
+	if v := filters["hostname"]; v != "" {
+		args = append(args, "%"+v+"%")
+		conditions = append(conditions, fmt.Sprintf("a.hostname ILIKE $%d", len(args)))
+	}
+	if v := filters["ip"]; v != "" {
+		args = append(args, "%"+v+"%")
+		conditions = append(conditions, fmt.Sprintf("a.ip LIKE $%d", len(args)))
+	}
+	if v := filters["status"]; v != "" {
+		args = append(args, v)
+		conditions = append(conditions, fmt.Sprintf("a.status = $%d", len(args)))
+	}
+
+	// Handle tag filters
+	for _, tf := range tagFilters {
+		parts := strings.SplitN(tf, ":", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		key, val := parts[0], parts[1]
+		args = append(args, key, val)
+		tagConditions = append(tagConditions, fmt.Sprintf("(t.\"Key\" = $%d AND t.\"Value\" = $%d)", len(args)-1, len(args)))
+	}
+	joinTags = len(tagConditions) > 0
+
+	var whereClause string
+	if joinTags {
+		conditions = append(conditions, "("+strings.Join(tagConditions, " OR ")+")")
+	}
+	if len(conditions) > 0 {
+		whereClause = " WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	query := baseSelect
+	if joinTags {
+		query += " JOIN tags t ON t.\"UUID\" = a.uuid"
+	}
+	query += whereClause
+
+	// If AND logic on tags, add GROUP BY + HAVING
+	if joinTags && logic == "and" {
+		havingIndex := len(args) + 1
+		query += `
+		GROUP BY a.agent_id, a.uuid, a.server_ip, a.server_port, a.callback_freq, a.callback_jitter,
+		         a.ip, a.agent_user, a.hostname, a.os_type, a.os_arch, a.os_build, a.cpus, a.memory,
+		         a.next_callback, a.status
+		HAVING COUNT(DISTINCT t."Key") = $` + strconv.Itoa(havingIndex)
+		args = append(args, len(tagFilters))
+	}
+
+	// Build count query
+	countQuery := "SELECT COUNT(*) FROM (" + query + ") AS sub"
+
+	// Sorting
+	sortableFields := map[string]bool{
+		"hostname": true, "ip": true, "status": true, "callback_freq": true, "next_callback": true,
+	}
+	if sort != "" {
+		parts := strings.SplitN(sort, ":", 2)
+		if len(parts) == 2 && sortableFields[parts[0]] {
+			direction := strings.ToUpper(parts[1])
+			if direction != "ASC" && direction != "DESC" {
+				direction = "ASC"
+			}
+			query += fmt.Sprintf(" ORDER BY a.%s %s", parts[0], direction)
+		}
+	}
+
+	// Pagination
+	query += fmt.Sprintf(" LIMIT %d OFFSET %d", limit, offset)
+
+	// Execute count query
+	var totalCount int
+	if err := db.QueryRow(countQuery, args...).Scan(&totalCount); err != nil {
+		return nil, 0, 0, fmt.Errorf("failed to count agents: %w", err)
+	}
+
+	// Execute main query
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, 0, 0, fmt.Errorf("query failed: %w", err)
+	}
+	defer rows.Close()
+
+	agents := make([]types.ConfigurationRequest, 0)
+	for rows.Next() {
+		var agent types.ConfigurationRequest
+		err := rows.Scan(
+			&agent.AgentID, &agent.ServerIP, &agent.ServerPort, &agent.CallbackFrequency,
+			&agent.CallbackJitter, &agent.AgentIP, &agent.Username, &agent.Hostname,
+			&agent.OSType, &agent.OSArch, &agent.OSBuild, &agent.CPUS, &agent.MEMORY,
+			&agent.NextCallback, &agent.Status,
+		)
+		if err != nil {
+			logger.Logf(logger.Error, "Error scanning agent: %v", err)
+			continue
+		}
+		agents = append(agents, agent)
+	}
+
+	nextOffset := offset + len(agents)
+	return agents, totalCount, nextOffset, nil
 }
 
 func AgentsByIp(Ip string) (agentAppend []types.ConfigurationRequest, err error) {

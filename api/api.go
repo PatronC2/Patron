@@ -71,6 +71,7 @@ func main() {
 
 	// GET requests to non-admin areas use Auth(readRoles)
 	r.GET("/api/agents", api.Auth(readRoles), api.GetAgentsHandler)
+	r.GET("/api/agents/search", api.Auth(readRoles), api.FilterAgentsHandler)
 	r.GET("/api/agentsmetrics", api.Auth(readRoles), api.GetAgentsMetricsHandler)
 	r.GET("/api/groupagents/:ip", api.Auth(readRoles), api.GetGroupAgentsByIP)
 	r.GET("/api/agent/:agt", api.Auth(readRoles), api.GetOneAgentByUUID)
@@ -80,6 +81,7 @@ func main() {
 	r.GET("/api/payloadconfs", api.Auth(readRoles), api.GetConfigurationsHandler)
 	r.GET("/api/notes/:agt", api.Auth(readRoles), api.GetNoteHandler)
 	r.GET("/api/tags/:agt", api.Auth(readRoles), api.GetTagsHandler)
+	r.GET("/api/tags/options", api.Auth(readRoles), api.GetTagKeyValuesHandler)
 	r.GET("/api/redirectors", api.Auth(readRoles), api.GetRedirectorsHandler)
 	r.GET("/api/files/list/:agt", api.Auth(readRoles), api.ListFilesForUUIDHandler)
 	r.GET("/api/files/download/:fileid", api.Auth(readRoles), api.DownloadFileHandler)
