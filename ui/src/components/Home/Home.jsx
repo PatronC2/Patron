@@ -15,7 +15,7 @@ const Home = ({ isMenuOpen }) => {
 
     const [hostnameFilter, setHostnameFilter] = useState('');
     const [ipFilter, setIpFilter] = useState('');
-    const [statusFilter, setStatusFilter] = useState('All');
+    const [statusFilter, setStatusFilter] = useState('Online');
     const [tagConditions, setTagConditions] = useState([{ key: '', value: '' }]);
     const [tagOptions, setTagOptions] = useState([]);
     const [logic, setLogic] = useState('or');
