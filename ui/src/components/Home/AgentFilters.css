@@ -9,8 +9,7 @@
     background-color: var(--background-color);
     max-width: 300px;
     width: 100%;
-    position: sticky;
-    top: calc(var(--header-height) + 16rem);
+    margin-top: calc(var(--header-height) + 16rem);
 }
 
 
