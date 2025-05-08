@@ -3,12 +3,14 @@ package api
 import (
 	"errors"
 	"net/http"
-	"time"
 	"os"
+	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/PatronC2/Patron/data"
+	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
 )
 
 var jwtKey []byte
@@ -26,7 +28,7 @@ func Auth(validRoles []string) gin.HandlerFunc {
 			context.Abort()
 			return
 		}
-		err:= ValidateToken(tokenString, validRoles)
+		err := ValidateToken(tokenString, validRoles)
 		if err != nil {
 			context.JSON(401, gin.H{"error": err.Error()})
 			context.Abort()
@@ -89,9 +91,10 @@ func ValidateToken(signedToken string, validRoles []string) (err error) {
 	}
 
 	if !contains(validRoles, claims.Role) {
-		err = errors.New("Insufficient Privileges")
+		logger.Logf(logger.Info, "Insufficient Prvileges")
+		err = errors.New("insufficient privileges")
 		return
-	}	
+	}
 	return
 
 }
@@ -126,7 +129,7 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	user, err := GetUserByUsername(loginRequest.Username)
+	user, err := data.GetUserByUsername(loginRequest.Username)
 	if err != nil || user.CheckPassword(loginRequest.Password) != nil {
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})

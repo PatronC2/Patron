@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/PatronC2/Patron/lib/logger"
 	_ "github.com/lib/pq"
@@ -14,31 +15,35 @@ var db *sql.DB
 
 func OpenDatabase() {
 	var err error
-
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")
 	user := os.Getenv("DB_USER")
 	password := os.Getenv("DB_PASS")
 	dbname := os.Getenv("DB_NAME")
 
+	logger.Logf(logger.Info, "Got environment variables host=%s, port=%s, user=%s, dbname=%s (password not shown)", host, port, user, dbname)
+
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
+	for {
 
-	db, err = sql.Open("postgres", psqlInfo)
-	if err != nil {
-		logger.Logf(logger.Error, "Failed to open database connection: %v\n", err)
-		return
+		db, err = sql.Open("postgres", psqlInfo)
+		if err != nil {
+			logger.Logf(logger.Error, "Failed to connect to the database: %v\n", err)
+			time.Sleep(30 * time.Second)
+			continue
+		}
+		err = db.Ping()
+		if err != nil {
+			logger.Logf(logger.Error, "Failed to ping the database: %v\n", err)
+			db.Close()
+			time.Sleep(30 * time.Second)
+			continue
+		}
+		logger.Logf(logger.Info, "Postgres DB connected\n")
+		break
 	}
-
-	err = db.Ping()
-	if err != nil {
-		logger.Logf(logger.Error, "Failed to ping database: %v\n", err)
-		db.Close()
-		return
-	}
-
-	logger.Logf(logger.Info, "Connected to the database successfully.")
 }
 
 func InitDatabase() {

@@ -101,13 +101,8 @@ textarea {
     font-size: 22px;
 }
 
-label,
-button:not(.menu-button):not(.toggle-button) {
+label {
     margin-top: 1rem;
-}
-
-button:not(.menu-button):not(.toggle-button) {
-    padding: 0.5rem;
 }
 
 .instructions {
