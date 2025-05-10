@@ -137,9 +137,13 @@ h1, h2, p, .header, .redirector-container {
 .redirector-container .status-box h2 {
     margin: 0;
     font-size: 2rem;
+    table-layout: auto;
+    width: 100%;
+    overflow-x: auto;
 }
 
 .redirector-container table {
+    table-layout: auto;
     width: 100%;
     border-collapse: collapse;
     margin: 1rem 0;
@@ -161,6 +165,9 @@ h1, h2, p, .header, .redirector-container {
     text-align: left;
     word-wrap: break-word;
     box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .redirector-container tbody tr:nth-child(odd) {

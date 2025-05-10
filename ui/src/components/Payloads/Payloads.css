@@ -68,8 +68,10 @@
 }
 
 .payloads-content table {
+    table-layout: fixed; 
     width: 100%;
     border-collapse: collapse;
+    min-width: 1000px;  
     margin: 1rem 0;
     font-size: 1rem;
     color: var(--text-color);
@@ -83,13 +85,26 @@
     background-color: var(--primary-color);
     color: var(--text-color);
     font-weight: bold;
+    border-bottom: 2px solid var(--border-color);
 }
 
 .payloads-content table th, table td {
     padding: 0.75rem;
     border-bottom: 1px solid var(--border-color);
     text-align: left;
+    text-overflow: ellipsis;
 }
+
+.payloads-content table th {
+    height: 40px;
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+}
+
+.payloads-content table th .header-content {
+    font-weight: bold;
+    font-size: 1.05rem;
+}  
 
 .payloads-content tbody tr:nth-child(odd) {
     background-color: rgba(0, 0, 0, 0.08);
@@ -137,15 +152,21 @@
     position: relative;
 }
 
+.payloads-content th div {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .payloads-content .delete-button {
-    padding: 0.5rem 1rem;
+    padding: 0.25rem 0.75rem;
+    white-space: nowrap;
     font-size: 0.9rem;
-    color: var(--text-color);
     background-color: var(--primary-color);
+    color: var(--text-color);
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
 }
 
 .payloads-content .delete-button:hover {
@@ -169,3 +190,51 @@
     background-color: red;
 }
 
+.payloads-content th .header-content,
+.payloads-content td .cell-content {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 12px;
+}
+
+.payloads-content th,
+.payloads-content td {
+  min-width: 100px;
+  max-width: 1px;
+}
+
+.payloads-content .no-ellipsis {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+}  
+
+.payloads-content .table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}  
+  
+.payloads-content .payloads-container {
+    width: 100%;
+    max-width: 100%;
+}
+
+.payloads-content th .header-content[title]::after {
+    content: attr(title);
+    visibility: hidden;
+    position: absolute;
+}
+  
+.payloads-content th .header-content:hover {
+    overflow: visible;
+    white-space: normal;
+    z-index: 10;
+}
+
+.payloads-content td:hover,
+.payloads-content th:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+  
