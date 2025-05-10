@@ -1,12 +1,14 @@
 import React, { useState, useContext } from 'react';
-import axios from '../../api/axios';
+import { useAxios } from '../../context/AxiosProvider';
 import AuthContext from '../../context/AuthProvider';
 import './NewRedirectorForm.css';
 
-const PATRON_C2_IP = `${process.env.REACT_APP_NGINX_IP}`;
-const PATRON_C2_PORT = `${process.env.REACT_APP_C2SERVER_PORT}`;
 
 const NewRedirectorForm = ({ fetchData, setActiveTab }) => {
+    const cfg = window.runtimeConfig;
+    const PATRON_C2_IP = `${cfg.REACT_APP_NGINX_IP}`;
+    const PATRON_C2_PORT = `${cfg.REACT_APP_C2SERVER_PORT}`;
+    const axios = useAxios();
     const { auth } = useContext(AuthContext);
     const [notification, setNotification] = useState('');
     const [notificationType, setNotificationType] = useState('');

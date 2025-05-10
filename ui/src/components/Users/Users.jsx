@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import axios from '../../api/axios';
+import { useAxios } from '../../context/AxiosProvider';
 import AuthContext from '../../context/AuthProvider';
 import NewUserForm from './NewUser';
 import ChangePasswordForm from './ModifyUser';
@@ -7,6 +7,7 @@ import LogLevelSettings from './LogLevelSettings';
 import './Users.css';
 
 const Users = () => {
+    const axios = useAxios();
     const { auth } = useContext(AuthContext);
     const [data, setData] = useState([]);
     const [error, setError] = useState(null);

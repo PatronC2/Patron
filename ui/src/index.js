@@ -4,14 +4,23 @@ import './index.css';
 import App from './components/App';
 import { AuthProvider } from './context/AuthProvider';
 import { ThemeProvider } from './context/Themes';
+import { AxiosProvider } from './context/AxiosProvider';
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
-  <React.StrictMode>
-    <ThemeProvider>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </ThemeProvider>
-  </React.StrictMode>
-);
+const loadConfig = async () => {
+  const res = await fetch('/config.json');
+  window.runtimeConfig = await res.json();
+};
+
+loadConfig().then(() => {
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    <React.StrictMode>
+      <AxiosProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </ThemeProvider>
+      </AxiosProvider>
+    </React.StrictMode>
+  );
+});

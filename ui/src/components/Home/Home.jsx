@@ -1,15 +1,17 @@
 import React, { useEffect, useState, useContext } from 'react';
 import qs from 'qs';
-import axios from '../../api/axios';
+import { useAxios } from '../../context/AxiosProvider';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../../context/AuthProvider';
 import AgentFilters from './AgentFilters';
 import './Home.css';
 
 const Home = ({ isMenuOpen }) => {
+    const axios = useAxios();
     const { auth } = useContext(AuthContext);
     const navigate = useNavigate();
 
+    const [error, setError] = useState(null);
     const [agents, setAgents] = useState([]);
     const [metrics, setMetrics] = useState({ onlineCount: '0', offlineCount: '0' });
 

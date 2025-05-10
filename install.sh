@@ -308,6 +308,19 @@ EOF
 
 export $(grep -v '^#' .env | xargs)
 
+echo "Generating frontend runtime config (frontend-config.json)..."
+
+cat <<EOF > frontend-config.json
+{
+  "REACT_APP_C2SERVER_PORT": "$REACT_APP_C2SERVER_PORT",
+  "REACT_APP_NGINX_PORT": "$REACT_APP_NGINX_PORT",
+  "REACT_APP_NGINX_IP": "$REACT_APP_NGINX_IP",
+  "REACT_SERVER_IP": "$REACT_SERVER_IP"
+}
+EOF
+
+echo "✅ Created frontend-config.json"
+
 echo "Installing Patron CLI"
 PLATFORM="linux"
 TAG="latest"
