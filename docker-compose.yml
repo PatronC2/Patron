@@ -60,7 +60,7 @@ services:
     working_dir: /app
     restart: always
     volumes:
-      - .env:/app/.env
+      - ./frontend-config.json:/usr/share/nginx/html/config.json:ro
       - ./logs:/app/logs
     environment:
       - PORT=${PORT}

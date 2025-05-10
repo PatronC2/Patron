@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useContext, useRef } from 'react';
-import axios from '../../api/axios';
+import { useAxios } from '../../context/AxiosProvider';
 import AuthContext from '../../context/AuthProvider';
 import { useLocation } from 'react-router-dom';
 import './Agent.css';
 
 const Agent = () => {
+  const axios = useAxios();
   const { auth } = useContext(AuthContext);
   const [error, setError] = useState(null);
 

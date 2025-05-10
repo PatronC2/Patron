@@ -1,9 +1,10 @@
 import React, { useState, useContext } from 'react';
-import axios from '../../api/axios';
+import { useAxios } from '../../context/AxiosProvider';
 import AuthContext from '../../context/AuthProvider';
 import './NewUser.css';
 
 const NewUserForm = ({ fetchData, setActiveTab }) => {
+    const axios = useAxios();
     const { auth } = useContext(AuthContext);
     const [formData, setFormData] = useState({
         username: '',

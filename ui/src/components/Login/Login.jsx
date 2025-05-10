@@ -2,11 +2,12 @@ import { useRef, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../../context/AuthProvider';
 import './Login.css';
-import axios from '../../api/axios';
+import { useAxios } from '../../context/AxiosProvider';
 
 const LOGIN_URL = '/api/login';
 
 const Login = ({ onSuccessfulLogin }) => {
+    const axios = useAxios();
     const { setAuth } = useContext(AuthContext);
     const navigate = useNavigate();
     const userRef = useRef();

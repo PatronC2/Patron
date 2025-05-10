@@ -1,10 +1,14 @@
-import React, { useEffect, useState, useContext } from 'react';
-import axios from '../../api/axios';
+import React, { useEffect, useMemo, useState, useContext } from 'react';
+import { useAxios } from '../../context/AxiosProvider';
 import AuthContext from '../../context/AuthProvider';
 import NewRedirectorForm from './NewRedirectorForm';
+import { useTable } from 'react-table';
+import { ResizableBox } from 'react-resizable';
+import 'react-resizable/css/styles.css';
 import './Redirectors.css';
 
 const Redirectors = () => {
+    const axios = useAxios();
     const { auth } = useContext(AuthContext);
     const [data, setData] = useState([]);
     const [error, setError] = useState(null);
@@ -14,10 +18,7 @@ const Redirectors = () => {
     useEffect(() => {
         document.body.classList.add('redirectors-page');
         fetchData();
-        const interval = setInterval(() => {
-            fetchData();
-        }, 10000);
-
+        const interval = setInterval(fetchData, 10000);
         return () => {
             document.body.classList.remove('redirectors-page');
             clearInterval(interval);
@@ -33,30 +34,54 @@ const Redirectors = () => {
             });
 
             const responseData = response.data.data;
-            if (Array.isArray(responseData)) {
-                setData(responseData);
-            } else {
-                setData([]);
-            }
+            setData(Array.isArray(responseData) ? responseData : []);
         } catch (err) {
             setError(err.message);
         }
     };
 
-    const activeCount = data.filter(item => item.status === 'Online').length;
-    const inactiveCount = data.filter(item => item.status === 'Offline').length;
+    const filteredData = useMemo(() => {
+        return data.filter(item => statusFilter === 'All' || item.status === statusFilter);
+    }, [data, statusFilter]);
 
-    const filteredData = data.filter(item =>
-        (statusFilter === 'All' || item.status === statusFilter)
-    );
+    const columns = useMemo(() => [
+        { Header: 'Name', accessor: 'name', minWidth: 120 },
+        { Header: 'Description', accessor: 'description', minWidth: 150 },
+        { Header: 'Forward IP', accessor: 'forwardip', minWidth: 130 },
+        { Header: 'Forward Port', accessor: 'forwardport', minWidth: 100 },
+        { Header: 'Listener Port', accessor: 'listenport', minWidth: 100 },
+        { Header: 'Status', accessor: 'status', minWidth: 100 },
+    ], []);
 
-    const handleTabChange = (tab) => {
-        setActiveTab(tab);
+    const {
+        getTableProps,
+        getTableBodyProps,
+        headerGroups,
+        rows,
+        prepareRow,
+    } = useTable({ columns, data: filteredData });
+
+    const renderResizableHeader = (column, index) => {
+        const width = column.minWidth || 150;
+        return (
+            <th key={index} {...column.getHeaderProps()}>
+                <ResizableBox
+                    width={width}
+                    height={30}
+                    axis="x"
+                    resizeHandles={['e']}
+                    minConstraints={[50, 30]}
+                    maxConstraints={[300, 30]}
+                >
+                    <div className="header-content" title={column.render('Header')}>
+                        {column.render('Header')}
+                    </div>
+                </ResizableBox>
+            </th>
+        );
     };
 
-    if (error) {
-        return <div>Error: {error}</div>;
-    }
+    if (error) return <div>Error: {error}</div>;
 
     return (
         <div className="redirector-container">
@@ -65,13 +90,13 @@ const Redirectors = () => {
                 <div className="header-buttons">
                     <button
                         className={activeTab === 'current_redirectors' ? 'active' : ''}
-                        onClick={() => handleTabChange('current_redirectors')}
+                        onClick={() => setActiveTab('current_redirectors')}
                     >
                         Existing Redirectors
                     </button>
                     <button
                         className={activeTab === 'new' ? 'active' : ''}
-                        onClick={() => handleTabChange('new')}
+                        onClick={() => setActiveTab('new')}
                     >
                         Create New Redirector
                     </button>
@@ -80,15 +105,14 @@ const Redirectors = () => {
 
             {activeTab === 'current_redirectors' ? (
                 <div className="redirectors-container">
-                    <h1>Redirectors</h1>
                     <div className="status-boxes">
                         <div className="status-box online">
-                        <p>Online</p>
-                        <h2>{activeCount}</h2>
+                            <p>Online</p>
+                            <h2>{data.filter(d => d.status === 'Online').length}</h2>
                         </div>
                         <div className="status-box offline">
-                        <p>Offline</p>
-                        <h2>{inactiveCount}</h2>
+                            <p>Offline</p>
+                            <h2>{data.filter(d => d.status === 'Offline').length}</h2>
                         </div>
                     </div>
 
@@ -106,38 +130,39 @@ const Redirectors = () => {
                     </div>
 
                     {filteredData.length > 0 ? (
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Description</th>
-                                    <th>Forward IP</th>
-                                    <th>Forward Port</th>
-                                    <th>Listener Port</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredData.map(item => (
-                                    <tr key={item.id}>
-                                        <td>{item.name}</td>
-                                        <td>{item.description}</td>
-                                        <td>{item.forwardip}</td>
-                                        <td>{item.forwardport}</td>
-                                        <td>{item.listenport}</td>
-                                        <td>{item.status}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                        <div className="table-wrapper">
+                            <table {...getTableProps()}>
+                                <thead>
+                                    {headerGroups.map(headerGroup => (
+                                        <tr {...headerGroup.getHeaderGroupProps()}>
+                                            {headerGroup.headers.map(renderResizableHeader)}
+                                        </tr>
+                                    ))}
+                                </thead>
+                                <tbody {...getTableBodyProps()}>
+                                    {rows.map(row => {
+                                        prepareRow(row);
+                                        return (
+                                            <tr {...row.getRowProps()}>
+                                                {row.cells.map(cell => (
+                                                    <td {...cell.getCellProps()}>
+                                                        <div className="cell-content">
+                                                            {cell.render('Cell')}
+                                                        </div>
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     ) : (
                         <p>No Redirectors</p>
                     )}
                 </div>
             ) : (
-                <div>
-                    <NewRedirectorForm fetchData={fetchData} setActiveTab={setActiveTab} />
-                </div>
+                <NewRedirectorForm fetchData={fetchData} setActiveTab={setActiveTab} />
             )}
         </div>
     );

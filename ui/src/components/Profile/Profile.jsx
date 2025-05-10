@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useContext } from 'react';
-import axios from '../../api/axios';
+import { useAxios } from '../../context/AxiosProvider';
 import AuthContext from '../../context/AuthProvider';
 import './Profile.css';
 import PasswordChangeForm from './PasswordChange';
 import ApiKeyForm from './ApiKey';
 
 const Profile = () => {
+    const axios = useAxios();
     const { auth } = useContext(AuthContext);
     const [user, setUser] = useState(null);
     const [error, setError] = useState(null);

@@ -129,7 +129,7 @@
     margin: 0 auto;
 }
 
-.table-wrapper {
+.home-container .table-wrapper {
     flex: 1;
     max-width: 800px;
     display: flex;

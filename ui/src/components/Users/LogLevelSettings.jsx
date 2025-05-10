@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useContext } from 'react';
-import axios from '../../api/axios';
+import { useAxios } from '../../context/AxiosProvider';
 import AuthContext from '../../context/AuthProvider';
 
 const LogLevelSettings = ({ appName }) => {
+	const axios = useAxios();
 	const { auth } = useContext(AuthContext);
 	const [logLevel, setLogLevel] = useState('');
 	const [logSize, setLogSize] = useState('');
