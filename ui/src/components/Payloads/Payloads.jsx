@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useContext } from 'react';
-import axios from '../../api/axios';
+import { useAxios } from '../../context/AxiosProvider';
 import AuthContext from '../../context/AuthProvider';
 import NewPayloadForm from './NewPayloadForm';
 import './Payloads.css';
 
-const FILE_SERVER = `https://${process.env.REACT_APP_NGINX_IP}:${process.env.REACT_APP_NGINX_PORT}/fileserver/`;
 
 const Payloads = () => {
+    const cfg = window.runtimeConfig;
+    const FILE_SERVER = `https://${cfg.REACT_APP_NGINX_IP}:${cfg.REACT_APP_NGINX_PORT}/fileserver/`;
+    const axios = useAxios();
     const { auth } = useContext(AuthContext);
     const [data, setData] = useState([]);
     const [error, setError] = useState(null);

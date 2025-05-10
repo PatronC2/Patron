@@ -7,3 +7,4 @@
 data/postgres_data/
 bot/data/
 PatronCLI
+frontend-config.json

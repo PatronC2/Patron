@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useContext } from 'react';
-import axios from '../../api/axios';
+import { useAxios } from '../../context/AxiosProvider';
 import AuthContext from '../../context/AuthProvider';
 import NewRedirectorForm from './NewRedirectorForm';
 import './Redirectors.css';
 
 const Redirectors = () => {
+    const axios = useAxios();
     const { auth } = useContext(AuthContext);
     const [data, setData] = useState([]);
     const [error, setError] = useState(null);
