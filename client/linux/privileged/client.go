@@ -7,10 +7,10 @@ import (
 	"log"
 	"time"
 
-	"github.com/MarinX/keylogger"
 	"github.com/PatronC2/Patron/client/client_utils"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
+	"github.com/PatronC2/linux-keylogger-1/keylogger"
 )
 
 var (

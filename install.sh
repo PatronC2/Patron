@@ -321,30 +321,6 @@ EOF
 
 echo "✅ Created frontend-config.json"
 
-echo "Installing Patron CLI"
-PLATFORM="linux"
-TAG="latest"
-INSTALL_PATH="/usr/bin"
-IMAGE="patronc2/cli:$PLATFORM-$TAG"
-BINARY_NAME="patron"
-
-echo "Pulling $IMAGE..."
-docker pull $IMAGE
-
-CID=$(docker create $IMAGE)
-echo "Copying $BINARY_NAME to $INSTALL_PATH"
-docker cp "$CID:/$BINARY_NAME" "$INSTALL_PATH/$BINARY_NAME"
-docker rm "$CID" > /dev/null
-
-chmod +x "$INSTALL_PATH/$BINARY_NAME"
-echo "✅ Installed $BINARY_NAME to $INSTALL_PATH"
-
-echo "Pulling redirector image"
-TAG="latest"
-IMAGE="patronc2/redirector:$TAG"
-docker pull $IMAGE
-echo "✅ Fetched redirector image"
-
 echo "Starting Patron C2"
 docker compose up -d
 
