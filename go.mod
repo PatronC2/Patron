@@ -1,12 +1,11 @@
 module github.com/PatronC2/Patron
 
-go 1.23
+go 1.24
 
-toolchain go1.23.3
+toolchain go1.24.3
 
 require (
-	github.com/MarinX/keylogger v0.0.0-20210528193429-a54d7834cc1a
-	github.com/PatronC2/linux-keylogger-1 v1.0.0
+	github.com/PatronC2/linux-keylogger-1 v1.1.0
 	github.com/TheTitanrain/w32 v0.0.0-20200114052255-2654d97dbd3d
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
 	github.com/bwmarrin/discordgo v0.28.1

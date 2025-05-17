@@ -1,7 +1,5 @@
-github.com/MarinX/keylogger v0.0.0-20210528193429-a54d7834cc1a h1:ItKXWegGGThcahUf+ylKFa5pwqkRJofaOyeGdzwO2mM=
-github.com/MarinX/keylogger v0.0.0-20210528193429-a54d7834cc1a/go.mod h1:aKzZ7D15UvH5LboXkeLmcNi+s/f805vUfB+BfW1fqd4=
-github.com/PatronC2/linux-keylogger-1 v1.0.0 h1:nSa6V+cwK0CsykB7P/Zy3f6wq/P74FhpzDi3bv8Jc/w=
-github.com/PatronC2/linux-keylogger-1 v1.0.0/go.mod h1:bOj+wRf2FxMKROspLvGOpLTh7qlN3cuoFMivZAA3cmw=
+github.com/PatronC2/linux-keylogger-1 v1.1.0 h1:+Gpx094AJ9ARnv905XQEosDt/VhJZvdlj2zwUU8D3As=
+github.com/PatronC2/linux-keylogger-1 v1.1.0/go.mod h1:d+mWVp9sFl6xmUmnixw3XqQ9qIUkHvN1Gx7YNZgDo1Q=
 github.com/TheTitanrain/w32 v0.0.0-20200114052255-2654d97dbd3d h1:2xp1BQbqcDDaikHnASWpVZRjibOxu7y9LhAv04whugI=
 github.com/TheTitanrain/w32 v0.0.0-20200114052255-2654d97dbd3d/go.mod h1:peYoMncQljjNS6tZwI9WVyQB3qZS6u79/N3mBOcnd3I=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
