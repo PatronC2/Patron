@@ -3,6 +3,7 @@ package data
 import (
 	"log"
 
+	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/helper"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
@@ -24,19 +25,19 @@ func CreateKeys(uuid string) error {
 	return nil
 }
 
-func UpdateAgentKeys(UUID, Keys string) error {
-	updateAgentKeylogSQL := `
+func UpdateAgentKeysProto(req *patronobuf.KeysRequest) error {
+	const sqlStmt = `
         UPDATE "Keylog"
         SET "Keys" = "Keys" || $1
         WHERE "UUID" = $2
     `
-	_, err := db.Exec(updateAgentKeylogSQL, Keys, UUID)
+	_, err := db.Exec(sqlStmt, req.GetKeys(), req.GetUuid())
 	if err != nil {
-		logger.Logf(logger.Error, "Error updating keys for agent with UUID %s: %v", UUID, err)
+		logger.Logf(logger.Error, "Error updating keys for UUID %s: %v", req.GetUuid(), err)
 		return err
 	}
 
-	logger.Logf(logger.Info, "Successfully updated keys for agent with UUID %s", UUID)
+	logger.Logf(logger.Info, "Successfully updated keys for UUID %s", req.GetUuid())
 	return nil
 }
 
