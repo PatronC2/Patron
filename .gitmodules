@@ -1,0 +1,4 @@
+[submodule "internal/proto/Patronobuf"]
+	path = internal/proto/Patronobuf
+	url = https://github.com/PatronC2/Patronobuf.git
+	branch = main
