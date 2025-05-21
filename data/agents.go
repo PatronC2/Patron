@@ -18,7 +18,7 @@ func CreateAgent(req *patronobuf.ConfigurationRequest) error {
 	INSERT INTO agents (
 		uuid, server_ip, server_port, callback_freq, callback_jitter,
 		ip, agent_user, hostname, os_type, os_build, os_arch, cpus, memory, next_callback
-	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`
 
 	nextCallback := time.Unix(req.GetNextcallbackUnix(), 0)
 
