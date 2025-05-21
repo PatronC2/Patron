@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"crypto/tls"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -14,7 +13,7 @@ import (
 
 	"github.com/PatronC2/Patron/lib/common"
 	"github.com/PatronC2/Patron/lib/logger"
-	"github.com/PatronC2/Patron/types"
+	"github.com/PatronC2/Patronobuf/go/patronobuf"
 )
 
 var (
@@ -152,44 +151,40 @@ func sendStatusUpdate() (string, string, error) {
 func handleClientConnection(clientConn net.Conn) {
 	defer clientConn.Close()
 
-	// Initialize the decoder and encoder for the client connection
-	clientDecoder := gob.NewDecoder(clientConn)
-	clientEncoder := gob.NewEncoder(clientConn)
-
-	// Reuse the same main connection for the entire session
 	mainConn, err := connectToMainServer()
 	if err != nil {
-		logger.Logf(logger.Warning, "Main server unavailable, retrying in 5 seconds: %v\n", err)
+		logger.Logf(logger.Warning, "Main server unavailable, retrying in 5 seconds: %v", err)
 		return
 	}
 	defer mainConn.Close()
 
 	clientAddr := clientConn.RemoteAddr().String()
-	logger.Logf(logger.Info, "Accepted connection from %s\n", clientAddr)
-
-	mainEncoder := gob.NewEncoder(mainConn)
-	mainDecoder := gob.NewDecoder(mainConn)
+	logger.Logf(logger.Info, "Accepted connection from %s", clientAddr)
 
 	for {
-		var request types.Request
-		if err := clientDecoder.Decode(&request); err != nil {
-			logger.Logf(logger.Warning, "Failed to decode request from client %s: %v\n", clientAddr, err)
+		// Read request from client
+		var request patronobuf.Request
+		if err := common.ReadDelimited(clientConn, &request); err != nil {
+			logger.Logf(logger.Warning, "Failed to decode request from client %s: %v", clientAddr, err)
 			return
 		}
 
-		if err := mainEncoder.Encode(request); err != nil {
-			logger.Logf(logger.Warning, "Failed to send request to main server: %v\n", err)
+		// Forward request to main server
+		if err := common.WriteDelimited(mainConn, &request); err != nil {
+			logger.Logf(logger.Warning, "Failed to send request to main server: %v", err)
 			return
 		}
 
-		var serverResponse types.Response
-		if err := mainDecoder.Decode(&serverResponse); err != nil {
-			logger.Logf(logger.Warning, "Failed to decode response from main server: %v\n", err)
+		// Read response from main server
+		var serverResponse patronobuf.Response
+		if err := common.ReadDelimited(mainConn, &serverResponse); err != nil {
+			logger.Logf(logger.Warning, "Failed to decode response from main server: %v", err)
 			return
 		}
 
-		if err := clientEncoder.Encode(serverResponse); err != nil {
-			logger.Logf(logger.Warning, "Failed to send response to client %s: %v\n", clientAddr, err)
+		// Send response back to client
+		if err := common.WriteDelimited(clientConn, &serverResponse); err != nil {
+			logger.Logf(logger.Warning, "Failed to send response to client %s: %v", clientAddr, err)
 			return
 		}
 	}
