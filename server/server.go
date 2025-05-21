@@ -89,8 +89,8 @@ func NewServer() *Server {
 			patronobuf.RequestType_COMMAND_STATUS: &handlers.CommandStatusHandler{},
 			//types.CommandStatusRequestType: &handlers.CommandStatusHandler{},
 			//types.KeysRequestType:          &handlers.KeysHandler{},
-			//types.FileRequestType:          &handlers.FileRequestHandler{},
-			//types.FileToServerType:         &handlers.FileToServerHandler{},
+			patronobuf.RequestType_FILE:           &handlers.FileRequestHandler{},
+			patronobuf.RequestType_FILE_TO_SERVER: &handlers.FileToServerHandler{},
 		},
 	}
 }
