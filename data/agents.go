@@ -169,22 +169,6 @@ func UpdateAgentCheckIn(req *patronobuf.ConfigurationRequest) error {
 	return nil
 }
 
-func UpdateAgentCommand(CommandUUID, Result, Output, uuid string) error {
-	updateAgentCommandSQL := `
-        UPDATE "Commands"
-        SET "Result" = $1, "Output" = $2
-        WHERE "CommandUUID" = $3`
-
-	_, err := db.Exec(updateAgentCommandSQL, Result, Output, CommandUUID)
-	if err != nil {
-		logger.Logf(logger.Error, "Error updating command for CommandUUID %s: %v", CommandUUID, err)
-		return err
-	}
-
-	logger.Logf(logger.Info, "Command %s updated for agent %s", CommandUUID, uuid)
-	return nil
-}
-
 func Agents() ([]types.ConfigurationRequest, error) {
 	/* DEPRECATED
 	USE FilterAgents() INSTEAD!

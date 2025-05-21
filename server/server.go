@@ -84,8 +84,9 @@ func NewServer() *Server {
 
 	return &Server{
 		handlers: map[patronobuf.RequestType]Handler{
-			patronobuf.RequestType_CONFIGURATION: &handlers.ConfigurationHandler{},
-			//types.CommandRequestType:       &handlers.CommandHandler{},
+			patronobuf.RequestType_CONFIGURATION:  &handlers.ConfigurationHandler{},
+			patronobuf.RequestType_COMMAND:        &handlers.CommandHandler{},
+			patronobuf.RequestType_COMMAND_STATUS: &handlers.CommandStatusHandler{},
 			//types.CommandStatusRequestType: &handlers.CommandStatusHandler{},
 			//types.KeysRequestType:          &handlers.KeysHandler{},
 			//types.FileRequestType:          &handlers.FileRequestHandler{},
