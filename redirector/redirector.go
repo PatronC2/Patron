@@ -29,7 +29,6 @@ var (
 func main() {
 	enableLogging := true
 	logger.EnableLogging(enableLogging)
-	common.RegisterGobTypes()
 
 	logFileName := "logs/forwarder.log"
 	err := logger.SetLogFile(logFileName)

@@ -49,7 +49,6 @@ func Initialize(logging_enabled string) {
 			fmt.Printf("Error setting log file: %v\n", err)
 		}
 	}
-	common.RegisterGobTypes()
 }
 
 func LoadCertificate(RootCert string) (*tls.Config, error) {
