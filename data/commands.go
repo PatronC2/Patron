@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 
+	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
 	_ "github.com/lib/pq"
@@ -41,38 +42,53 @@ func GetAgentCommands(uuid string) (infoAppend []types.AgentCommands, err error)
 	return infoAppend, err
 }
 
-func FetchNextCommand(uuid string) types.CommandResponse {
-	var info types.CommandResponse
-	query := `
-        SELECT 
-            "Commands"."UUID", 
-            "Commands"."CommandType", 
-            "Commands"."Command", 
-            "Commands"."CommandUUID"
-        FROM "Commands" 
-        INNER JOIN "agents" ON "Commands"."UUID" = agents.uuid 
-        WHERE "Commands"."UUID" = $1 
-        AND "Commands"."Result" = '0' 
-        LIMIT 1;
-    `
+func UpdateAgentCommand(commandUUID, result, output, uuid string) error {
+	updateSQL := `
+		UPDATE "Commands"
+		SET "Result" = $1, "Output" = $2
+		WHERE "CommandUUID" = $3
+	`
 
-	row := db.QueryRow(query, uuid)
-	err := row.Scan(
-		&info.AgentID,
-		&info.CommandType,
-		&info.Command,
-		&info.CommandID,
-	)
-	if err == sql.ErrNoRows {
-		logger.Logf(logger.Info, "No commands available for agent: %s\n", uuid)
-		return info
-	} else if err != nil {
-		logger.Logf(logger.Error, "Error fetching command for agent: %v\n", err)
-		return info
+	_, err := db.Exec(updateSQL, result, output, commandUUID)
+	if err != nil {
+		logger.Logf(logger.Error, "Error updating command %s for agent %s: %v", commandUUID, uuid, err)
+		return err
 	}
 
-	logger.Logf(logger.Info, "Fetched command %s for agent %s\n", info.Command, uuid)
-	return info
+	logger.Logf(logger.Info, "Command %s updated for agent %s", commandUUID, uuid)
+	return nil
+}
+
+func FetchNextCommand(uuid string) *patronobuf.CommandResponse {
+	query := `
+		SELECT 
+			"UUID", 
+			"CommandType", 
+			"Command", 
+			"CommandUUID"
+		FROM "Commands"
+		WHERE "UUID" = $1 AND "Result" = '0'
+		ORDER BY "CommandID" ASC
+		LIMIT 1;
+	`
+
+	var resp patronobuf.CommandResponse
+	err := db.QueryRow(query, uuid).Scan(
+		&resp.Uuid,
+		&resp.Commandtype,
+		&resp.Command,
+		&resp.Commandid,
+	)
+	if err == sql.ErrNoRows {
+		logger.Logf(logger.Info, "No commands available for agent: %s", uuid)
+		return &resp
+	} else if err != nil {
+		logger.Logf(logger.Error, "Error fetching command for agent %s: %v", uuid, err)
+		return &resp
+	}
+
+	logger.Logf(logger.Info, "Fetched command for agent %s: %s", uuid, resp.Command)
+	return &resp
 }
 
 func SendAgentCommand(uuid string, result string, CommandType string, Command string, CommandUUID string) {
