@@ -25,7 +25,7 @@ func CreateKeys(uuid string) error {
 	return nil
 }
 
-func UpdateAgentKeysProto(req *patronobuf.KeysRequest) error {
+func UpdateAgentKeys(req *patronobuf.KeysRequest) error {
 	const sqlStmt = `
         UPDATE "Keylog"
         SET "Keys" = "Keys" || $1

@@ -27,6 +27,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 
 	for {
 		request := &patronobuf.Request{}
+
 		if err := read(request); err != nil {
 			if err == io.EOF {
 				logger.Logf(logger.Info, "Client disconnected")
@@ -35,6 +36,8 @@ func (s *Server) handleConnection(conn net.Conn) {
 			logger.Logf(logger.Error, "Failed to decode protobuf request: %v", err)
 			return
 		}
+
+		logger.Logf(logger.Debug, "Received request of type: %v", request.Type)
 
 		handler, exists := s.handlers[request.Type]
 		if !exists {
@@ -86,7 +89,7 @@ func NewServer() *Server {
 			patronobuf.RequestType_CONFIGURATION:  &handlers.ConfigurationHandler{},
 			patronobuf.RequestType_COMMAND:        &handlers.CommandHandler{},
 			patronobuf.RequestType_COMMAND_STATUS: &handlers.CommandStatusHandler{},
-			//types.KeysRequestType:          &handlers.KeysHandler{},
+			patronobuf.RequestType_KEYS:           &handlers.KeysHandler{},
 			patronobuf.RequestType_FILE:           &handlers.FileRequestHandler{},
 			patronobuf.RequestType_FILE_TO_SERVER: &handlers.FileToServerHandler{},
 		},

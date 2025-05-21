@@ -58,6 +58,7 @@ func (h *ConfigurationHandler) Handle(request *patronobuf.Request, conn net.Conn
 	payload := request.GetConfiguration()
 
 	if payload == nil {
+		logger.Logf(logger.Debug, "Payload is nil")
 		return &patronobuf.Response{
 			Type: patronobuf.ResponseType_CONFIGURATION_RESPONSE,
 			Payload: &patronobuf.Response_ConfigurationResponse{
@@ -68,6 +69,7 @@ func (h *ConfigurationHandler) Handle(request *patronobuf.Request, conn net.Conn
 
 	respData, ok := validateOrCreateAgent(payload)
 	if !ok {
+		logger.Logf(logger.Debug, "Failed to create agent in DB")
 		return &patronobuf.Response{
 			Type: patronobuf.ResponseType_CONFIGURATION_RESPONSE,
 			Payload: &patronobuf.Response_ConfigurationResponse{
@@ -77,6 +79,8 @@ func (h *ConfigurationHandler) Handle(request *patronobuf.Request, conn net.Conn
 	}
 
 	_ = data.UpdateAgentCheckIn(payload)
+
+	logger.Logf(logger.Debug, "Sending configuration response: %+v", respData)
 
 	return &patronobuf.Response{
 		Type: patronobuf.ResponseType_CONFIGURATION_RESPONSE,
