@@ -1,6 +1,9 @@
 package types
 
-import "time"
+import (
+	"io"
+	"time"
+)
 
 // Defining request and response types
 type RequestType string
@@ -134,4 +137,10 @@ type FileToServer struct {
 type FileTransferStatusResponse struct {
 	FileID  string `json:"fileid"`
 	AgentID string `json:"uuid"`
+}
+
+type CommonStream interface {
+	io.Reader
+	io.Writer
+	io.Closer
 }

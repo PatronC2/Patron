@@ -1,11 +1,10 @@
 package handlers
 
 import (
-	"net"
-
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/lib/logger"
+	"github.com/PatronC2/Patron/types"
 )
 
 // All agents use this handler on their first request
@@ -54,7 +53,7 @@ func validateOrCreateAgent(c *patronobuf.ConfigurationRequest) (*patronobuf.Conf
 	return resp, fetch.GetUuid() == c.GetUuid()
 }
 
-func (h *ConfigurationHandler) Handle(request *patronobuf.Request, conn net.Conn) *patronobuf.Response {
+func (h *ConfigurationHandler) Handle(request *patronobuf.Request, stream types.CommonStream) *patronobuf.Response {
 	payload := request.GetConfiguration()
 
 	if payload == nil {

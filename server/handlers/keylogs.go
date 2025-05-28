@@ -1,16 +1,15 @@
 package handlers
 
 import (
-	"net"
-
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/lib/logger"
+	"github.com/PatronC2/Patron/types"
 )
 
 type KeysHandler struct{}
 
-func (h *KeysHandler) Handle(request *patronobuf.Request, conn net.Conn) *patronobuf.Response {
+func (h *KeysHandler) Handle(request *patronobuf.Request, stream types.CommonStream) *patronobuf.Response {
 	keyReq := request.GetKeys()
 	if keyReq == nil {
 		return &patronobuf.Response{

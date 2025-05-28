@@ -12,7 +12,7 @@ ENV NO_PROXY=${NO_PROXY}
 WORKDIR /app
 COPY . ./
 RUN go mod tidy
-RUN go build -o app ./server/server.go
+RUN go build -o app ./server/teamserver.go
 
 FROM alpine:latest
 

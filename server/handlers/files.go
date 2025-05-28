@@ -1,17 +1,16 @@
 package handlers
 
 import (
-	"net"
-
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/lib/logger"
+	"github.com/PatronC2/Patron/types"
 )
 
 type FileRequestHandler struct{}
 type FileToServerHandler struct{}
 
-func (h *FileRequestHandler) Handle(request *patronobuf.Request, conn net.Conn) *patronobuf.Response {
+func (h *FileRequestHandler) Handle(request *patronobuf.Request, stream types.CommonStream) *patronobuf.Response {
 	req := request.GetFile()
 	if req == nil {
 		return &patronobuf.Response{
@@ -35,7 +34,7 @@ func (h *FileRequestHandler) Handle(request *patronobuf.Request, conn net.Conn) 
 	}
 }
 
-func (h *FileToServerHandler) Handle(request *patronobuf.Request, conn net.Conn) *patronobuf.Response {
+func (h *FileToServerHandler) Handle(request *patronobuf.Request, stream types.CommonStream) *patronobuf.Response {
 	file := request.GetFileToServer()
 	if file == nil {
 		return &patronobuf.Response{

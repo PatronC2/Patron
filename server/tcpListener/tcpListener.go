@@ -1,18 +1,16 @@
-package main
+package tcpListener
 
 import (
 	"crypto/tls"
 	"io"
-	"log"
 	"net"
 	"os"
-	"time"
 
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
-	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/lib/common"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/server/handlers"
+	"github.com/PatronC2/Patron/types"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -55,8 +53,8 @@ func (s *Server) handleConnection(conn net.Conn) {
 }
 
 func (s *Server) Start() {
-	c2serverip := os.Getenv("C2SERVER_IP")
-	c2serverport := os.Getenv("C2SERVER_PORT")
+	c2serverip := os.Getenv("TCP_LISTENER_IP")
+	c2serverport := os.Getenv("TCP_LISTENER_PORT")
 
 	cer, err := tls.LoadX509KeyPair("certs/server.pem", "certs/server.key")
 	if err != nil {
@@ -96,73 +94,10 @@ func NewServer() *Server {
 	}
 }
 
-func Init() {
-	enableLogging := true
-	logger.EnableLogging(enableLogging)
-	err := logger.SetLogFile("logs/server.log")
-	if err != nil {
-		log.Fatalf("Error setting log file: %v\n", err)
-	}
-}
-
-func Refresh(appName string) {
-	go func() {
-		ticker := time.NewTicker(60 * time.Second)
-		defer ticker.Stop()
-
-		for range ticker.C {
-			logger.Logf(logger.Info, "Refreshing settings")
-			refreshLogLevel(appName)
-			refreshLogTruncation(appName)
-		}
-	}()
-}
-
-func refreshLogLevel(appName string) {
-	level, err := data.GetLogLevel(appName)
-	if err != nil {
-		logger.Logf(logger.Error, "Failed to load log level from DB: %v", err)
-		return
-	}
-
-	if level == "" {
-		logger.Logf(logger.Warning, "No log level found for '%s' — defaulting to 'info'", appName)
-		logger.SetLogLevel(logger.Info)
-	} else {
-		logger.SetLogLevelByName(level)
-		logger.Logf(logger.Debug, "Log level for '%s' set to '%s'", appName, level)
-	}
-}
-
-func refreshLogTruncation(app string) {
-	size, err := data.GetLogFileMaxSize(app)
-	if err != nil {
-		logger.Logf(logger.Error, "Failed to get log size limit: %v", err)
-		return
-	}
-	if size > 0 {
-		err := logger.TruncateLogFileIfTooLarge(size)
-		if err != nil {
-			logger.Logf(logger.Error, "Failed to truncate log file: %v", err)
-		}
-	}
-}
-
-// Unique types required in the main. Do not move to types package, it won't work.
 type Handler interface {
-	Handle(request *patronobuf.Request, conn net.Conn) *patronobuf.Response
+	Handle(request *patronobuf.Request, stream types.CommonStream) *patronobuf.Response
 }
 
 type Server struct {
 	handlers map[patronobuf.RequestType]Handler
-}
-
-func main() {
-	appName := "server"
-	Init()
-	data.OpenDatabase()
-	data.InitDatabase()
-	Refresh(appName)
-	server := NewServer()
-	server.Start()
 }
