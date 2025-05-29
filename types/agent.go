@@ -57,6 +57,7 @@ type ConfigurationRequest struct {
 	Status            string    `json:"status"`
 	Tags              []Tag     `json:"tags"`
 	NextCallback      time.Time `json:"nextcallback"`
+	TransportProtocol string    `json:"transportprotocol"`
 }
 
 // ConfigurationResponse is sent back to agent after a ConfigurationRequest

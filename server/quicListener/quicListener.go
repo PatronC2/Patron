@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"os"
 
 	quic "github.com/quic-go/quic-go"
@@ -55,21 +56,28 @@ func (s *Server) handleSession(sess quic.Connection) {
 func (s *Server) handleStream(stream quic.Stream) {
 	defer stream.Close()
 
-	request := &patronobuf.Request{}
-	if err := common.ReadDelimited(stream, request); err != nil {
-		logger.Logf(logger.Warning, "failed to read request: %v", err)
-		return
-	}
+	for {
+		request := &patronobuf.Request{}
+		if err := common.ReadDelimited(stream, request); err != nil {
+			if err == io.EOF {
+				logger.Logf(logger.Info, "client closed stream")
+			} else {
+				logger.Logf(logger.Warning, "failed to read request: %v", err)
+			}
+			return
+		}
 
-	handler, exists := s.handlers[request.Type]
-	if !exists {
-		logger.Logf(logger.Warning, "unknown request type: %v", request.Type)
-		return
-	}
+		handler, exists := s.handlers[request.Type]
+		if !exists {
+			logger.Logf(logger.Warning, "unknown request type: %v", request.Type)
+			continue
+		}
 
-	response := handler.Handle(request, stream)
-	if err := common.WriteDelimited(stream, response); err != nil {
-		logger.Logf(logger.Warning, "failed to write response: %v", err)
+		response := handler.Handle(request, stream)
+		if err := common.WriteDelimited(stream, response); err != nil {
+			logger.Logf(logger.Warning, "failed to write response: %v", err)
+			return
+		}
 	}
 }
 
@@ -84,7 +92,12 @@ type Server struct {
 func NewServer() *Server {
 	return &Server{
 		handlers: map[patronobuf.RequestType]Handler{
-			patronobuf.RequestType_CONFIGURATION: &handlers.ConfigurationHandler{},
+			patronobuf.RequestType_CONFIGURATION:  &handlers.ConfigurationHandler{},
+			patronobuf.RequestType_COMMAND:        &handlers.CommandHandler{},
+			patronobuf.RequestType_COMMAND_STATUS: &handlers.CommandStatusHandler{},
+			patronobuf.RequestType_KEYS:           &handlers.KeysHandler{},
+			patronobuf.RequestType_FILE:           &handlers.FileRequestHandler{},
+			patronobuf.RequestType_FILE_TO_SERVER: &handlers.FileToServerHandler{},
 		},
 	}
 }

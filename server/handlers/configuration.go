@@ -18,10 +18,10 @@ func validateOrCreateAgent(c *patronobuf.ConfigurationRequest) (*patronobuf.Conf
 		return &patronobuf.ConfigurationResponse{}, false
 	}
 
-	logger.Logf(logger.Debug, "Beacon ID: %v, Callback IP: %v, Callback Port: %v, Callback Freq: %v, Callback Jitter: %v, Agent IP: %v, Username: %v, Hostname: %v, OS: %s %s %s, CPUs: %s, Memory: %s",
+	logger.Logf(logger.Debug, "Beacon ID: %v, Callback IP: %v, Callback Port: %v, Callback Freq: %v, Callback Jitter: %v, Agent IP: %v, Username: %v, Hostname: %v, OS: %s %s %s, CPUs: %s, Memory: %s, Transport Protocol: %s",
 		c.GetUuid(), c.GetServerip(), c.GetServerport(), c.GetCallbackfrequency(), c.GetCallbackjitter(),
 		c.GetAgentip(), c.GetUsername(), c.GetHostname(), c.GetOstype(), c.GetOsbuild(), c.GetArch(),
-		c.GetCpus(), c.GetMemory())
+		c.GetCpus(), c.GetMemory(), c.GetTransportprotocol())
 
 	// Register agent if new and master key matches
 	if fetch == nil || fetch.GetUuid() == "" && c.GetMasterkey() == "MASTERKEY" {
@@ -48,6 +48,7 @@ func validateOrCreateAgent(c *patronobuf.ConfigurationRequest) (*patronobuf.Conf
 		Serverport:        fetch.GetServerport(),
 		Callbackfrequency: fetch.GetCallbackfrequency(),
 		Callbackjitter:    fetch.GetCallbackjitter(),
+		Transportprotocol: fetch.GetTransportprotocol(),
 	}
 
 	return resp, fetch.GetUuid() == c.GetUuid()
