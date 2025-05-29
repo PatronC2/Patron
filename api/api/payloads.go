@@ -77,7 +77,7 @@ func CreatePayloadHandler(c *gin.Context) {
 
 	commandString := fmt.Sprintf(
 		"docker run --rm -v %s:/build -w /build -e HTTPS_PROXY=%s golang:1.24.3 sh -c '"+
-			"%s env %s go build %s \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s -X main.LoggingEnabled=%s\" "+
+			"%s env %s go build %s \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s -X main.LoggingEnabled=%s -X main.TransportProtocol=%s\" "+
 			"-o /build/payloads/%s /build/client/%s'",
 		repo_dir,
 		docker_https_proxy,
@@ -90,6 +90,7 @@ func CreatePayloadHandler(c *gin.Context) {
 		body["callbackjitter"],
 		publickey,
 		body["logging"],
+		body["transportprotocol"],
 		concat,
 		config.CodePath,
 	)
@@ -117,7 +118,7 @@ func CreatePayloadHandler(c *gin.Context) {
 		}
 	}
 
-	data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat)
+	data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat, body["transportprotocol"])
 	c.JSON(http.StatusOK, gin.H{"data": "success"})
 }
 

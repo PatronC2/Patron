@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 
 	"google.golang.org/protobuf/proto"
@@ -12,10 +13,13 @@ func WriteDelimited(w io.Writer, msg proto.Message) error {
 	if err != nil {
 		return err
 	}
-	if err := binary.Write(w, binary.BigEndian, uint32(len(data))); err != nil {
-		return err
-	}
-	_, err = w.Write(data)
+
+	lengthBuf := make([]byte, 4)
+	binary.BigEndian.PutUint32(lengthBuf, uint32(len(data)))
+
+	fullMsg := append(lengthBuf, data...)
+
+	_, err = w.Write(fullMsg)
 	return err
 }
 
@@ -25,8 +29,10 @@ func ReadDelimited(r io.Reader, msg proto.Message) error {
 		return err
 	}
 	buf := make([]byte, length)
-	if _, err := io.ReadFull(r, buf); err != nil {
-		return err
+	n, err := io.ReadFull(r, buf)
+	if err != nil {
+		return fmt.Errorf("read %d/%d bytes: %w", n, length, err)
 	}
+
 	return proto.Unmarshal(buf, msg)
 }

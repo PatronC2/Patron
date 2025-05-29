@@ -25,8 +25,10 @@ function set_global_default_variable {
    webserverport="8000"
    reactclientip="0.0.0.0"
    reactclientport="8081"
-   c2serverip=""
-   c2serverport="9000"
+   tcplistenerip=""
+   tcplistenerport="9000"
+   quiclistenerip=""
+   quiclistenerport="9001"
    redirectorport="9000"
    dockerinternal="172.18.0"
    nginxip=""
@@ -45,8 +47,10 @@ function ask_prompt {
    read -p "Enter REACTCLIENT IP: " reactclientip
    read -p "Enter REACTCLIENT PORT: " reactclientport
    echo "Note: To listen on all interfaces, leave C2SERVER IP blank"
-   read -p "Enter C2SERVER IP: " c2serverip
-   read -p "Enter C2SERVER PORT: " c2serverport
+   read -p "Enter TCP Listener IP: " tcplistenerip
+   read -p "Enter TCP Listener PORT: " tcplistenerport
+   read -p "Enter QUIC Listener IP: " quiclistenerip
+   read -p "Enter QUIC Listener PORT: " quiclistenerport
    read -p "Enter DOCKER INTERNAL NETWORK e.g. 172.18.0 (without the last octet): " dockerinternal
    read -p "Enter NGINX PORT: " nginxport
    read -p "Enter Database Host: " dbhost
@@ -280,8 +284,10 @@ REPO_DIR=$(pwd)
 
 cat <<EOF > .env
 WEBSERVER_PORT=$webserverport
-C2SERVER_IP=$c2serverip
-C2SERVER_PORT=$c2serverport
+TCP_LISTENER_IP=$tcplistenerip
+TCP_LISTENER_PORT=$tcplistenerport
+QUIC_LISTENER_IP=$quiclistenerip
+QUIC_LISTENER_PORT=$quiclistenerport
 PUBLIC_KEY=$encpubkey
 DISCORD_BOT_TOKEN=$bottoken
 DB_HOST=$dbhost
@@ -294,7 +300,7 @@ ADMIN_AUTH_USER=$patronUsername
 ADMIN_AUTH_PASS=$patronPassword
 JWT_KEY=$JWT_KEY
 REPO_DIR=$REPO_DIR
-REACT_APP_C2SERVER_PORT=$c2serverport
+REACT_APP_C2SERVER_PORT=$tcplistenerport
 REACT_APP_NGINX_PORT=$nginxport
 REACT_APP_NGINX_IP=$nginxip
 REACT_SERVER_IP=$reactclientip
@@ -354,7 +360,7 @@ echo "✅ Patron C2 Install successful"
 echo ""
 echo "Visit https://$nginxip:$nginxport for Web"
 echo ""
-echo "C2 Server on $nginxip:$c2serverport"
+echo "C2 Server on $nginxip:$tcplistenerport"
 echo ""
 echo "See .env to tweak environment variables (not advised and restart required)"
 echo "Run 'docker compose down --rmi all -v --remove-orphans' to stop"

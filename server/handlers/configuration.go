@@ -1,11 +1,10 @@
 package handlers
 
 import (
-	"net"
-
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/lib/logger"
+	"github.com/PatronC2/Patron/types"
 )
 
 // All agents use this handler on their first request
@@ -19,10 +18,10 @@ func validateOrCreateAgent(c *patronobuf.ConfigurationRequest) (*patronobuf.Conf
 		return &patronobuf.ConfigurationResponse{}, false
 	}
 
-	logger.Logf(logger.Debug, "Beacon ID: %v, Callback IP: %v, Callback Port: %v, Callback Freq: %v, Callback Jitter: %v, Agent IP: %v, Username: %v, Hostname: %v, OS: %s %s %s, CPUs: %s, Memory: %s",
+	logger.Logf(logger.Debug, "Beacon ID: %v, Callback IP: %v, Callback Port: %v, Callback Freq: %v, Callback Jitter: %v, Agent IP: %v, Username: %v, Hostname: %v, OS: %s %s %s, CPUs: %s, Memory: %s, Transport Protocol: %s",
 		c.GetUuid(), c.GetServerip(), c.GetServerport(), c.GetCallbackfrequency(), c.GetCallbackjitter(),
 		c.GetAgentip(), c.GetUsername(), c.GetHostname(), c.GetOstype(), c.GetOsbuild(), c.GetArch(),
-		c.GetCpus(), c.GetMemory())
+		c.GetCpus(), c.GetMemory(), c.GetTransportprotocol())
 
 	// Register agent if new and master key matches
 	if fetch == nil || fetch.GetUuid() == "" && c.GetMasterkey() == "MASTERKEY" {
@@ -49,12 +48,13 @@ func validateOrCreateAgent(c *patronobuf.ConfigurationRequest) (*patronobuf.Conf
 		Serverport:        fetch.GetServerport(),
 		Callbackfrequency: fetch.GetCallbackfrequency(),
 		Callbackjitter:    fetch.GetCallbackjitter(),
+		Transportprotocol: fetch.GetTransportprotocol(),
 	}
 
 	return resp, fetch.GetUuid() == c.GetUuid()
 }
 
-func (h *ConfigurationHandler) Handle(request *patronobuf.Request, conn net.Conn) *patronobuf.Response {
+func (h *ConfigurationHandler) Handle(request *patronobuf.Request, stream types.CommonStream) *patronobuf.Response {
 	payload := request.GetConfiguration()
 
 	if payload == nil {

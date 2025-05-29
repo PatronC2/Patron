@@ -1,17 +1,16 @@
 package handlers
 
 import (
-	"net"
-
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/lib/logger"
+	"github.com/PatronC2/Patron/types"
 )
 
 type CommandHandler struct{}
 type CommandStatusHandler struct{}
 
-func (h *CommandHandler) Handle(request *patronobuf.Request, conn net.Conn) *patronobuf.Response {
+func (h *CommandHandler) Handle(request *patronobuf.Request, stream types.CommonStream) *patronobuf.Response {
 	commandReq := request.GetCommand()
 	if commandReq == nil {
 		return &patronobuf.Response{
@@ -32,7 +31,7 @@ func (h *CommandHandler) Handle(request *patronobuf.Request, conn net.Conn) *pat
 	}
 }
 
-func (h *CommandStatusHandler) Handle(request *patronobuf.Request, conn net.Conn) *patronobuf.Response {
+func (h *CommandStatusHandler) Handle(request *patronobuf.Request, stream types.CommonStream) *patronobuf.Response {
 	status := request.GetCommandStatus()
 	if status == nil {
 		return &patronobuf.Response{

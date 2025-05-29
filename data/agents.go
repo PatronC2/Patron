@@ -17,8 +17,8 @@ func CreateAgent(req *patronobuf.ConfigurationRequest) error {
 	CreateAgentSQL := `
 	INSERT INTO agents (
 		uuid, server_ip, server_port, callback_freq, callback_jitter,
-		ip, agent_user, hostname, os_type, os_build, os_arch, cpus, memory, next_callback
-	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`
+		ip, agent_user, hostname, os_type, os_build, os_arch, cpus, memory, next_callback, transport_protocol
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`
 
 	nextCallback := time.Unix(req.GetNextcallbackUnix(), 0)
 
@@ -27,7 +27,7 @@ func CreateAgent(req *patronobuf.ConfigurationRequest) error {
 		req.GetCallbackfrequency(), req.GetCallbackjitter(),
 		req.GetAgentip(), req.GetUsername(), req.GetHostname(),
 		req.GetOstype(), req.GetOsbuild(), req.GetArch(),
-		req.GetCpus(), req.GetMemory(), nextCallback,
+		req.GetCpus(), req.GetMemory(), nextCallback, req.GetTransportprotocol(),
 	)
 
 	if err != nil {
@@ -56,7 +56,8 @@ func FetchOneAgent(uuid string) (*patronobuf.ConfigurationRequest, error) {
 		cpus,
 		memory,
 		next_callback,
-		status
+		status,
+		transport_protocol
 	FROM agents_status
 	WHERE uuid = $1
 	`
@@ -80,6 +81,7 @@ func FetchOneAgent(uuid string) (*patronobuf.ConfigurationRequest, error) {
 		&req.Memory,
 		&nextCallback,
 		&req.Status,
+		&req.Transportprotocol,
 	)
 
 	if err == sql.ErrNoRows {
@@ -96,57 +98,31 @@ func FetchOneAgent(uuid string) (*patronobuf.ConfigurationRequest, error) {
 	return &req, nil
 }
 
-func FetchOne(uuid string) (infoAppend []types.ConfigurationResponse, err error) {
-	var info types.ConfigurationResponse
-	FetchSQL := `
-	SELECT 
-		uuid, server_ip, server_port, callback_freq, callback_jitter
-	FROM "agents" WHERE "uuid"=$1
-	`
-	row, err := db.Query(FetchSQL, uuid)
-	if err != nil {
-		logger.Logf(logger.Error, "Error Fetching one agent: %v", err)
-	}
-	defer row.Close()
-	for row.Next() {
-		row.Scan(
-			&info.AgentID,
-			&info.ServerIP,
-			&info.ServerPort,
-			&info.CallbackFrequency,
-			&info.CallbackJitter,
-		)
-	}
-	infoAppend = append(infoAppend, info)
-	logger.Logf(logger.Info, "%v\n", info)
-	return infoAppend, err
-}
-
-func UpdateAgentConfig(UUID, ServerIP, ServerPort, CallbackFrequency, CallbackJitter string, NextCallback time.Time) {
+func UpdateAgentConfig(UUID, ServerIP, ServerPort, CallbackFrequency, CallbackJitter string, NextCallback time.Time, TransportProtocol string) {
 	updateAgentConfigSQL := `
 	UPDATE agents 
-	SET server_ip= $1, server_port= $2, callback_freq= $3, callback_jitter= $4, next_callback=$5
-	WHERE "uuid"= $6`
+	SET server_ip= $1, server_port= $2, callback_freq= $3, callback_jitter= $4, next_callback=$5, transport_protocol=$6
+	WHERE "uuid"= $7`
 
 	statement, err := db.Prepare(updateAgentConfigSQL)
 	if err != nil {
 		logger.Logf(logger.Error, "Error while updating agent config: %v", err)
 	}
 
-	_, err = statement.Exec(ServerIP, ServerPort, CallbackFrequency, CallbackJitter, NextCallback, UUID)
+	_, err = statement.Exec(ServerIP, ServerPort, CallbackFrequency, CallbackJitter, NextCallback, TransportProtocol, UUID)
 	if err != nil {
 		logger.Logf(logger.Error, "Error while updating agent config: %v", err)
 	}
 	logger.Logf(logger.Info, "Agent %s Reveived Config Update  \n", UUID)
 }
 
-func UpdateAgentConfigNoNext(UUID, ServerIP, ServerPort, CallbackFrequency, CallbackJitter string) {
+func UpdateAgentConfigNoNext(UUID, ServerIP, ServerPort, CallbackFrequency, CallbackJitter string, TransportProtocol string) {
 	updateSQL := `
 	UPDATE agents 
-	SET server_ip = $1, server_port = $2, callback_freq = $3, callback_jitter = $4
-	WHERE uuid = $5`
+	SET server_ip = $1, server_port = $2, callback_freq = $3, callback_jitter = $4, transport_protocol = $5
+	WHERE uuid = $6`
 
-	_, err := db.Exec(updateSQL, ServerIP, ServerPort, CallbackFrequency, CallbackJitter, UUID)
+	_, err := db.Exec(updateSQL, ServerIP, ServerPort, CallbackFrequency, CallbackJitter, TransportProtocol, UUID)
 	if err != nil {
 		logger.Logf(logger.Error, "Error while updating agent config: %v", err)
 	}
@@ -214,12 +190,12 @@ func Agents() ([]types.ConfigurationRequest, error) {
 			uuid, serverIP, serverPort, callbackFreq, callbackJitter, ip, agentUser, hostname string
 			osType, osArch, osBuild, cpus, memory                                             string
 			nextCallback                                                                      time.Time
-			status                                                                            string
+			status, transportProtocol                                                         string
 			tagID, tagKey, tagValue                                                           sql.NullString
 		)
 
 		err := rows.Scan(&uuid, &serverIP, &serverPort, &callbackFreq, &callbackJitter, &ip, &agentUser,
-			&hostname, &osType, &osArch, &osBuild, &cpus, &memory, &nextCallback, &status,
+			&hostname, &osType, &osArch, &osBuild, &cpus, &memory, &nextCallback, &status, &transportProtocol,
 			&tagID, &tagKey, &tagValue)
 		if err != nil {
 			logger.Logf(logger.Error, "Error scanning row from Agents: %v", err)
@@ -243,6 +219,7 @@ func Agents() ([]types.ConfigurationRequest, error) {
 				MEMORY:            memory,
 				NextCallback:      nextCallback,
 				Status:            status,
+				TransportProtocol: transportProtocol,
 				Tags:              []types.Tag{},
 			}
 		}
@@ -275,7 +252,7 @@ func FilterAgents(filters map[string]string, tagFilters []string, logic string, 
 		SELECT 
 			a.uuid, a.server_ip, a.server_port, a.callback_freq, a.callback_jitter,
 			a.ip, a.agent_user, a.hostname, a.os_type, a.os_arch, a.os_build,
-			a.cpus, a.memory, a.next_callback, a.status
+			a.cpus, a.memory, a.next_callback, a.status, a.transport_protocol
 		FROM agents_status a`
 
 	var (
@@ -331,7 +308,7 @@ func FilterAgents(filters map[string]string, tagFilters []string, logic string, 
 		query += `
 		GROUP BY a.agent_id, a.uuid, a.server_ip, a.server_port, a.callback_freq, a.callback_jitter,
 		         a.ip, a.agent_user, a.hostname, a.os_type, a.os_arch, a.os_build, a.cpus, a.memory,
-		         a.next_callback, a.status
+		         a.next_callback, a.status, a.transport_protocol
 		HAVING COUNT(DISTINCT t."Key") = $` + strconv.Itoa(havingIndex)
 		args = append(args, len(tagFilters))
 	}
@@ -377,7 +354,7 @@ func FilterAgents(filters map[string]string, tagFilters []string, logic string, 
 			&agent.AgentID, &agent.ServerIP, &agent.ServerPort, &agent.CallbackFrequency,
 			&agent.CallbackJitter, &agent.AgentIP, &agent.Username, &agent.Hostname,
 			&agent.OSType, &agent.OSArch, &agent.OSBuild, &agent.CPUS, &agent.MEMORY,
-			&agent.NextCallback, &agent.Status,
+			&agent.NextCallback, &agent.Status, &agent.TransportProtocol,
 		)
 		if err != nil {
 			logger.Logf(logger.Error, "Error scanning agent: %v", err)
@@ -408,7 +385,8 @@ func AgentsByIp(Ip string) (agentAppend []types.ConfigurationRequest, err error)
 		cpus,
 		memory,
 		next_callback,
-		status
+		status,
+		transport_protocol,
 	FROM agents_status
 	WHERE "Ip" = $1
 	`
@@ -434,6 +412,7 @@ func AgentsByIp(Ip string) (agentAppend []types.ConfigurationRequest, err error)
 			&agents.MEMORY,
 			&agents.NextCallback,
 			&agents.Status,
+			&agents.TransportProtocol,
 		)
 		agentAppend = append(agentAppend, agents)
 	}

