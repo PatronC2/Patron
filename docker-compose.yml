@@ -7,8 +7,10 @@ services:
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
       DB_NAME: ${DB_NAME}
-      C2SERVER_IP: patron_c2_server
-      C2SERVER_PORT: ${C2SERVER_PORT}
+      TCP_LISTENER_IP: patron_c2_server
+      TCP_LISTENER_PORT: ${TCP_LISTENER_PORT}
+      QUIC_LISTENER_IP: patron_c2_server
+      QUIC_LISTENER_PORT: ${QUIC_LISTENER_PORT}
     restart: always
     volumes:
       - ./logs:/app/logs
@@ -17,7 +19,8 @@ services:
     networks:
       - internal_c2_network
     ports:
-      - "${C2SERVER_PORT}:${C2SERVER_PORT}"
+      - "${TCP_LISTENER_PORT}:${TCP_LISTENER_PORT}"
+      - "${QUIC_LISTENER_PORT}:${QUIC_LISTENER_PORT}/udp"
     depends_on:
       patron_c2_postgres:
         condition: service_healthy

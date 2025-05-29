@@ -1,8 +1,7 @@
 package handlers
 
 import (
-	"net"
-
+	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
@@ -12,61 +11,81 @@ import (
 
 type ConfigurationHandler struct{}
 
-func validateOrCreateAgent(c types.ConfigurationRequest) (types.ConfigurationResponse, bool) {
-	fetch, err := data.FetchOneAgent(c.AgentID)
+func validateOrCreateAgent(c *patronobuf.ConfigurationRequest) (*patronobuf.ConfigurationResponse, bool) {
+	fetch, err := data.FetchOneAgent(c.GetUuid())
 	if err != nil {
 		logger.Logf(logger.Warning, "Couldn't fetch agent: %v\n", err)
-		return types.ConfigurationResponse{}, false
+		return &patronobuf.ConfigurationResponse{}, false
 	}
 
-	logger.Logf(logger.Debug, "Beacon ID: %v, Callback IP: %v, Callback Port: %v, Callback Freq: %v, Callback Jitter: %v, Agent IP: %v, Username: %v, Hostname: %v, OS: %s %s %s, CPUs: %s, Memory: %s",
-		c.AgentID, c.ServerIP, c.ServerPort, c.CallbackFrequency, c.CallbackJitter, c.AgentIP, c.Username, c.Hostname, c.OSType, c.OSBuild, c.OSArch, c.CPUS, c.MEMORY)
+	logger.Logf(logger.Debug, "Beacon ID: %v, Callback IP: %v, Callback Port: %v, Callback Freq: %v, Callback Jitter: %v, Agent IP: %v, Username: %v, Hostname: %v, OS: %s %s %s, CPUs: %s, Memory: %s, Transport Protocol: %s",
+		c.GetUuid(), c.GetServerip(), c.GetServerport(), c.GetCallbackfrequency(), c.GetCallbackjitter(),
+		c.GetAgentip(), c.GetUsername(), c.GetHostname(), c.GetOstype(), c.GetOsbuild(), c.GetArch(),
+		c.GetCpus(), c.GetMemory(), c.GetTransportprotocol())
 
-	if fetch.AgentID == "" && c.MasterKey == "MASTERKEY" {
-		logger.Logf(logger.Info, "Registering new agent: %v", c.AgentID)
-		data.CreateAgent(c.AgentID, c.ServerIP, c.ServerPort, c.CallbackFrequency, c.CallbackJitter, c.AgentIP, c.Username, c.Hostname, c.OSType, c.OSBuild, c.OSArch, c.CPUS, c.MEMORY, c.NextCallback)
-		data.CreateKeys(c.AgentID)
-		fetch, err = data.FetchOneAgent(c.AgentID)
+	// Register agent if new and master key matches
+	if fetch == nil || fetch.GetUuid() == "" && c.GetMasterkey() == "MASTERKEY" {
+		logger.Logf(logger.Info, "Registering new agent: %v", c.GetUuid())
+
+		if err := data.CreateAgent(c); err != nil {
+			logger.Logf(logger.Error, "Failed to create agent: %v", err)
+			return &patronobuf.ConfigurationResponse{}, false
+		}
+
+		data.CreateKeys(c.GetUuid())
+
+		fetch, err = data.FetchOneAgent(c.GetUuid())
 		if err != nil {
 			logger.Logf(logger.Warning, "Couldn't fetch agent after creation: %v\n", err)
-			return types.ConfigurationResponse{}, false
+			return &patronobuf.ConfigurationResponse{}, false
 		}
 	}
 
-	response := types.ConfigurationResponse{
-		ServerIP:          fetch.ServerIP,
-		ServerPort:        fetch.ServerPort,
-		CallbackFrequency: fetch.CallbackFrequency,
-		CallbackJitter:    fetch.CallbackJitter,
+	// Build the response
+	resp := &patronobuf.ConfigurationResponse{
+		Uuid:              fetch.GetUuid(),
+		Serverip:          fetch.GetServerip(),
+		Serverport:        fetch.GetServerport(),
+		Callbackfrequency: fetch.GetCallbackfrequency(),
+		Callbackjitter:    fetch.GetCallbackjitter(),
+		Transportprotocol: fetch.GetTransportprotocol(),
 	}
 
-	return response, fetch.AgentID == c.AgentID
+	return resp, fetch.GetUuid() == c.GetUuid()
 }
 
-func (h *ConfigurationHandler) Handle(request types.Request, conn net.Conn) types.Response {
-	configReq, ok := request.Payload.(types.ConfigurationRequest)
+func (h *ConfigurationHandler) Handle(request *patronobuf.Request, stream types.CommonStream) *patronobuf.Response {
+	payload := request.GetConfiguration()
+
+	if payload == nil {
+		logger.Logf(logger.Debug, "Payload is nil")
+		return &patronobuf.Response{
+			Type: patronobuf.ResponseType_CONFIGURATION_RESPONSE,
+			Payload: &patronobuf.Response_ConfigurationResponse{
+				ConfigurationResponse: &patronobuf.ConfigurationResponse{},
+			},
+		}
+	}
+
+	respData, ok := validateOrCreateAgent(payload)
 	if !ok {
-		return types.Response{
-			Type:    types.ConfigurationResponseType,
-			Payload: types.ConfigurationResponse{},
+		logger.Logf(logger.Debug, "Failed to create agent in DB")
+		return &patronobuf.Response{
+			Type: patronobuf.ResponseType_CONFIGURATION_RESPONSE,
+			Payload: &patronobuf.Response_ConfigurationResponse{
+				ConfigurationResponse: &patronobuf.ConfigurationResponse{},
+			},
 		}
 	}
 
-	configResponse, success := validateOrCreateAgent(configReq)
-	if !success {
-		return types.Response{
-			Type:    types.ConfigurationResponseType,
-			Payload: types.ConfigurationResponse{},
-		}
-	}
+	_ = data.UpdateAgentCheckIn(payload)
 
-	err := data.UpdateAgentCheckIn(configReq)
-	if err != nil {
-		logger.Logf(logger.Error, "Could not update last callback for %v, %v", configReq.AgentID, err)
-	}
+	logger.Logf(logger.Debug, "Sending configuration response: %+v", respData)
 
-	return types.Response{
-		Type:    types.ConfigurationResponseType,
-		Payload: configResponse,
+	return &patronobuf.Response{
+		Type: patronobuf.ResponseType_CONFIGURATION_RESPONSE,
+		Payload: &patronobuf.Response_ConfigurationResponse{
+			ConfigurationResponse: respData,
+		},
 	}
 }

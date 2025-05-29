@@ -10,6 +10,7 @@ type Payload struct {
 	CallbackFrequency string `json:"callbackfrequency"`
 	CallbackJitter    string `json:"callbackjitter"`
 	Concat            string `json:"concat"`
+	TransportProtocol string `json:"transportprotocol"`
 }
 
 type BuildConfig struct {

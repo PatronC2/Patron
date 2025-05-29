@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
 	_ "github.com/lib/pq"
 )
 
-func FetchNextFileTransfer(uuid string) types.FileResponse {
-	var info types.FileResponse
+func FetchNextFileTransfer(uuid string) *patronobuf.FileResponse {
 	query := `
         SELECT 
             "files"."FileID",
@@ -26,48 +26,55 @@ func FetchNextFileTransfer(uuid string) types.FileResponse {
         LIMIT 1;
     `
 
-	row := db.QueryRow(query, uuid)
-	var content []byte
-	err := row.Scan(
-		&info.FileID,
-		&info.AgentID,
-		&info.Type,
-		&info.Path,
+	var (
+		resp    patronobuf.FileResponse
+		content []byte
+	)
+
+	err := db.QueryRow(query, uuid).Scan(
+		&resp.Fileid,
+		&resp.Uuid,
+		&resp.Transfertype,
+		&resp.Filepath,
 		&content,
 	)
 	if err == sql.ErrNoRows {
-		logger.Logf(logger.Info, "No pending file transfers for agent: %s\n", uuid)
-		return info
-	} else if err != nil {
-		logger.Logf(logger.Error, "Error fetching file transfers for agent: %v\n", err)
-		return info
+		logger.Logf(logger.Info, "No pending file transfers for agent: %s", uuid)
+		return nil
+	}
+	if err != nil {
+		logger.Logf(logger.Error, "Error fetching file transfer: %v", err)
+		return nil
 	}
 
-	info.Chunk = content
-	logger.Logf(logger.Info, "Fetched file transfer %s for agent %s\n", info.FileID, uuid)
-	return info
+	resp.Chunk = content
+	logger.Logf(logger.Info, "Fetched file transfer %s for agent %s", resp.Fileid, uuid)
+	return &resp
 }
 
-func UpdateFileTransfer(fileData types.FileToServer) error {
+func UpdateFileTransfer(file *patronobuf.FileToServer) error {
 	var query string
 	var args []interface{}
 
-	if fileData.Type == "Download" {
+	switch file.GetTransfertype() {
+	case "Download":
 		query = `UPDATE files SET "Status" = $1 WHERE "FileID" = $2 AND "UUID" = $3 AND "Type" = $4`
-		args = append(args, fileData.Status, fileData.FileID, fileData.AgentID, fileData.Type)
-	} else if fileData.Type == "Upload" {
+		args = append(args, file.GetStatus(), file.GetFileid(), file.GetUuid(), file.GetTransfertype())
+
+	case "Upload":
 		query = `UPDATE files SET "Status" = $1, "Content" = $2 WHERE "FileID" = $3 AND "UUID" = $4 AND "Type" = $5`
-		args = append(args, fileData.Status, fileData.Chunk, fileData.FileID, fileData.AgentID, fileData.Type)
-	} else {
-		return fmt.Errorf("unknown transfer type: %s", fileData.Type)
+		args = append(args, file.GetStatus(), file.GetChunk(), file.GetFileid(), file.GetUuid(), file.GetTransfertype())
+
+	default:
+		return fmt.Errorf("unknown transfer type: %s", file.GetTransfertype())
 	}
 
 	_, err := db.Exec(query, args...)
 	if err != nil {
-		return fmt.Errorf("failed to update file transfer: %v", err)
+		return fmt.Errorf("failed to update file transfer: %w", err)
 	}
 
-	logger.Logf(logger.Debug, "File transfer with ID %s updated successfully\n", fileData.FileID)
+	logger.Logf(logger.Debug, "File transfer with ID %s updated successfully", file.GetFileid())
 	return nil
 }
 

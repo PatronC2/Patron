@@ -65,7 +65,8 @@ func InitDatabase() {
 		cpus TEXT NOT NULL DEFAULT 'Unknown',
 		memory TEXT NOT NULL DEFAULT 'Unknown',
 		last_callback TIMESTAMPTZ,
-		next_callback TIMESTAMPTZ
+		next_callback TIMESTAMPTZ,
+		transport_protocol TEXT
 	);
 	CREATE OR REPLACE VIEW agents_status AS
 	SELECT 
@@ -85,6 +86,7 @@ func InitDatabase() {
 		memory,
 		last_callback,
 		next_callback,
+		transport_protocol,
 		CASE 
 			WHEN next_callback IS NULL OR next_callback < NOW() - INTERVAL '5 seconds'
 				THEN 'Offline'
@@ -159,6 +161,7 @@ func InitDatabase() {
 		"CallbackFrequency" TEXT,
 		"CallbackJitter" TEXT,
 		"Concat" TEXT,
+		"transport_protocol" TEXT,
 		"isDeleted" INTEGER NOT NULL DEFAULT 0
 	);
 	`
@@ -221,7 +224,8 @@ func InitDatabase() {
 		"ForwardIP" TEXT,
 		"ForwardPort" TEXT,
 		"ListenPort" TEXT NOT NULL,
-		"LastReport" TIMESTAMPTZ
+		"LastReport" TIMESTAMPTZ,
+		"transport_protocol" TEXT
 	);
 	CREATE OR REPLACE VIEW redirector_status AS
 	SELECT 
@@ -232,6 +236,7 @@ func InitDatabase() {
 		"ForwardPort",
 		"ListenPort",
 		"LastReport",
+		"transport_protocol",
 		CASE 
 			WHEN "LastReport" IS NULL OR "LastReport" < NOW() - INTERVAL '10 minutes' THEN 'Offline'
 			ELSE 'Online'

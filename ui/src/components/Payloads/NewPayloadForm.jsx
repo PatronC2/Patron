@@ -20,6 +20,7 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
         callbackfrequency: '300',
         callbackjitter: '80',
         logging: 'false',
+        transportprotocol: 'TCP',
         compression: 'none',
     });
     const [availableTypes, setAvailableTypes] = useState([]);
@@ -28,11 +29,7 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
     useEffect(() => {
         const fetchTypes = async () => {
             try {
-                const response = await axios.get('/api/payloadconfs', {
-                    headers: {
-                        Authorization: `${auth.accessToken}`,
-                    },
-                });
+                const response = await axios.get('/api/payloadconfs');
 
                 const types = Object.entries(response.data).map(([key, value]) => ({
                     value: key,
@@ -190,6 +187,18 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
                         onChange={handleChange}
                         placeholder="Enter callback jitter"
                     />
+                </div>
+                <div>
+                    <label htmlFor="transportprotocol">Transport Protocol:</label>
+                    <select
+                        id="transportprotocol"
+                        name="transportprotocol"
+                        value={formData.transportprotocol}
+                        onChange={handleChange}
+                    >
+                        <option value="TCP">TCP</option>
+                        <option value="QUIC">QUIC</option>
+                    </select>
                 </div>
                 <div>
                     <label htmlFor="logging">Enable Logging:</label>

@@ -11,7 +11,8 @@ tag="snapshot"
 PORT="8081"
 WEBSERVER_PORT="8000"
 REACT_APP_NGINX_PORT="8443"
-C2SERVER_PORT="9000"
+TCP_LISTENER_PORT="9000"
+QUIC_LISTENER_PORT="9001"
 REDIRECTOR_PORT="9000"
 DB_PORT="5432"
 DB_USER="patron"
@@ -25,7 +26,8 @@ function show_help {
    echo "  --port <port>                     (default: 8081)"
    echo "  --web-port <port>                (default: 8000)"
    echo "  --nginx-port <port>              (default: 8443)"
-   echo "  --c2-port <port>                 (default: 9000)"
+   echo "  --tcp-listener-port <port>                 (default: 9000)"
+   echo "  --quic-listener-port <port>                 (default: 9001)"
    echo "  --redirector-port <port>         (default: 9000)"
    echo "  --db-port <port>                 (default: 5432)"
    echo "  --db-user <user>                 (default: patron)"
@@ -44,7 +46,8 @@ while true; do
       --port ) PORT="$2"; shift 2 ;;
       --web-port ) WEBSERVER_PORT="$2"; shift 2 ;;
       --nginx-port ) REACT_APP_NGINX_PORT="$2"; shift 2 ;;
-      --c2-port ) C2SERVER_PORT="$2"; shift 2 ;;
+      --tcp-listener-port ) TCP_LISTENER_PORT="$2"; shift 2 ;;
+      --quic-listener-port ) TCP_LISTENER_PORT="$2"; shift 2 ;;
       --redirector-port ) REDIRECTOR_PORT="$2"; shift 2 ;;
       --db-port ) DB_PORT="$2"; shift 2 ;;
       --db-user ) DB_USER="$2"; shift 2 ;;
@@ -118,7 +121,8 @@ TAG=$tag
 PORT=$PORT
 WEBSERVER_PORT=$WEBSERVER_PORT
 REACT_APP_NGINX_PORT=$REACT_APP_NGINX_PORT
-C2SERVER_PORT=$C2SERVER_PORT
+TCP_LISTENER_PORT=$TCP_LISTENER_PORT
+QUIC_LISTENER_PORT=$QUIC_LISTENER_PORT
 REDIRECTOR_PORT=$REDIRECTOR_PORT
 DB_PORT=$DB_PORT
 DB_USER=$DB_USER

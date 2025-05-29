@@ -1,44 +1,61 @@
 package handlers
 
 import (
-	"net"
-
+	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/data"
+	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
 )
-
-// Returns the next command to run to an agent. Updates the DB after the command gets run
 
 type CommandHandler struct{}
 type CommandStatusHandler struct{}
 
-func (h *CommandHandler) Handle(request types.Request, conn net.Conn) types.Response {
-    commandReq, ok := request.Payload.(types.CommandRequest)
-    if !ok {
-        return types.Response{
-            Type:    types.CommandResponseType,
-            Payload: types.CommandResponse{},
-        }
-    }
-    CommandResponse := data.FetchNextCommand(commandReq.AgentID)
-    return types.Response{
-        Type:    types.CommandResponseType,
-        Payload: CommandResponse,
-    }
+func (h *CommandHandler) Handle(request *patronobuf.Request, stream types.CommonStream) *patronobuf.Response {
+	commandReq := request.GetCommand()
+	if commandReq == nil {
+		return &patronobuf.Response{
+			Type: patronobuf.ResponseType_COMMAND_RESPONSE,
+			Payload: &patronobuf.Response_CommandResponse{
+				CommandResponse: &patronobuf.CommandResponse{},
+			},
+		}
+	}
+
+	command := data.FetchNextCommand(commandReq.GetUuid())
+
+	return &patronobuf.Response{
+		Type: patronobuf.ResponseType_COMMAND_RESPONSE,
+		Payload: &patronobuf.Response_CommandResponse{
+			CommandResponse: command,
+		},
+	}
 }
 
-func (h *CommandStatusHandler) Handle(request types.Request, conn net.Conn) types.Response {
-    c, ok := request.Payload.(types.CommandStatusRequest)
-    if !ok {
-        return types.Response{
-            Type:    types.CommandStatusResponseType,
-            Payload: types.CommandStatusResponse{},
-        }
-    }
-	data.UpdateAgentCommand(c.CommandID, c.CommandResult, c.CommandOutput, c.AgentID)
-	// This type doesn't actually matter since the client won't read it
-	return types.Response{
-		Type:    types.CommandStatusResponseType,
-		Payload: types.CommandStatusResponse{},
+func (h *CommandStatusHandler) Handle(request *patronobuf.Request, stream types.CommonStream) *patronobuf.Response {
+	status := request.GetCommandStatus()
+	if status == nil {
+		return &patronobuf.Response{
+			Type: patronobuf.ResponseType_COMMAND_STATUS_RESPONSE,
+			Payload: &patronobuf.Response_CommandStatusResponse{
+				CommandStatusResponse: &patronobuf.CommandStatusResponse{},
+			},
+		}
+	}
+
+	err := data.UpdateAgentCommand(
+		status.GetCommandid(),
+		status.GetResult(),
+		status.GetOutput(),
+		status.GetUuid(),
+	)
+	if err != nil {
+		logger.Logf(logger.Error, "Failed to update command: %v", err)
+	}
+
+	return &patronobuf.Response{
+		Type: patronobuf.ResponseType_COMMAND_STATUS_RESPONSE,
+		Payload: &patronobuf.Response_CommandStatusResponse{
+			CommandStatusResponse: &patronobuf.CommandStatusResponse{},
+		},
 	}
 }
