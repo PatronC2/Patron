@@ -56,16 +56,5 @@
             "github.com/kardianos/service",
             "github.com/armon/go-socks5"
         ]
-    },
-    "wip": {
-        "type": "QUIC",
-        "description": "wip",
-        "code_path": "wip/client.go",
-        "flags": "-trimpath -ldflags",
-        "environment": "CGO_ENABLED=0",
-        "file_suffix": "",
-        "dependencies":[
-            "github.com/quic-go/quic-go"
-        ]
     }
 }
