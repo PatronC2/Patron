@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -14,6 +15,8 @@ import (
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/lib/common"
 	"github.com/PatronC2/Patron/lib/logger"
+	"github.com/PatronC2/Patron/types"
+	quic "github.com/quic-go/quic-go"
 )
 
 var (
@@ -25,6 +28,19 @@ var (
 	linkingKey     = os.Getenv("LINKING_KEY")
 	certHolder     atomic.Value
 )
+
+type netConnWrapper struct {
+	net.Conn
+}
+
+type TransportType int
+
+const (
+	TransportTCP TransportType = iota
+	TransportQUIC
+)
+
+func (n netConnWrapper) Close() error { return n.Conn.Close() }
 
 func main() {
 	enableLogging := true
@@ -62,7 +78,7 @@ func main() {
 	}
 
 	go listenAndServe("0.0.0.0:"+forwarderPort, tlsConfig)
-	go listenAndServe("[::]:"+forwarderPort, tlsConfig)
+	go startQUICListener("0.0.0.0:"+forwarderPort, tlsConfig)
 
 	go func() {
 		for {
@@ -100,7 +116,39 @@ func listenAndServe(address string, tlsConfig *tls.Config) {
 			logger.Logf(logger.Warning, "Failed to accept connection on %s: %v", address, err)
 			continue
 		}
-		go handleClientConnection(conn)
+		go handleClientConnection(conn, TransportTCP)
+	}
+}
+
+func startQUICListener(address string, baseTLSConfig *tls.Config) {
+	quicConfig := &quic.Config{}
+
+	tlsConf := baseTLSConfig.Clone()
+	tlsConf.NextProtos = []string{"quic-patron"}
+
+	listener, err := quic.ListenAddr(address, tlsConf, quicConfig)
+	if err != nil {
+		logger.Logf(logger.Warning, "Failed to start QUIC listener on %s: %v", address, err)
+		return
+	}
+	logger.Logf(logger.Info, "QUIC Forwarder listening on %s", address)
+
+	for {
+		conn, err := listener.Accept(context.Background())
+		if err != nil {
+			logger.Logf(logger.Warning, "Failed to accept QUIC connection: %v", err)
+			continue
+		}
+		go func(conn quic.Connection) {
+			for {
+				stream, err := conn.AcceptStream(context.Background())
+				if err != nil {
+					logger.Logf(logger.Warning, "Failed to accept QUIC stream: %v", err)
+					return
+				}
+				go handleClientConnection(stream, TransportQUIC)
+			}
+		}(conn)
 	}
 }
 
@@ -147,43 +195,50 @@ func sendStatusUpdate() (string, string, error) {
 	return response.ServerKey, response.ServerCert, nil
 }
 
-func handleClientConnection(clientConn net.Conn) {
+func handleClientConnection(clientConn types.CommonStream, transport TransportType) {
 	defer clientConn.Close()
 
-	mainConn, err := connectToMainServer()
+	var (
+		mainConn types.CommonStream
+		err      error
+	)
+
+	switch transport {
+	case TransportQUIC:
+		mainConn, err = connectToMainServerQUIC()
+	case TransportTCP:
+		mainConn, err = connectToMainServer()
+	default:
+		logger.Logf(logger.Error, "Unknown transport type for forwarding")
+		return
+	}
+
 	if err != nil {
-		logger.Logf(logger.Warning, "Main server unavailable, retrying in 5 seconds: %v", err)
+		logger.Logf(logger.Warning, "Failed to connect to main server: %v", err)
 		return
 	}
 	defer mainConn.Close()
 
-	clientAddr := clientConn.RemoteAddr().String()
-	logger.Logf(logger.Info, "Accepted connection from %s", clientAddr)
-
 	for {
-		// Read request from client
 		var request patronobuf.Request
 		if err := common.ReadDelimited(clientConn, &request); err != nil {
-			logger.Logf(logger.Warning, "Failed to decode request from client %s: %v", clientAddr, err)
+			logger.Logf(logger.Warning, "Failed to read from client: %v", err)
 			return
 		}
 
-		// Forward request to main server
 		if err := common.WriteDelimited(mainConn, &request); err != nil {
-			logger.Logf(logger.Warning, "Failed to send request to main server: %v", err)
+			logger.Logf(logger.Warning, "Failed to forward to server: %v", err)
 			return
 		}
 
-		// Read response from main server
-		var serverResponse patronobuf.Response
-		if err := common.ReadDelimited(mainConn, &serverResponse); err != nil {
-			logger.Logf(logger.Warning, "Failed to decode response from main server: %v", err)
+		var response patronobuf.Response
+		if err := common.ReadDelimited(mainConn, &response); err != nil {
+			logger.Logf(logger.Warning, "Failed to read from server: %v", err)
 			return
 		}
 
-		// Send response back to client
-		if err := common.WriteDelimited(clientConn, &serverResponse); err != nil {
-			logger.Logf(logger.Warning, "Failed to send response to client %s: %v", clientAddr, err)
+		if err := common.WriteDelimited(clientConn, &response); err != nil {
+			logger.Logf(logger.Warning, "Failed to send response to client: %v", err)
 			return
 		}
 	}
@@ -198,4 +253,16 @@ func connectToMainServer() (*tls.Conn, error) {
 	tlsConfig := &tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: true}
 
 	return tls.Dial("tcp", mainServerIP+":"+mainServerPort, tlsConfig)
+}
+
+func connectToMainServerQUIC() (quic.Stream, error) {
+	tlsConf := &tls.Config{
+		InsecureSkipVerify: true,
+		NextProtos:         []string{"quic-patron"},
+	}
+	session, err := quic.DialAddr(context.Background(), mainServerIP+":"+mainServerPort, tlsConf, &quic.Config{})
+	if err != nil {
+		return nil, err
+	}
+	return session.OpenStreamSync(context.Background())
 }

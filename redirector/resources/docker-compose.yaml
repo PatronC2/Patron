@@ -2,7 +2,8 @@ services:
   redirector:
     image: patronc2/redirector
     ports:
-      - "${EXTERNAL_PORT}:${REDIRECTOR_PORT}"
+      - "${EXTERNAL_PORT}:${REDIRECTOR_PORT}/tcp"
+      - "${EXTERNAL_PORT}:${REDIRECTOR_PORT}/udp"
     environment:
       MAIN_SERVER_IP: "${FORWARD_IP}"
       MAIN_SERVER_PORT: "${FORWARD_PORT}"
