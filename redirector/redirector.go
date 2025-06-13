@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"net"
 	"net/http"
 	"os"
 	"sync/atomic"
@@ -29,18 +28,12 @@ var (
 	certHolder     atomic.Value
 )
 
-type netConnWrapper struct {
-	net.Conn
-}
-
 type TransportType int
 
 const (
 	TransportTCP TransportType = iota
 	TransportQUIC
 )
-
-func (n netConnWrapper) Close() error { return n.Conn.Close() }
 
 func main() {
 	enableLogging := true
@@ -77,7 +70,7 @@ func main() {
 		},
 	}
 
-	go listenAndServe("0.0.0.0:"+forwarderPort, tlsConfig)
+	go startTCPListener("0.0.0.0:"+forwarderPort, tlsConfig)
 	go startQUICListener("0.0.0.0:"+forwarderPort, tlsConfig)
 
 	go func() {
@@ -101,7 +94,7 @@ func main() {
 	select {}
 }
 
-func listenAndServe(address string, tlsConfig *tls.Config) {
+func startTCPListener(address string, tlsConfig *tls.Config) {
 	listener, err := tls.Listen("tcp", address, tlsConfig)
 	if err != nil {
 		logger.Logf(logger.Warning, "Failed to start listener on %s: %v", address, err)
@@ -207,7 +200,7 @@ func handleClientConnection(clientConn types.CommonStream, transport TransportTy
 	case TransportQUIC:
 		mainConn, err = connectToMainServerQUIC()
 	case TransportTCP:
-		mainConn, err = connectToMainServer()
+		mainConn, err = connectToMainServerTCP()
 	default:
 		logger.Logf(logger.Error, "Unknown transport type for forwarding")
 		return
@@ -244,7 +237,7 @@ func handleClientConnection(clientConn types.CommonStream, transport TransportTy
 	}
 }
 
-func connectToMainServer() (*tls.Conn, error) {
+func connectToMainServerTCP() (*tls.Conn, error) {
 	c := certHolder.Load()
 	if c == nil {
 		return nil, fmt.Errorf("no TLS certificate loaded")
