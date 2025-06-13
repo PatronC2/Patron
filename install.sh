@@ -28,7 +28,7 @@ function set_global_default_variable {
    tcplistenerip=""
    tcplistenerport="9000"
    quiclistenerip=""
-   quiclistenerport="9001"
+   quiclistenerport="9000"
    redirectorport="9000"
    dockerinternal="172.18.0"
    nginxip=""
