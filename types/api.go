@@ -83,3 +83,12 @@ type TagKeyValues struct {
 	Key    string   `json:"key"`
 	Values []string `json:"values"`
 }
+
+type Listener struct {
+	ListenerID        int
+	Name              string
+	Description       string
+	ListenIP          string
+	ListenPort        int
+	TransportProtocol string
+}

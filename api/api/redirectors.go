@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"strconv"
 
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/lib/logger"
@@ -98,6 +99,12 @@ func CreateRedirectorHandler(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error", "details": err.Error()})
 		} else {
 			data.CreateRedirector(newRedirectorID, body["Name"], body["Description"], body["ForwardIP"], body["ForwardPort"], body["ListenPort"])
+			listen_port, err := strconv.Atoi(body["ListenPort"])
+			if err != nil {
+				logger.Logf(logger.Error, "Listener port is not an int (if this ever logs, something is wrong with the above logic for checking valid ports)")
+			}
+			data.CreateListener(body["Name"], body["Description"], "DONT_USE_ME", listen_port, "TCP")
+			data.CreateListener(body["Name"], body["Description"], "DONT_USE_ME", listen_port, "QUIC")
 			c.Header("Content-Disposition", "attachment; filename=redirector_install.sh")
 			c.Data(http.StatusOK, "application/x-sh", script)
 		}

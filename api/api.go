@@ -24,6 +24,7 @@ func main() {
 	api.InitAuth()
 
 	data.OpenDatabase()
+	data.InitDatabase()
 	api.CreateAdminUser()
 
 	gin.SetMode(gin.ReleaseMode)
