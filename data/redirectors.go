@@ -16,7 +16,7 @@ func GetRedirectors() ([]types.Redirector, error) {
             forward_ip,
             forward_port,
             COALESCE(listen_port, '') AS listen_port,
-            COALESCE(transport_protocol, '') AS transport_protocol,
+            COALESCE(transport_protocol::text, '') AS transport_protocol,
             status
         FROM redirector_status
     `
