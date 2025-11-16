@@ -17,6 +17,7 @@ const NewRedirectorForm = ({ fetchData, setActiveTab }) => {
         Description: '',
         ForwardIP: `${PATRON_C2_IP}`,
         ForwardPort: `${PATRON_C2_PORT}`,
+        ListenIP: `x.x.x.x`,
         ListenPort: `${PATRON_C2_PORT}`,
     });
     const [loading, setLoading] = useState(false);
@@ -144,6 +145,18 @@ const NewRedirectorForm = ({ fetchData, setActiveTab }) => {
                         onChange={handleChange}
                         aria-label="Forward Port"
                         placeholder="Enter the Forward Port"
+                    />
+                </div>
+                <div>
+                    <label htmlFor="ListenIP">Listen IP:</label>
+                    <input
+                        type="text"
+                        id="ListenIP"
+                        name="ListenIP"
+                        value={formData.ListenIP}
+                        onChange={handleChange}
+                        aria-label="Listen IP"
+                        placeholder="Enter the new host's IP"
                     />
                 </div>
                 <div>

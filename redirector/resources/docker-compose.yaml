@@ -11,6 +11,7 @@ services:
       LINKING_KEY: "${LINKING_KEY}"
       API_IP: "${API_IP}"
       API_PORT: "${API_PORT}"
+      EXTERNAL_PORT: "${EXTERNAL_PORT}"
     volumes:
       - ./logs:/app/logs
     restart: always

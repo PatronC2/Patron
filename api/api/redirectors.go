@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
-	"strconv"
 
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/lib/logger"
@@ -39,11 +38,14 @@ func CreateRedirectorHandler(c *gin.Context) {
 	}
 
 	vForwardIP, _ := regexp.MatchString(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`, body["ForwardIP"])
+	vListenIP, _ := regexp.MatchString(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`, body["ListenIP"])
 	vForwardPort, _ := regexp.MatchString(`^(6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`, body["ForwardPort"])
 	vListenPort, _ := regexp.MatchString(`^(6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`, body["ListenPort"])
 
 	if !vForwardIP {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ForwardIP"})
+	} else if !vListenIP {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ListenIP"})
 	} else if !vForwardPort {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ForwardPort"})
 	} else if !vListenPort {
@@ -98,13 +100,7 @@ func CreateRedirectorHandler(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error", "details": err.Error()})
 		} else {
-			data.CreateRedirector(newRedirectorID, body["Name"], body["Description"], body["ForwardIP"], body["ForwardPort"], body["ListenPort"])
-			listen_port, err := strconv.Atoi(body["ListenPort"])
-			if err != nil {
-				logger.Logf(logger.Error, "Listener port is not an int (if this ever logs, something is wrong with the above logic for checking valid ports)")
-			}
-			data.CreateListener(body["Name"], body["Description"], "DONT_USE_ME", listen_port, "TCP")
-			data.CreateListener(body["Name"], body["Description"], "DONT_USE_ME", listen_port, "QUIC")
+			data.CreateRedirector(newRedirectorID, body["Name"], body["Description"], body["ForwardIP"], body["ForwardPort"], body["ListenIP"])
 			c.Header("Content-Disposition", "attachment; filename=redirector_install.sh")
 			c.Data(http.StatusOK, "application/x-sh", script)
 		}
@@ -112,15 +108,17 @@ func CreateRedirectorHandler(c *gin.Context) {
 }
 
 func RedirectorStatusHandler(c *gin.Context) {
-	var body map[string]string
-	if err := c.BindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+	var body types.RedirectorStatusRequest
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid request body",
+			"details": err.Error(),
+		})
 		return
 	}
 
-	linkingKey := body["linking_key"]
-	if err := data.SetRedirectorStatus(linkingKey); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error"})
+	if err := data.SetRedirectorStatus(body.LinkingKey, body.ExternalPort, body.RedirectorProtocols); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 		return
 	}
 

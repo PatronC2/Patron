@@ -219,28 +219,47 @@ func InitDatabase() {
 		redirector_id TEXT PRIMARY KEY,
 		name TEXT NOT NULL,
 		description TEXT,
+		listen_ip TEXT,
 		forward_ip TEXT,
 		forward_port TEXT,
-		listen_port TEXT NOT NULL,
-		last_report TIMESTAMPTZ,
-		transport_protocol TEXT
+		is_teamserver BOOLEAN NOT NULL DEFAULT FALSE,
+		last_report TIMESTAMPTZ
 	);
+
+	DO $$
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'listener_protocol') THEN
+			CREATE TYPE listener_protocol AS ENUM ('tcp', 'quic', 'https');
+		END IF;
+	END$$;
+
+	CREATE TABLE IF NOT EXISTS redirector_listeners (
+		id BIGSERIAL PRIMARY KEY,
+		redirector_id TEXT NOT NULL REFERENCES redirectors(redirector_id) ON DELETE CASCADE,
+		listen_port TEXT NOT NULL,
+		protocol listener_protocol NOT NULL,
+		created_at TIMESTAMPTZ DEFAULT NOW(),
+		UNIQUE (redirector_id, listen_port, protocol)
+	);
+
 	CREATE OR REPLACE VIEW redirector_status AS
 	SELECT 
-		redirector_id,
-		name,
-		description,
-		forward_ip,
-		forward_port,
-		listen_port,
-		last_report,
-		transport_protocol,
+		r.redirector_id,
+		r.name,
+		r.description,
+		r.listen_ip,
+		r.forward_ip,
+		r.forward_port,
+		r.last_report,
+		l.listen_port,
+		l.protocol AS transport_protocol,
 		CASE 
-			WHEN last_report IS NULL OR last_report < NOW() - INTERVAL '10 minutes' THEN 'Offline'
+			WHEN r.last_report IS NULL 
+			OR r.last_report < NOW() - INTERVAL '10 minutes' THEN 'Offline'
 			ELSE 'Online'
 		END AS status
-	FROM 
-		redirectors;
+	FROM redirectors r
+	LEFT JOIN redirector_listeners l ON r.redirector_id = l.redirector_id;
 	`
 	_, err = db.Exec(RedirectorsSQL)
 	if err != nil {
@@ -248,40 +267,55 @@ func InitDatabase() {
 	}
 	logger.Logf(logger.Info, "Redirectors table initialized")
 
+	teamserverID := "11111111-1111-1111-1111-111111111111"
 	tcp_listener_ip := os.Getenv("REACT_APP_NGINX_IP")
 	tcp_listener_port := os.Getenv("TCP_LISTENER_PORT")
-	quic_listener_ip := os.Getenv("REACT_APP_NGINX_IP")
 	quic_listener_port := os.Getenv("QUIC_LISTENER_PORT")
 
-	ListenersSQL := `
-	CREATE TABLE IF NOT EXISTS listeners (
-		listener_id SERIAL PRIMARY KEY,
-		name TEXT NOT NULL,
-		description TEXT,
-		listen_ip TEXT,
-		listen_port INT,
-		transport_protocol TEXT,
-		redirector_id TEXT REFERENCES redirectors(redirector_id) ON DELETE SET NULL
-	);
-	`
-
-	_, err = db.Exec(ListenersSQL)
+	upsertRedirectorSQL := `
+        INSERT INTO redirectors (redirector_id, name, description, listen_ip, forward_ip, forward_port, last_report, is_teamserver)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW(), TRUE)
+        ON CONFLICT (redirector_id)
+        DO UPDATE SET
+            name         = EXCLUDED.name,
+            description  = EXCLUDED.description,
+			listen_ip	 = EXCLUDED.listen_ip,
+            forward_ip   = EXCLUDED.forward_ip,
+            forward_port = EXCLUDED.forward_port,
+            last_report  = NOW(),
+            is_teamserver = TRUE;
+    `
+	_, err = db.Exec(upsertRedirectorSQL, teamserverID, "teamserver", "default listener", tcp_listener_ip, "127.0.0.1", tcp_listener_port)
 	if err != nil {
-		logger.Logf(logger.Error, "Failed to create Listeners table: %v", err)
+		logger.Logf(logger.Error, "Failed to initialize teamserver listener: %v", err)
 	}
-	logger.Logf(logger.Info, "Listeners table created")
+	logger.Logf(logger.Info, "Teamserver initialized")
 
-	ListenersInitSQL := `
-	INSERT INTO listeners (name, description, listen_ip, listen_port, transport_protocol)
-	VALUES
-		('Teamserver', 'built-in', $1, $2, 'TCP'),
-		('Teamserver', 'built-in', $3, $4, 'QUIC');`
-
-	_, err = db.Exec(ListenersInitSQL, tcp_listener_ip, tcp_listener_port, quic_listener_ip, quic_listener_port)
-	if err != nil {
-		logger.Logf(logger.Error, "Failed to initialize Listeners table: %v", err)
+	// wipe existing listeners for teamserver
+	if _, err := db.Exec(`DELETE FROM redirector_listeners WHERE redirector_id = $1`, teamserverID); err != nil {
+		logger.Logf(logger.Error, "Failed to initialize teamserver listeners: %v", err)
 	}
-	logger.Logf(logger.Info, "Listeners table initialized")
+	logger.Logf(logger.Info, "Removed previous listeners")
+
+	// add listeners for teamserver
+	insertListenerSQL := `
+        INSERT INTO redirector_listeners (redirector_id, listen_port, protocol)
+        VALUES ($1, $2, $3)
+    `
+
+	if tcp_listener_port != "" {
+		if _, err := db.Exec(insertListenerSQL, teamserverID, tcp_listener_port, "tcp"); err != nil {
+			logger.Logf(logger.Error, "Failed to insert teamserver tcp listener: %v", err)
+		}
+		logger.Logf(logger.Info, "Added teamserver tcp listener")
+	}
+
+	if quic_listener_port != "" {
+		if _, err := db.Exec(insertListenerSQL, teamserverID, quic_listener_port, "quic"); err != nil {
+			logger.Logf(logger.Error, "Failed to insert teamserver quic listener: %v", err)
+		}
+		logger.Logf(logger.Info, "Added teamserver quic listener")
+	}
 
 	ConfigSQL := `
 	CREATE TABLE IF NOT EXISTS configs (

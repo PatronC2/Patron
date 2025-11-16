@@ -54,14 +54,15 @@ type Tag struct {
 }
 
 type Redirector struct {
-	RedirectorID string `json:"id" binding:"required"`
-	Name         string `json:"name" binding:"required"`
-	Description  string `json:"description" binding:"required"`
-	ForwardIP    string `json:"forwardip"`
-	ForwardPort  string `json:"forwardport"`
-	ListenIP     string `json:"listenip" binding:"required"`
-	ListenPort   string `json:"listenport" binding:"required"`
-	Status       string `json:"status" binding:"required"`
+	RedirectorID      string `json:"id" binding:"required"`
+	Name              string `json:"name" binding:"required"`
+	Description       string `json:"description" binding:"required"`
+	ForwardIP         string `json:"forwardip"`
+	ForwardPort       string `json:"forwardport"`
+	ListenIP          string `json:"listenip" binding:"required"`
+	ListenPort        string `json:"listenport" binding:"required"`
+	TransportProtocol string `json:"transportprotocol"`
+	Status            string `json:"status" binding:"required"`
 }
 
 type RedirectorTemplateData struct {
@@ -72,6 +73,12 @@ type RedirectorTemplateData struct {
 	ExternalPort   string
 	ForwardIP      string
 	ForwardPort    string
+}
+
+type RedirectorStatusRequest struct {
+	LinkingKey          string   `json:"linking_key" binding:"required"`
+	RedirectorProtocols []string `json:"redirectorProtocols"`
+	ExternalPort        string   `json:"external_port" binding:"required"`
 }
 
 type AgentMetrics struct {
