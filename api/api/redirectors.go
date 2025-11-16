@@ -18,7 +18,7 @@ import (
 func GetRedirectorsHandler(c *gin.Context) {
 	redirectors, err := data.GetRedirectors()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"data": redirectors})
 	}

@@ -252,7 +252,7 @@ func InitDatabase() {
 		r.forward_port,
 		r.last_report,
 		l.listen_port,
-		l.protocol AS transport_protocol,
+		l.protocol::text AS transport_protocol,
 		CASE 
 			WHEN r.is_teamserver = TRUE THEN 'Online'
 			WHEN r.last_report IS NULL 
@@ -261,8 +261,7 @@ func InitDatabase() {
 			ELSE 'Online'
 		END AS status
 	FROM redirectors r
-	LEFT JOIN redirector_listeners l 
-		ON r.redirector_id = l.redirector_id;
+	LEFT JOIN redirector_listeners l ON r.redirector_id = l.redirector_id;
 	`
 	_, err = db.Exec(RedirectorsSQL)
 	if err != nil {
