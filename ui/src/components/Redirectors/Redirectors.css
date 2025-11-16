@@ -163,7 +163,7 @@
 }
 
 .redirector-container table {
-    table-layout: fixed;
+    table-layout: auto;
     width: 100%;
     min-width: 1000px;
     border-collapse: collapse;
@@ -190,7 +190,7 @@
     text-align: left;
     text-overflow: ellipsis;
     min-width: 100px;
-    max-width: 1px;
+    max-width: none;
 }
 
 .redirector-container table th .header-content,
