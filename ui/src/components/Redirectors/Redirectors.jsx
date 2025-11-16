@@ -49,7 +49,9 @@ const Redirectors = () => {
         { Header: 'Description', accessor: 'description', minWidth: 150 },
         { Header: 'Forward IP', accessor: 'forwardip', minWidth: 130 },
         { Header: 'Forward Port', accessor: 'forwardport', minWidth: 100 },
+        { Header: 'Listener IP', accessor: 'listenip', minWidth: 140 },
         { Header: 'Listener Port', accessor: 'listenport', minWidth: 100 },
+        { Header: 'Protocol', accessor: 'transportprotocol', minWidth: 100 },
         { Header: 'Status', accessor: 'status', minWidth: 100 },
     ], []);
 
