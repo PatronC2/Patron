@@ -19,13 +19,14 @@ import (
 )
 
 var (
-	mainServerIP   = os.Getenv("MAIN_SERVER_IP")
-	mainServerPort = os.Getenv("MAIN_SERVER_PORT")
-	forwarderPort  = os.Getenv("FORWARDER_PORT")
-	apiIP          = os.Getenv("API_IP")
-	apiPort        = os.Getenv("API_PORT")
-	linkingKey     = os.Getenv("LINKING_KEY")
-	certHolder     atomic.Value
+	mainServerIP     = os.Getenv("MAIN_SERVER_IP")
+	mainServerPort   = os.Getenv("MAIN_SERVER_PORT")
+	forwarderPort    = os.Getenv("FORWARDER_PORT")
+	apiIP            = os.Getenv("API_IP")
+	apiPort          = os.Getenv("API_PORT")
+	linkingKey       = os.Getenv("LINKING_KEY")
+	redirectorProtos = []string{"tcp", "quic"}
+	certHolder       atomic.Value
 )
 
 type TransportType int
@@ -145,12 +146,20 @@ func startQUICListener(address string, baseTLSConfig *tls.Config) {
 	}
 }
 
+type StatusUpdate struct {
+	LinkingKey          string   `json:"linking_key"`
+	RedirectorProtocols []string `json:"redirectorProtocols"`
+}
+
 func sendStatusUpdate() (string, string, error) {
+	// Send the teamserver API a heartbeat and its capabilities
+	redirectorProtos = []string{"tcp", "quic"}
 	url := fmt.Sprintf("https://%s:%s/api/redirector/status", apiIP, apiPort)
-	data := map[string]string{
-		"linking_key": linkingKey,
+	body := StatusUpdate{
+		LinkingKey:          linkingKey,
+		RedirectorProtocols: redirectorProtos,
 	}
-	jsonData, err := json.Marshal(data)
+	jsonData, err := json.Marshal(body)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to marshal JSON: %w", err)
 	}

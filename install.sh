@@ -335,7 +335,7 @@ IMAGE="patronc2/cli:$PLATFORM-$TAG"
 BINARY_NAME="patron"
 
 echo "Pulling $IMAGE..."
-docker pull $IMAGE
+#docker pull $IMAGE
 
 CID=$(docker create $IMAGE)
 echo "Copying $BINARY_NAME to $INSTALL_PATH"
@@ -348,7 +348,7 @@ echo "✅ Installed $BINARY_NAME to $INSTALL_PATH"
 echo "Pulling redirector image"
 TAG="latest"
 IMAGE="patronc2/redirector:$TAG"
-docker pull $IMAGE
+#docker pull $IMAGE
 echo "✅ Fetched redirector image"
 
 echo "Starting Patron C2"
