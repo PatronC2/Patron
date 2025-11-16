@@ -1,8 +1,6 @@
 package data
 
 import (
-	"log"
-
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
 	_ "github.com/lib/pq"
@@ -17,14 +15,14 @@ func GetRedirectors() ([]types.Redirector, error) {
             listen_ip,
             forward_ip,
             forward_port,
-            listen_port,
-            transport_protocol,
+            COALESCE(listen_port, '') AS listen_port,
+            COALESCE(transport_protocol, '') AS transport_protocol,
             status
         FROM redirector_status
     `
 	rows, err := db.Query(FetchSQL)
 	if err != nil {
-		log.Println("Error querying redirectors:", err)
+		logger.Logf(logger.Error, "Error querying redirectors: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -44,18 +42,18 @@ func GetRedirectors() ([]types.Redirector, error) {
 			&r.TransportProtocol,
 			&r.Status,
 		); err != nil {
-			log.Println("Error scanning row:", err)
+			logger.Logf(logger.Error, "Error scanning row: %v", err)
 			return nil, err
 		}
 		redirectors = append(redirectors, r)
 	}
 
 	if err := rows.Err(); err != nil {
-		log.Println("Error iterating over rows:", err)
+		logger.Logf(logger.Error, "Error iterating over rows: %v", err)
 		return nil, err
 	}
 
-	logger.Logf(logger.Info, "Current redirectors: %+v\n", redirectors)
+	logger.Logf(logger.Info, "Current redirectors: %+v", redirectors)
 	return redirectors, nil
 }
 

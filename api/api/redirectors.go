@@ -98,7 +98,7 @@ func CreateRedirectorHandler(c *gin.Context) {
 		cmd.Stderr = os.Stderr
 		err = cmd.Run()
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error", "details": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error", "details": err.Error()})
 		} else {
 			data.CreateRedirector(newRedirectorID, body["Name"], body["Description"], body["ForwardIP"], body["ForwardPort"], body["ListenIP"])
 			c.Header("Content-Disposition", "attachment; filename=redirector_install.sh")
