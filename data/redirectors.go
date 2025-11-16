@@ -94,7 +94,6 @@ func SetRedirectorStatus(redirectorID, listenPort string, protocols []string) er
 	}
 	defer tx.Rollback()
 
-	// 1) Update last_report for status view
 	updateSQL := `
         UPDATE redirectors
         SET last_report = NOW()
@@ -105,20 +104,15 @@ func SetRedirectorStatus(redirectorID, listenPort string, protocols []string) er
 		return err
 	}
 
-	// 2) Clear existing listeners for this redirector
-	if _, err := tx.Exec(`DELETE FROM redirector_listeners WHERE redirector_id = $1`, redirectorID); err != nil {
-		logger.Logf(logger.Error, "Error clearing listeners for %s: %v", redirectorID, err)
-		return err
-	}
-
-	// 3) Insert one row per protocol
 	insertSQL := `
-        INSERT INTO redirector_listeners (redirector_id, listen_port, protocol)
-        VALUES ($1, $2, $3)
+        INSERT INTO redirector_listeners (redirector_id, listen_port, protocol, last_report)
+        VALUES ($1, $2, $3, NOW())
+        ON CONFLICT (redirector_id, listen_port, protocol)
+        DO UPDATE SET last_report = EXCLUDED.last_report;
     `
 	for _, p := range protocols {
 		if _, err := tx.Exec(insertSQL, redirectorID, listenPort, p); err != nil {
-			logger.Logf(logger.Error, "Error inserting listener for %s (%s/%s): %v",
+			logger.Logf(logger.Error, "Error upserting listener for %s (%s/%s): %v",
 				redirectorID, listenPort, p, err)
 			return err
 		}

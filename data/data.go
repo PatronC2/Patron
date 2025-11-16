@@ -239,6 +239,7 @@ func InitDatabase() {
 		listen_port TEXT NOT NULL,
 		protocol listener_protocol NOT NULL,
 		created_at TIMESTAMPTZ DEFAULT NOW(),
+		last_report TIMESTAMPTZ,
 		UNIQUE (redirector_id, listen_port, protocol)
 	);
 
@@ -250,14 +251,14 @@ func InitDatabase() {
 		r.listen_ip,
 		r.forward_ip,
 		r.forward_port,
-		r.last_report,
+		r.last_report          AS redirector_last_report,
 		l.listen_port,
-		l.protocol AS transport_protocol,
+		l.protocol             AS transport_protocol,
+		l.last_report          AS listener_last_report,
 		CASE 
 			WHEN r.is_teamserver = TRUE THEN 'Online'
-			WHEN r.last_report IS NULL 
-				OR r.last_report < NOW() - INTERVAL '10 minutes'
-				THEN 'Offline'
+			WHEN l.last_report IS NULL 
+				OR l.last_report < NOW() - INTERVAL '10 minutes' THEN 'Offline'
 			ELSE 'Online'
 		END AS status
 	FROM redirectors r
