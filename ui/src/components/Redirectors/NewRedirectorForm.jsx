@@ -11,6 +11,7 @@ const NewRedirectorForm = ({ fetchData, setActiveTab, redirectors }) => {
     const { auth } = useContext(AuthContext);
     const [notification, setNotification] = useState('');
     const [notificationType, setNotificationType] = useState('');
+    const [selectedForwardTargetId, setSelectedForwardTargetId] = useState('');
     const [formData, setFormData] = useState({
         Name: '',
         Description: '',
@@ -37,6 +38,8 @@ const NewRedirectorForm = ({ fetchData, setActiveTab, redirectors }) => {
 
     const handleForwardTargetChange = (e) => {
         const selectedId = e.target.value;
+        setSelectedForwardTargetId(selectedId);
+        
         if (!selectedId) return;
 
         const target = onlineTargets.find(r => r.id === selectedId);
@@ -153,7 +156,7 @@ const NewRedirectorForm = ({ fetchData, setActiveTab, redirectors }) => {
                     <select
                         id="ForwardTarget"
                         onChange={handleForwardTargetChange}
-                        value=""
+                        value={selectedForwardTargetId}
                     >
                         <option value="">
                             -- Select an online redirector (optional) --
