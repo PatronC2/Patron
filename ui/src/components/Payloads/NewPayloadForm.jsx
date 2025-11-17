@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { useAxios } from '../../context/AxiosProvider';
 import AuthContext from '../../context/AuthProvider';
 import './NewPayloadForm.css';
@@ -24,36 +24,68 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
         compression: 'none',
     });
     const [availableTypes, setAvailableTypes] = useState([]);
+    const [redirectors, setRedirectors] = useState([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        const fetchTypes = async () => {
+        const fetchStuff = async () => {
             try {
-                const response = await axios.get('/api/payloadconfs');
-
-                const types = Object.entries(response.data).map(([key, value]) => ({
+                const typesResp = await axios.get('/api/payloadconfs');
+                const types = Object.entries(typesResp.data).map(([key, value]) => ({
                     value: key,
                     label: value.type,
                 }));
-
                 setAvailableTypes(types);
-                setFormData((prevData) => ({
+                setFormData(prevData => ({
                     ...prevData,
                     type: types[0]?.value || '',
                 }));
+
+                const redirResp = await axios.get('/api/redirectors');
+                const list = Array.isArray(redirResp.data.data)
+                    ? redirResp.data.data
+                    : [];
+                setRedirectors(list);
             } catch (error) {
-                console.error('Error fetching payload types:', error);
-                setNotification('Error fetching payload types.');
+                console.error('Error fetching payload types / redirectors:', error);
+                setNotification('Error fetching payload types or redirectors.');
                 setNotificationType('error');
             }
         };
 
-        fetchTypes();
-    }, [auth.accessToken]);
+        fetchStuff();
+    });
+
+    const onlineListeners = useMemo(
+        () =>
+            (redirectors || []).filter(
+                r => r.status === 'Online' && r.listenport && r.listenport !== ''
+            ),
+        [redirectors]
+    );
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleListenerTargetChange = (e) => {
+        const selectedId = e.target.value;
+        if (!selectedId) return;
+
+        const target = onlineListeners.find(r => r.id === selectedId);
+        if (!target) return;
+
+        // transportprotocol from API is lowercase ("tcp"/"quic"), form uses "TCP"/"QUIC"
+        const protoFromAPI = target.transportprotocol || '';
+        const protoUpper = protoFromAPI.toUpperCase(); // "TCP", "QUIC", "HTTPS" etc.
+
+        setFormData(prev => ({
+            ...prev,
+            serverip: target.listenip,
+            serverport: target.listenport,
+            transportprotocol: protoUpper || prev.transportprotocol,
+        }));
     };
 
     const handleSubmit = async (e) => {
@@ -144,6 +176,33 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
                         ))}
                     </select>
                 </div>
+
+                <div>
+                    <label htmlFor="listenerTarget">
+                        Use Online Redirector Listener:
+                    </label>
+                    <select
+                        id="listenerTarget"
+                        onChange={handleListenerTargetChange}
+                        value=""
+                    >
+                        <option value="">
+                            -- Optional: select an online listener --
+                        </option>
+                        {onlineListeners.map((r) => (
+                            <option
+                                key={`${r.id}-${r.listenport}-${r.transportprotocol}`}
+                                value={r.id}
+                            >
+                                {r.name} — {r.listenip}:{r.listenport}
+                                {r.transportprotocol
+                                    ? ` (${r.transportprotocol.toUpperCase()})`
+                                    : ''}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
                 <div>
                     <label htmlFor="serverip">Listener IP:</label>
                     <input
