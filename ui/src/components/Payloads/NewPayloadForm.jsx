@@ -187,15 +187,15 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
                     <select
                         id="listenerTarget"
                         onChange={handleListenerTargetChange}
-                        value=""
+                        value={selectedListenerIndex}
                     >
                         <option value="">
                             -- Optional: select an online listener --
                         </option>
-                        {onlineListeners.map((r) => (
+                        {onlineListeners.map((r, idx) => (
                             <option
                                 key={`${r.id}-${r.listenport}-${r.transportprotocol}`}
-                                value={r.idx}
+                                value={idx}
                             >
                                 {r.name} — {r.listenip}:{r.listenport}
                                 {r.transportprotocol
