@@ -11,6 +11,7 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
     const { auth } = useContext(AuthContext);
     const [notification, setNotification] = useState('');
     const [notificationType, setNotificationType] = useState('');
+    const [selectedListenerIndex, setSelectedListenerIndex] = useState('');
     const [formData, setFormData] = useState({
         name: '',
         description: '',
