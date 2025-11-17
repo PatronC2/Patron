@@ -54,7 +54,7 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
         };
 
         fetchStuff();
-    });
+    }, []);
 
     const onlineListeners = useMemo(
         () =>
