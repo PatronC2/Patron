@@ -164,7 +164,7 @@ const Redirectors = () => {
                     )}
                 </div>
             ) : (
-                <NewRedirectorForm fetchData={fetchData} setActiveTab={setActiveTab} />
+                <NewRedirectorForm fetchData={fetchData} setActiveTab={setActiveTab} redirectors={data} />
             )}
         </div>
     );
