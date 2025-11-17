@@ -101,7 +101,7 @@ func CreatePayloadHandler(c *gin.Context) {
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error", "details": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error", "details": err.Error()})
 		return
 	}
 

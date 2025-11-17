@@ -66,7 +66,6 @@ func main() {
 	appName := "server"
 	Init()
 	data.OpenDatabase()
-	data.InitDatabase()
 	Refresh(appName)
 
 	tlsServer := tcpListener.NewServer()

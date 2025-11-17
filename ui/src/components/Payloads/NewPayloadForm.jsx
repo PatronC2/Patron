@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { useAxios } from '../../context/AxiosProvider';
 import AuthContext from '../../context/AuthProvider';
 import './NewPayloadForm.css';
@@ -11,6 +11,7 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
     const { auth } = useContext(AuthContext);
     const [notification, setNotification] = useState('');
     const [notificationType, setNotificationType] = useState('');
+    const [selectedListenerIndex, setSelectedListenerIndex] = useState('');
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -24,36 +25,70 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
         compression: 'none',
     });
     const [availableTypes, setAvailableTypes] = useState([]);
+    const [redirectors, setRedirectors] = useState([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        const fetchTypes = async () => {
+        const fetchStuff = async () => {
             try {
-                const response = await axios.get('/api/payloadconfs');
-
-                const types = Object.entries(response.data).map(([key, value]) => ({
+                const typesResp = await axios.get('/api/payloadconfs');
+                const types = Object.entries(typesResp.data).map(([key, value]) => ({
                     value: key,
                     label: value.type,
                 }));
-
                 setAvailableTypes(types);
-                setFormData((prevData) => ({
+                setFormData(prevData => ({
                     ...prevData,
                     type: types[0]?.value || '',
                 }));
+
+                const redirResp = await axios.get('/api/redirectors');
+                const list = Array.isArray(redirResp.data.data)
+                    ? redirResp.data.data
+                    : [];
+                setRedirectors(list);
             } catch (error) {
-                console.error('Error fetching payload types:', error);
-                setNotification('Error fetching payload types.');
+                console.error('Error fetching payload types / redirectors:', error);
+                setNotification('Error fetching payload types or redirectors.');
                 setNotificationType('error');
             }
         };
 
-        fetchTypes();
-    }, [auth.accessToken]);
+        fetchStuff();
+    }, []);
+
+    const onlineListeners = useMemo(
+        () =>
+            (redirectors || []).filter(
+                r => r.status === 'Online' && r.listenport && r.listenport !== ''
+            ),
+        [redirectors]
+    );
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleListenerTargetChange = (e) => {
+        const { value } = e.target;
+        setSelectedListenerIndex(value);
+
+        if (value === '') return;
+
+        const idx = parseInt(value, 10);
+        const target = onlineListeners[idx];
+        if (!target) return;
+
+        const protoFromAPI = target.transportprotocol || '';
+        const protoUpper = protoFromAPI.toUpperCase();
+
+        setFormData(prev => ({
+            ...prev,
+            serverip: target.listenip,
+            serverport: target.listenport,
+            transportprotocol: protoUpper || prev.transportprotocol,
+        }));
     };
 
     const handleSubmit = async (e) => {
@@ -144,6 +179,33 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
                         ))}
                     </select>
                 </div>
+
+                <div>
+                    <label htmlFor="listenerTarget">
+                        Use Online Redirector Listener:
+                    </label>
+                    <select
+                        id="listenerTarget"
+                        onChange={handleListenerTargetChange}
+                        value={selectedListenerIndex}
+                    >
+                        <option value="">
+                            -- Optional: select an online listener --
+                        </option>
+                        {onlineListeners.map((r, idx) => (
+                            <option
+                                key={`${r.id}-${r.listenport}-${r.transportprotocol}`}
+                                value={idx}
+                            >
+                                {r.name} — {r.listenip}:{r.listenport}
+                                {r.transportprotocol
+                                    ? ` (${r.transportprotocol.toUpperCase()})`
+                                    : ''}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
                 <div>
                     <label htmlFor="serverip">Listener IP:</label>
                     <input

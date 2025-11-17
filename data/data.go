@@ -3,7 +3,6 @@ package data
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -27,21 +26,20 @@ func OpenDatabase() {
 		"password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
 	for {
-
 		db, err = sql.Open("postgres", psqlInfo)
 		if err != nil {
-			logger.Logf(logger.Error, "Failed to connect to the database: %v\n", err)
-			time.Sleep(30 * time.Second)
+			logger.Logf(logger.Error, "Failed to connect to the database: %v", err)
+			time.Sleep(5 * time.Second)
 			continue
 		}
 		err = db.Ping()
 		if err != nil {
-			logger.Logf(logger.Error, "Failed to ping the database: %v\n", err)
+			logger.Logf(logger.Error, "Failed to ping the database: %v", err)
 			db.Close()
-			time.Sleep(30 * time.Second)
+			time.Sleep(5 * time.Second)
 			continue
 		}
-		logger.Logf(logger.Info, "Postgres DB connected\n")
+		logger.Logf(logger.Info, "Postgres DB connected")
 		break
 	}
 }
@@ -97,9 +95,9 @@ func InitDatabase() {
 	`
 	_, err := db.Exec(AgentSQL)
 	if err != nil {
-		log.Fatal(err.Error())
+		logger.Logf(logger.Error, "Failed to create agents table, %v", err)
 	}
-	logger.Logf(logger.Info, "agents table initialized\n")
+	logger.Logf(logger.Info, "agents table initialized")
 
 	CommandSQL := `
 	CREATE TABLE IF NOT EXISTS "Commands" (
@@ -115,9 +113,9 @@ func InitDatabase() {
 	`
 	_, err = db.Exec(CommandSQL)
 	if err != nil {
-		log.Fatal(err.Error())
+		logger.Logf(logger.Error, "Failed to create Commands table: %v", err)
 	}
-	logger.Logf(logger.Info, "Commands table initialized\n")
+	logger.Logf(logger.Info, "Commands table initialized")
 
 	FilesSQL := `
 	CREATE TABLE IF NOT EXISTS "files" (
@@ -132,9 +130,9 @@ func InitDatabase() {
 	`
 	_, err = db.Exec(FilesSQL)
 	if err != nil {
-		log.Fatal(err.Error())
+		logger.Logf(logger.Error, "Failed to create files table: %v", err)
 	}
-	logger.Logf(logger.Info, "Files table initialized\n")
+	logger.Logf(logger.Info, "Files table initialized")
 
 	KeylogSQL := `
 	CREATE TABLE IF NOT EXISTS "Keylog" (
@@ -146,9 +144,9 @@ func InitDatabase() {
 	`
 	_, err = db.Exec(KeylogSQL)
 	if err != nil {
-		log.Fatal(err.Error())
+		logger.Logf(logger.Error, "Failed to create Keylog table: %v", err)
 	}
-	logger.Logf(logger.Info, "Keylog table initialized\n")
+	logger.Logf(logger.Info, "Keylog table initialized")
 
 	PayloadSQL := `
 	CREATE TABLE IF NOT EXISTS "Payloads" (
@@ -167,9 +165,9 @@ func InitDatabase() {
 	`
 	_, err = db.Exec(PayloadSQL)
 	if err != nil {
-		log.Fatal(err.Error())
+		logger.Logf(logger.Error, "Failed to create Payloads table: %v", err)
 	}
-	logger.Logf(logger.Info, "Payloads table initialized\n")
+	logger.Logf(logger.Info, "Payloads table initialized")
 
 	UsersSQL := `
 	CREATE TABLE IF NOT EXISTS users (
@@ -181,7 +179,7 @@ func InitDatabase() {
 	`
 	_, err = db.Exec(UsersSQL)
 	if err != nil {
-		log.Fatal(err.Error())
+		logger.Logf(logger.Error, "Failed to create users table: %v", err)
 	}
 	logger.Logf(logger.Info, "Users table initialized")
 
@@ -196,9 +194,9 @@ func InitDatabase() {
 	`
 	_, err = db.Exec(NotesSQL)
 	if err != nil {
-		log.Fatal(err.Error())
+		logger.Logf(logger.Error, "Failed to create notes table: %v", err)
 	}
-	logger.Logf(logger.Info, "Notes table initialized\n")
+	logger.Logf(logger.Info, "Notes table initialized")
 
 	TagsSQL := `
 	CREATE TABLE IF NOT EXISTS "tags" (
@@ -212,43 +210,116 @@ func InitDatabase() {
 	`
 	_, err = db.Exec(TagsSQL)
 	if err != nil {
-		log.Fatal(err.Error())
+		logger.Logf(logger.Error, "Failed to create tags table: %v", err)
 	}
-	logger.Logf(logger.Info, "tags table initialized\n")
+	logger.Logf(logger.Info, "tags table initialized")
 
 	RedirectorsSQL := `
-	CREATE TABLE IF NOT EXISTS "redirectors" (
-		"RedirectorID" TEXT PRIMARY KEY,
-		"Name" TEXT NOT NULL,
-		"Description" TEXT,
-		"ForwardIP" TEXT,
-		"ForwardPort" TEXT,
-		"ListenPort" TEXT NOT NULL,
-		"LastReport" TIMESTAMPTZ,
-		"transport_protocol" TEXT
+	CREATE TABLE IF NOT EXISTS redirectors (
+		redirector_id TEXT PRIMARY KEY,
+		name TEXT NOT NULL,
+		description TEXT,
+		listen_ip TEXT,
+		forward_ip TEXT,
+		forward_port TEXT,
+		is_teamserver BOOLEAN NOT NULL DEFAULT FALSE,
+		last_report TIMESTAMPTZ
 	);
+
+	DO $$
+	BEGIN
+		IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'listener_protocol') THEN
+			CREATE TYPE listener_protocol AS ENUM ('tcp', 'quic', 'https');
+		END IF;
+	END$$;
+
+	CREATE TABLE IF NOT EXISTS redirector_listeners (
+		id BIGSERIAL PRIMARY KEY,
+		redirector_id TEXT NOT NULL REFERENCES redirectors(redirector_id) ON DELETE CASCADE,
+		listen_port TEXT NOT NULL,
+		protocol listener_protocol NOT NULL,
+		created_at TIMESTAMPTZ DEFAULT NOW(),
+		last_report TIMESTAMPTZ,
+		UNIQUE (redirector_id, listen_port, protocol)
+	);
+
 	CREATE OR REPLACE VIEW redirector_status AS
 	SELECT 
-		"RedirectorID",
-		"Name",
-		"Description",
-		"ForwardIP",
-		"ForwardPort",
-		"ListenPort",
-		"LastReport",
-		"transport_protocol",
+		r.redirector_id,
+		r.name,
+		r.description,
+		r.listen_ip,
+		r.forward_ip,
+		r.forward_port,
+		r.last_report          AS redirector_last_report,
+		l.listen_port,
+		l.protocol             AS transport_protocol,
+		l.last_report          AS listener_last_report,
 		CASE 
-			WHEN "LastReport" IS NULL OR "LastReport" < NOW() - INTERVAL '10 minutes' THEN 'Offline'
+			WHEN r.is_teamserver = TRUE THEN 'Online'
+			WHEN l.last_report IS NULL 
+				OR l.last_report < NOW() - INTERVAL '10 minutes' THEN 'Offline'
 			ELSE 'Online'
-		END AS "Status"
-	FROM 
-		"redirectors";
+		END AS status
+	FROM redirectors r
+	LEFT JOIN redirector_listeners l 
+		ON r.redirector_id = l.redirector_id;
 	`
 	_, err = db.Exec(RedirectorsSQL)
 	if err != nil {
-		log.Fatal(err.Error())
+		logger.Logf(logger.Error, "Failed to create Redirectors table: %v", err)
 	}
-	logger.Logf(logger.Info, "Redirectors table initialized\n")
+	logger.Logf(logger.Info, "Redirectors table initialized")
+
+	teamserverID := "11111111-1111-1111-1111-111111111111"
+	tcp_listener_ip := os.Getenv("REACT_APP_NGINX_IP")
+	tcp_listener_port := os.Getenv("TCP_LISTENER_PORT")
+	quic_listener_port := os.Getenv("QUIC_LISTENER_PORT")
+
+	upsertRedirectorSQL := `
+        INSERT INTO redirectors (redirector_id, name, description, listen_ip, forward_ip, forward_port, last_report, is_teamserver)
+        VALUES ($1, $2, $3, $4, $5, $6, NOW(), TRUE)
+        ON CONFLICT (redirector_id)
+        DO UPDATE SET
+            name         = EXCLUDED.name,
+            description  = EXCLUDED.description,
+			listen_ip	 = EXCLUDED.listen_ip,
+            forward_ip   = EXCLUDED.forward_ip,
+            forward_port = EXCLUDED.forward_port,
+            last_report  = NOW(),
+            is_teamserver = TRUE;
+    `
+	_, err = db.Exec(upsertRedirectorSQL, teamserverID, "teamserver", "default listener", tcp_listener_ip, "127.0.0.1", tcp_listener_port)
+	if err != nil {
+		logger.Logf(logger.Error, "Failed to initialize teamserver listener: %v", err)
+	}
+	logger.Logf(logger.Info, "Teamserver initialized")
+
+	// wipe existing listeners for teamserver
+	if _, err := db.Exec(`DELETE FROM redirector_listeners WHERE redirector_id = $1`, teamserverID); err != nil {
+		logger.Logf(logger.Error, "Failed to initialize teamserver listeners: %v", err)
+	}
+	logger.Logf(logger.Info, "Removed previous listeners")
+
+	// add listeners for teamserver
+	insertListenerSQL := `
+        INSERT INTO redirector_listeners (redirector_id, listen_port, protocol)
+        VALUES ($1, $2, $3)
+    `
+
+	if tcp_listener_port != "" {
+		if _, err := db.Exec(insertListenerSQL, teamserverID, tcp_listener_port, "tcp"); err != nil {
+			logger.Logf(logger.Error, "Failed to insert teamserver tcp listener: %v", err)
+		}
+		logger.Logf(logger.Info, "Added teamserver tcp listener")
+	}
+
+	if quic_listener_port != "" {
+		if _, err := db.Exec(insertListenerSQL, teamserverID, quic_listener_port, "quic"); err != nil {
+			logger.Logf(logger.Error, "Failed to insert teamserver quic listener: %v", err)
+		}
+		logger.Logf(logger.Info, "Added teamserver quic listener")
+	}
 
 	ConfigSQL := `
 	CREATE TABLE IF NOT EXISTS configs (
@@ -259,7 +330,7 @@ func InitDatabase() {
 	`
 	_, err = db.Exec(ConfigSQL)
 	if err != nil {
-		log.Fatal(err.Error())
+		logger.Logf(logger.Error, "Failed to create configs table: %v", err)
 	}
 	insertDefaults := `
 	INSERT INTO configs (application, log_level, log_file_max_size)
@@ -270,7 +341,7 @@ func InitDatabase() {
 	`
 	_, err = db.Exec(insertDefaults)
 	if err != nil {
-		log.Fatal(err)
+		logger.Logf(logger.Error, "Failed to insert defaults: %v", err)
 	}
 	logger.Logf(logger.Info, "configs table initialized\n")
 

@@ -1,10 +1,9 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useMemo } from 'react';
 import { useAxios } from '../../context/AxiosProvider';
 import AuthContext from '../../context/AuthProvider';
 import './NewRedirectorForm.css';
 
-
-const NewRedirectorForm = ({ fetchData, setActiveTab }) => {
+const NewRedirectorForm = ({ fetchData, setActiveTab, redirectors }) => {
     const cfg = window.runtimeConfig;
     const PATRON_C2_IP = `${cfg.REACT_APP_NGINX_IP}`;
     const PATRON_C2_PORT = `${cfg.REACT_APP_C2SERVER_PORT}`;
@@ -12,18 +11,46 @@ const NewRedirectorForm = ({ fetchData, setActiveTab }) => {
     const { auth } = useContext(AuthContext);
     const [notification, setNotification] = useState('');
     const [notificationType, setNotificationType] = useState('');
+    const [selectedForwardTargetId, setSelectedForwardTargetId] = useState('');
     const [formData, setFormData] = useState({
         Name: '',
         Description: '',
         ForwardIP: `${PATRON_C2_IP}`,
         ForwardPort: `${PATRON_C2_PORT}`,
+        ListenIP: `x.x.x.x`,
         ListenPort: `${PATRON_C2_PORT}`,
     });
     const [loading, setLoading] = useState(false);
 
+    // Only online redirectors with a valid listener port
+    const onlineTargets = useMemo(
+        () =>
+            (redirectors || []).filter(
+                r => r.status === 'Online' && r.transportprotocol === 'tcp' && r.listenport && r.listenport !== ''
+            ),
+        [redirectors]
+    );
+
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleForwardTargetChange = (e) => {
+        const selectedId = e.target.value;
+        setSelectedForwardTargetId(selectedId);
+        
+        if (!selectedId) return;
+
+        const target = onlineTargets.find(r => r.id === selectedId);
+        if (!target) return;
+
+        // Use the *listener's* IP/port as ForwardIP/ForwardPort for the new redirector
+        setFormData(prev => ({
+            ...prev,
+            ForwardIP: target.listenip,
+            ForwardPort: target.listenport,
+        }));
     };
 
     const handleNotification = (message, type) => {
@@ -33,7 +60,7 @@ const NewRedirectorForm = ({ fetchData, setActiveTab }) => {
             setNotification('');
             setNotificationType('');
         }, 3000);
-    };    
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -123,6 +150,29 @@ const NewRedirectorForm = ({ fetchData, setActiveTab }) => {
                     />
                 </div>
                 <div>
+                    <label htmlFor="ForwardTarget">
+                        Forward To (online redirector / listener):
+                    </label>
+                    <select
+                        id="ForwardTarget"
+                        onChange={handleForwardTargetChange}
+                        value={selectedForwardTargetId}
+                    >
+                        <option value="">
+                            -- Select an online redirector (optional) --
+                        </option>
+                        {onlineTargets.map(r => (
+                            <option key={`${r.id}-${r.listenport}`} value={r.id}>
+                                {r.name} — {r.listenip}:{r.listenport}
+                                {r.transportprotocol
+                                    ? ` (${r.transportprotocol.toUpperCase()})`
+                                    : ''}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div>
                     <label htmlFor="ForwardIP">Forward IP:</label>
                     <input
                         type="text"
@@ -147,6 +197,18 @@ const NewRedirectorForm = ({ fetchData, setActiveTab }) => {
                     />
                 </div>
                 <div>
+                    <label htmlFor="ListenIP">Listen IP:</label>
+                    <input
+                        type="text"
+                        id="ListenIP"
+                        name="ListenIP"
+                        value={formData.ListenIP}
+                        onChange={handleChange}
+                        aria-label="Listen IP"
+                        placeholder="Enter the new host's IP"
+                    />
+                </div>
+                <div>
                     <label htmlFor="ListenPort">Listen Port:</label>
                     <input
                         type="text"
@@ -168,7 +230,7 @@ const NewRedirectorForm = ({ fetchData, setActiveTab }) => {
                 )}
             </form>
         </div>
-    );    
+    );
 };
 
 export default NewRedirectorForm;
