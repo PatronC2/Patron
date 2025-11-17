@@ -70,15 +70,17 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
     };
 
     const handleListenerTargetChange = (e) => {
-        const selectedId = e.target.value;
-        if (!selectedId) return;
+        const { value } = e.target;
+        setSelectedListenerIndex(value);
 
-        const target = onlineListeners.find(r => r.id === selectedId);
+        if (value === '') return;
+
+        const idx = parseInt(value, 10);
+        const target = onlineListeners[idx];
         if (!target) return;
 
-        // transportprotocol from API is lowercase ("tcp"/"quic"), form uses "TCP"/"QUIC"
         const protoFromAPI = target.transportprotocol || '';
-        const protoUpper = protoFromAPI.toUpperCase(); // "TCP", "QUIC", "HTTPS" etc.
+        const protoUpper = protoFromAPI.toUpperCase();
 
         setFormData(prev => ({
             ...prev,
@@ -192,7 +194,7 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
                         {onlineListeners.map((r) => (
                             <option
                                 key={`${r.id}-${r.listenport}-${r.transportprotocol}`}
-                                value={r.id}
+                                value={r.idx}
                             >
                                 {r.name} — {r.listenip}:{r.listenport}
                                 {r.transportprotocol
