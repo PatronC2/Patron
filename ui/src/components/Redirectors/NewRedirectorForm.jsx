@@ -25,7 +25,7 @@ const NewRedirectorForm = ({ fetchData, setActiveTab, redirectors }) => {
     const onlineTargets = useMemo(
         () =>
             (redirectors || []).filter(
-                r => r.status === 'Online' && r.listenport && r.listenport !== ''
+                r => r.status === 'Online' && r.transportprotocol === 'tcp' && r.listenport && r.listenport !== ''
             ),
         [redirectors]
     );
