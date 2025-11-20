@@ -62,6 +62,7 @@ type Redirector struct {
 	ListenIP          string `json:"listenip" binding:"required"`
 	ListenPort        string `json:"listenport" binding:"required"`
 	TransportProtocol string `json:"transportprotocol"`
+	IPFamily          string `json:"ipfamily"`
 	Status            string `json:"status" binding:"required"`
 }
 
@@ -73,12 +74,16 @@ type RedirectorTemplateData struct {
 	ExternalPort   string
 	ForwardIP      string
 	ForwardPort    string
+	ListenIPv4     string
+	ListenIPv6     string
 }
 
 type RedirectorStatusRequest struct {
 	LinkingKey          string   `json:"linking_key" binding:"required"`
 	RedirectorProtocols []string `json:"redirectorProtocols"`
 	ExternalPort        string   `json:"external_port" binding:"required"`
+	ListenIPv4          string   `json:"listen_ipv4" binding:"required"`
+	ListenIPv6          string   `json:"listen_ipv6"`
 }
 
 type AgentMetrics struct {

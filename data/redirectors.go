@@ -8,18 +8,19 @@ import (
 
 func GetRedirectors() ([]types.Redirector, error) {
 	FetchSQL := `
-        SELECT
-            redirector_id,
-            name,
-            description,
-            listen_ip,
-            forward_ip,
-            forward_port,
-            COALESCE(listen_port, '') AS listen_port,
-            COALESCE(transport_protocol::text, '') AS transport_protocol,
-            status
-        FROM redirector_status
-    `
+		SELECT
+			redirector_id,
+			name,
+			description,
+			listen_ip,
+			forward_ip,
+			forward_port,
+			COALESCE(listen_port, '') AS listen_port,
+			COALESCE(transport_protocol::text, '') AS transport_protocol,
+			COALESCE(ip_family::text, '')        AS ip_family,
+			status
+		FROM redirector_status
+	`
 	rows, err := db.Query(FetchSQL)
 	if err != nil {
 		logger.Logf(logger.Error, "Error querying redirectors: %v", err)
@@ -40,6 +41,7 @@ func GetRedirectors() ([]types.Redirector, error) {
 			&r.ForwardPort,
 			&r.ListenPort,
 			&r.TransportProtocol,
+			&r.IPFamily,
 			&r.Status,
 		); err != nil {
 			logger.Logf(logger.Error, "Error scanning row: %v", err)
@@ -62,12 +64,11 @@ func CreateRedirector(
 	Name,
 	Description,
 	ForwardIP,
-	ForwardPort,
-	ListenIP string,
+	ForwardPort string,
 ) error {
 	InsertSQL := `
-        INSERT INTO redirectors (redirector_id, name, description, forward_ip, forward_port, listen_ip)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO redirectors (redirector_id, name, description, forward_ip, forward_port)
+        VALUES ($1, $2, $3, $4, $5)
     `
 
 	_, err := db.Exec(InsertSQL,
@@ -76,7 +77,6 @@ func CreateRedirector(
 		Description,
 		ForwardIP,
 		ForwardPort,
-		ListenIP,
 	)
 	if err != nil {
 		logger.Logf(logger.Error, "Error creating redirector with RedirectorID %s: %v", RedirectorID, err)
@@ -87,7 +87,7 @@ func CreateRedirector(
 	return nil
 }
 
-func SetRedirectorStatus(redirectorID, listenPort string, protocols []string) error {
+func SetRedirectorStatus(redirectorID string, listenIPv4 string, listenIPv6 string, listenPort string, protocols []string) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -105,16 +105,19 @@ func SetRedirectorStatus(redirectorID, listenPort string, protocols []string) er
 	}
 
 	insertSQL := `
-        INSERT INTO redirector_listeners (redirector_id, listen_port, protocol, last_report)
-        VALUES ($1, $2, $3, NOW())
-        ON CONFLICT (redirector_id, listen_port, protocol)
-        DO UPDATE SET last_report = EXCLUDED.last_report;
-    `
-	for _, p := range protocols {
-		if _, err := tx.Exec(insertSQL, redirectorID, listenPort, p); err != nil {
-			logger.Logf(logger.Error, "Error upserting listener for %s (%s/%s): %v",
-				redirectorID, listenPort, p, err)
-			return err
+		INSERT INTO redirector_listeners (redirector_id, listen_ip, listen_port, protocol, ip_family, last_report)
+		VALUES ($1, $2, $3, $4, $5, NOW())
+		ON CONFLICT (redirector_id, listen_ip, listen_port, protocol)
+		DO UPDATE SET last_report = EXCLUDED.last_report;
+	`
+	if listenIPv4 != "" {
+		for _, p := range protocols {
+			tx.Exec(insertSQL, redirectorID, listenIPv4, listenPort, p, "ipv4")
+		}
+	}
+	if listenIPv6 != "" {
+		for _, p := range protocols {
+			tx.Exec(insertSQL, redirectorID, listenIPv6, listenPort, p, "ipv6")
 		}
 	}
 

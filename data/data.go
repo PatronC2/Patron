@@ -219,7 +219,6 @@ func InitDatabase() {
 		redirector_id TEXT PRIMARY KEY,
 		name TEXT NOT NULL,
 		description TEXT,
-		listen_ip TEXT,
 		forward_ip TEXT,
 		forward_port TEXT,
 		is_teamserver BOOLEAN NOT NULL DEFAULT FALSE,
@@ -236,33 +235,42 @@ func InitDatabase() {
 	CREATE TABLE IF NOT EXISTS redirector_listeners (
 		id BIGSERIAL PRIMARY KEY,
 		redirector_id TEXT NOT NULL REFERENCES redirectors(redirector_id) ON DELETE CASCADE,
+		listen_ip TEXT NOT NULL,
 		listen_port TEXT NOT NULL,
 		protocol listener_protocol NOT NULL,
+		ip_family ip_family NOT NULL,
 		created_at TIMESTAMPTZ DEFAULT NOW(),
 		last_report TIMESTAMPTZ,
-		UNIQUE (redirector_id, listen_port, protocol)
+		UNIQUE (redirector_id, listen_ip, listen_port, protocol)
 	);
 
 	CREATE OR REPLACE VIEW redirector_status AS
-	SELECT 
+	SELECT
 		r.redirector_id,
 		r.name,
 		r.description,
-		r.listen_ip,
 		r.forward_ip,
 		r.forward_port,
-		r.last_report          AS redirector_last_report,
+
+		l.listen_ip,
 		l.listen_port,
-		l.protocol             AS transport_protocol,
-		l.last_report          AS listener_last_report,
-		CASE 
+		l.protocol AS transport_protocol,
+		l.ip_family,
+		l.last_report AS listener_last_report,
+
+		r.last_report AS redirector_last_report,
+		r.is_teamserver,
+
+		CASE
 			WHEN r.is_teamserver = TRUE THEN 'Online'
 			WHEN l.last_report IS NULL 
-				OR l.last_report < NOW() - INTERVAL '10 minutes' THEN 'Offline'
+				OR l.last_report < NOW() - INTERVAL '10 minutes'
+			THEN 'Offline'
 			ELSE 'Online'
 		END AS status
+
 	FROM redirectors r
-	LEFT JOIN redirector_listeners l 
+	LEFT JOIN redirector_listeners l
 		ON r.redirector_id = l.redirector_id;
 	`
 	_, err = db.Exec(RedirectorsSQL)

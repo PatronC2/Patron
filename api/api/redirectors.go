@@ -36,6 +36,13 @@ func CreateRedirectorHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
+	vListenIPv6 := true
+	if body["ListenIPv6"] != "" {
+		vListenIPv6, _ = regexp.MatchString(
+			`^([0-9a-fA-F:]+:+)+[0-9a-fA-F]+$`,
+			body["ListenIPv6"],
+		)
+	}
 
 	vForwardIP, _ := regexp.MatchString(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`, body["ForwardIP"])
 	vListenIP, _ := regexp.MatchString(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`, body["ListenIP"])
@@ -50,6 +57,8 @@ func CreateRedirectorHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ForwardPort"})
 	} else if !vListenPort {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ListenPort"})
+	} else if !vListenIPv6 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ListenIPv6"})
 	} else {
 		sourcePath := "resources/docker-compose.yaml"
 		destPath := "payloads/docker-compose.yaml"
@@ -82,6 +91,8 @@ func CreateRedirectorHandler(c *gin.Context) {
 			ExternalPort:   body["ListenPort"],
 			ForwardIP:      body["ForwardIP"],
 			ForwardPort:    body["ForwardPort"],
+			ListenIPv4:     body["ListenIPv4"],
+			ListenIPv6:     body["ListenIPv6"],
 		}
 
 		var scriptBuf bytes.Buffer
@@ -117,7 +128,13 @@ func RedirectorStatusHandler(c *gin.Context) {
 		return
 	}
 
-	if err := data.SetRedirectorStatus(body.LinkingKey, body.ExternalPort, body.RedirectorProtocols); err != nil {
+	if err := data.SetRedirectorStatus(
+		body.LinkingKey,
+		body.ListenIPv4,
+		body.ListenIPv6,
+		body.ExternalPort,
+		body.RedirectorProtocols,
+	); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 		return
 	}
