@@ -26,6 +26,8 @@ var (
 	apiPort          = os.Getenv("API_PORT")
 	linkingKey       = os.Getenv("LINKING_KEY")
 	externalPort     = os.Getenv("EXTERNAL_PORT")
+	listenIPv4       = os.Getenv("LISTEN_IPV4")
+	listenIPv6       = os.Getenv("LISTEN_IPV6")
 	redirectorProtos = []string{"tcp", "quic"}
 	certHolder       atomic.Value
 )
@@ -155,6 +157,8 @@ func sendStatusUpdate() (string, string, error) {
 		LinkingKey:          linkingKey,
 		RedirectorProtocols: redirectorProtos,
 		ExternalPort:        externalPort,
+		ListenIPv4:          listenIPv4,
+		ListenIPv6:          listenIPv6,
 	}
 
 	jsonData, err := json.Marshal(body)

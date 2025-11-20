@@ -9,24 +9,30 @@ const NewRedirectorForm = ({ fetchData, setActiveTab, redirectors }) => {
     const PATRON_C2_PORT = `${cfg.REACT_APP_C2SERVER_PORT}`;
     const axios = useAxios();
     const { auth } = useContext(AuthContext);
+
     const [notification, setNotification] = useState('');
     const [notificationType, setNotificationType] = useState('');
     const [selectedForwardTargetId, setSelectedForwardTargetId] = useState('');
+    const [loading, setLoading] = useState(false);
+
     const [formData, setFormData] = useState({
         Name: '',
         Description: '',
         ForwardIP: `${PATRON_C2_IP}`,
         ForwardPort: `${PATRON_C2_PORT}`,
-        ListenIP: `x.x.x.x`,
+        ListenIPv4: 'x.x.x.x',
+        ListenIPv6: '',
         ListenPort: `${PATRON_C2_PORT}`,
     });
-    const [loading, setLoading] = useState(false);
 
-    // Only online redirectors with a valid listener port
     const onlineTargets = useMemo(
         () =>
             (redirectors || []).filter(
-                r => r.status === 'Online' && r.transportprotocol === 'tcp' && r.listenport && r.listenport !== ''
+                r =>
+                    r.status === 'Online' &&
+                    r.transportprotocol === 'tcp' &&
+                    r.listenport &&
+                    r.listenport !== ''
             ),
         [redirectors]
     );
@@ -39,13 +45,12 @@ const NewRedirectorForm = ({ fetchData, setActiveTab, redirectors }) => {
     const handleForwardTargetChange = (e) => {
         const selectedId = e.target.value;
         setSelectedForwardTargetId(selectedId);
-        
+
         if (!selectedId) return;
 
         const target = onlineTargets.find(r => r.id === selectedId);
         if (!target) return;
 
-        // Use the *listener's* IP/port as ForwardIP/ForwardPort for the new redirector
         setFormData(prev => ({
             ...prev,
             ForwardIP: target.listenip,
@@ -65,9 +70,9 @@ const NewRedirectorForm = ({ fetchData, setActiveTab, redirectors }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const url = `/api/redirector`;
-        
+
         setLoading(true);
-        
+
         try {
             const response = await axios.post(url, formData, {
                 headers: {
@@ -76,20 +81,20 @@ const NewRedirectorForm = ({ fetchData, setActiveTab, redirectors }) => {
                 },
                 responseType: 'blob',
             });
-    
+
             if (response.status === 200) {
                 const blob = new Blob([response.data], { type: response.headers['content-type'] });
                 const downloadUrl = URL.createObjectURL(blob);
-    
+
                 const link = document.createElement('a');
                 link.href = downloadUrl;
                 link.download = 'redirector_install.sh';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-    
+
                 URL.revokeObjectURL(downloadUrl);
-    
+
                 handleNotification('Redirector created successfully! Install Script downloading.', 'success');
                 fetchData();
                 setTimeout(() => {
@@ -116,7 +121,7 @@ const NewRedirectorForm = ({ fetchData, setActiveTab, redirectors }) => {
         } finally {
             setLoading(false);
         }
-    };    
+    };
 
     return (
         <div className="redirector-form-container">
@@ -138,6 +143,7 @@ const NewRedirectorForm = ({ fetchData, setActiveTab, redirectors }) => {
                         placeholder="Enter the name of the redirector"
                     />
                 </div>
+
                 <div>
                     <label htmlFor="Description">Description:</label>
                     <textarea
@@ -149,6 +155,7 @@ const NewRedirectorForm = ({ fetchData, setActiveTab, redirectors }) => {
                         placeholder="Enter a brief description"
                     />
                 </div>
+
                 <div>
                     <label htmlFor="ForwardTarget">
                         Forward To (online redirector / listener):
@@ -184,6 +191,7 @@ const NewRedirectorForm = ({ fetchData, setActiveTab, redirectors }) => {
                         placeholder="Enter the Forward IP"
                     />
                 </div>
+
                 <div>
                     <label htmlFor="ForwardPort">Forward Port:</label>
                     <input
@@ -196,18 +204,33 @@ const NewRedirectorForm = ({ fetchData, setActiveTab, redirectors }) => {
                         placeholder="Enter the Forward Port"
                     />
                 </div>
+
                 <div>
-                    <label htmlFor="ListenIP">Listen IP:</label>
+                    <label htmlFor="ListenIPv4">Listen IPv4:</label>
                     <input
                         type="text"
-                        id="ListenIP"
-                        name="ListenIP"
-                        value={formData.ListenIP}
+                        id="ListenIPv4"
+                        name="ListenIPv4"
+                        value={formData.ListenIPv4}
                         onChange={handleChange}
-                        aria-label="Listen IP"
-                        placeholder="Enter the new host's IP"
+                        aria-label="Listen IPv4"
+                        placeholder="Enter the new host's IPv4"
                     />
                 </div>
+
+                <div>
+                    <label htmlFor="ListenIPv6">Listen IPv6 (optional):</label>
+                    <input
+                        type="text"
+                        id="ListenIPv6"
+                        name="ListenIPv6"
+                        value={formData.ListenIPv6}
+                        onChange={handleChange}
+                        aria-label="Listen IPv6"
+                        placeholder="Enter the new host's IPv6 (optional)"
+                    />
+                </div>
+
                 <div>
                     <label htmlFor="ListenPort">Listen Port:</label>
                     <input
@@ -220,9 +243,11 @@ const NewRedirectorForm = ({ fetchData, setActiveTab, redirectors }) => {
                         placeholder="Enter the Listen Port"
                     />
                 </div>
+
                 <button type="submit" disabled={loading}>
                     {loading ? 'Creating...' : 'Create Redirector'}
                 </button>
+
                 {notification && (
                     <div className={`notification ${notificationType}`}>
                         {notification}
