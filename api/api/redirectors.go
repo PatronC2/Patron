@@ -45,14 +45,17 @@ func CreateRedirectorHandler(c *gin.Context) {
 	}
 
 	vForwardIP, _ := regexp.MatchString(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`, body["ForwardIP"])
-	vListenIP, _ := regexp.MatchString(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`, body["ListenIP"])
+	vListenIPv4, _ := regexp.MatchString(
+		`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`,
+		body["ListenIPv4"],
+	)
 	vForwardPort, _ := regexp.MatchString(`^(6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`, body["ForwardPort"])
 	vListenPort, _ := regexp.MatchString(`^(6553[0-5]|655[0-2]\d|65[0-4]\d\d|6[0-4]\d{3}|[1-5]\d{4}|[1-9]\d{0,3}|0)$`, body["ListenPort"])
 
 	if !vForwardIP {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ForwardIP"})
-	} else if !vListenIP {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ListenIP"})
+	} else if !vListenIPv4 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ListenIPv4"})
 	} else if !vForwardPort {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ForwardPort"})
 	} else if !vListenPort {
