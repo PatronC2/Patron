@@ -365,32 +365,6 @@ func InitDatabase() {
 		}
 	}
 
-	// wipe existing listeners for teamserver
-	if _, err := db.Exec(`DELETE FROM redirector_listeners WHERE redirector_id = $1`, teamserverID); err != nil {
-		logger.Logf(logger.Error, "Failed to initialize teamserver listeners: %v", err)
-	}
-	logger.Logf(logger.Info, "Removed previous listeners")
-
-	// add listeners for teamserver
-	insertListenerSQL := `
-        INSERT INTO redirector_listeners (redirector_id, listen_port, protocol)
-        VALUES ($1, $2, $3)
-    `
-
-	if tcp_listener_port != "" {
-		if _, err := db.Exec(insertListenerSQL, teamserverID, tcp_listener_port, "tcp"); err != nil {
-			logger.Logf(logger.Error, "Failed to insert teamserver tcp listener: %v", err)
-		}
-		logger.Logf(logger.Info, "Added teamserver tcp listener")
-	}
-
-	if quic_listener_port != "" {
-		if _, err := db.Exec(insertListenerSQL, teamserverID, quic_listener_port, "quic"); err != nil {
-			logger.Logf(logger.Error, "Failed to insert teamserver quic listener: %v", err)
-		}
-		logger.Logf(logger.Info, "Added teamserver quic listener")
-	}
-
 	ConfigSQL := `
 	CREATE TABLE IF NOT EXISTS configs (
 		application TEXT PRIMARY KEY,
