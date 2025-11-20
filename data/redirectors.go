@@ -12,12 +12,12 @@ func GetRedirectors() ([]types.Redirector, error) {
 			redirector_id,
 			name,
 			description,
-			listen_ip,
+			COALESCE(listen_ip, '')             AS listen_ip,
 			forward_ip,
 			forward_port,
-			COALESCE(listen_port, '') AS listen_port,
+			COALESCE(listen_port, '')           AS listen_port,
 			COALESCE(transport_protocol::text, '') AS transport_protocol,
-			COALESCE(ip_family::text, '')        AS ip_family,
+			COALESCE(ip_family::text, '')       AS ip_family,
 			status
 		FROM redirector_status
 	`
