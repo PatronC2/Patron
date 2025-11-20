@@ -321,7 +321,7 @@ func InitDatabase() {
 	}
 	logger.Logf(logger.Info, "Teamserver initialized")
 
-	insertListenerSQL := `
+	insertTeamserverSQL := `
 		INSERT INTO redirector_listeners (
 			redirector_id,
 			listen_ip,
@@ -337,7 +337,7 @@ func InitDatabase() {
 
 	if tcp_listener_port != "" {
 		if _, err := db.Exec(
-			insertListenerSQL,
+			insertTeamserverSQL,
 			teamserverID,
 			tcp_listener_ip,
 			tcp_listener_port,
@@ -352,7 +352,7 @@ func InitDatabase() {
 
 	if quic_listener_port != "" {
 		if _, err := db.Exec(
-			insertListenerSQL,
+			insertTeamserverSQL,
 			teamserverID,
 			tcp_listener_ip,
 			quic_listener_port,
