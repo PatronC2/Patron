@@ -289,23 +289,81 @@ func InitDatabase() {
 	quic_listener_port := os.Getenv("QUIC_LISTENER_PORT")
 
 	upsertRedirectorSQL := `
-        INSERT INTO redirectors (redirector_id, name, description, listen_ip, forward_ip, forward_port, last_report, is_teamserver)
-        VALUES ($1, $2, $3, $4, $5, $6, NOW(), TRUE)
-        ON CONFLICT (redirector_id)
-        DO UPDATE SET
-            name         = EXCLUDED.name,
-            description  = EXCLUDED.description,
-			listen_ip	 = EXCLUDED.listen_ip,
-            forward_ip   = EXCLUDED.forward_ip,
-            forward_port = EXCLUDED.forward_port,
-            last_report  = NOW(),
-            is_teamserver = TRUE;
-    `
-	_, err = db.Exec(upsertRedirectorSQL, teamserverID, "teamserver", "default listener", tcp_listener_ip, "127.0.0.1", tcp_listener_port)
+		INSERT INTO redirectors (
+			redirector_id,
+			name,
+			description,
+			forward_ip,
+			forward_port,
+			last_report,
+			is_teamserver
+		)
+		VALUES ($1, $2, $3, $4, $5, NOW(), TRUE)
+		ON CONFLICT (redirector_id)
+		DO UPDATE SET
+			name         = EXCLUDED.name,
+			description  = EXCLUDED.description,
+			forward_ip   = EXCLUDED.forward_ip,
+			forward_port = EXCLUDED.forward_port,
+			last_report  = NOW(),
+			is_teamserver = TRUE;
+	`
+	_, err = db.Exec(
+		upsertRedirectorSQL,
+		teamserverID,
+		"teamserver",
+		"default listener",
+		"127.0.0.1",
+		tcp_listener_port,
+	)
 	if err != nil {
 		logger.Logf(logger.Error, "Failed to initialize teamserver listener: %v", err)
 	}
 	logger.Logf(logger.Info, "Teamserver initialized")
+
+	insertListenerSQL := `
+		INSERT INTO redirector_listeners (
+			redirector_id,
+			listen_ip,
+			listen_port,
+			protocol,
+			ip_family,
+			last_report
+		)
+		VALUES ($1, $2, $3, $4, $5, NOW())
+		ON CONFLICT (redirector_id, listen_ip, listen_port, protocol)
+		DO UPDATE SET last_report = EXCLUDED.last_report;
+	`
+
+	if tcp_listener_port != "" {
+		if _, err := db.Exec(
+			insertListenerSQL,
+			teamserverID,
+			tcp_listener_ip,
+			tcp_listener_port,
+			"tcp",
+			"ipv4",
+		); err != nil {
+			logger.Logf(logger.Error, "Failed to insert teamserver tcp listener: %v", err)
+		} else {
+			logger.Logf(logger.Info, "Added teamserver tcp listener")
+		}
+	}
+
+	if quic_listener_port != "" {
+		if _, err := db.Exec(
+			insertListenerSQL,
+			teamserverID,
+			tcp_listener_ip,
+			quic_listener_port,
+			"quic",
+			"ipv4",
+		); err != nil {
+			logger.Logf(logger.Error, "Failed to insert teamserver quic listener: %v", err)
+		} else {
+			logger.Logf(logger.Info, "Added teamserver quic listener")
+		}
+	}
 
 	// wipe existing listeners for teamserver
 	if _, err := db.Exec(`DELETE FROM redirector_listeners WHERE redirector_id = $1`, teamserverID); err != nil {
