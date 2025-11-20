@@ -230,6 +230,10 @@ func InitDatabase() {
 		IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'listener_protocol') THEN
 			CREATE TYPE listener_protocol AS ENUM ('tcp', 'quic', 'https');
 		END IF;
+
+		IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ip_family') THEN
+			CREATE TYPE ip_family AS ENUM ('ipv4', 'ipv6');
+		END IF;
 	END$$;
 
 	CREATE TABLE IF NOT EXISTS redirector_listeners (
