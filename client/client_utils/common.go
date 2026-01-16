@@ -141,7 +141,13 @@ func (b *quicBeacon) Close() error {
 }
 
 func EstablishConnection(config *tls.Config, ServerIP, ServerPort, TransportProtocol string) (io.ReadWriteCloser, error) {
-	address := fmt.Sprintf("%s:%s", ServerIP, ServerPort)
+	ip := net.ParseIP(ServerIP)
+	var address string
+	if ip != nil && ip.To4() == nil {
+		address = fmt.Sprintf("[%s]:%s", ServerIP, ServerPort)
+	} else {
+		address = fmt.Sprintf("%s:%s", ServerIP, ServerPort)
+	}
 
 	switch TransportProtocol {
 	case "QUIC":
@@ -154,11 +160,7 @@ func EstablishConnection(config *tls.Config, ServerIP, ServerPort, TransportProt
 		if err != nil {
 			return nil, fmt.Errorf("QUIC stream failed: %w", err)
 		}
-
-		return &quicBeacon{
-			Stream: stream,
-			conn:   session,
-		}, nil
+		return &quicBeacon{Stream: stream, conn: session}, nil
 
 	case "TCP":
 		logger.Logf(logger.Info, "Dialing TCP %v", address)
