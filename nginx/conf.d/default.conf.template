@@ -1,6 +1,7 @@
 server {
     listen 8443 ssl;
     server_name patronc2.net;
+    client_max_body_size 0;
 
     ssl_certificate /etc/nginx/ssl/nginx.crt;
     ssl_certificate_key /etc/nginx/ssl/nginx.key;
