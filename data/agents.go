@@ -35,6 +35,22 @@ func CreateAgent(req *patronobuf.ConfigurationRequest) error {
 		return err
 	}
 
+	uuid := req.GetUuid()
+	tags := map[string]string{
+		"os_type":      req.GetOstype(),
+		"os_build":     req.GetOsbuild(),
+		"architecture": req.GetArch(),
+		"username":     req.GetUsername(),
+		"hostname":     req.GetHostname(),
+	}
+
+	for k, v := range tags {
+		if err := PutAgentTags(uuid, k, v); err != nil {
+			logger.Logf(logger.Error, "Error applying tag %q to agent %v: %v", k, uuid, err)
+			return err
+		}
+	}
+
 	logger.Logf(logger.Info, "New agent created in DB: %s", req.GetUuid())
 	return nil
 }
