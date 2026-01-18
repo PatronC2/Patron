@@ -369,7 +369,7 @@ const Agent = () => {
         <h3>File Transfers</h3>
         <form onSubmit={(e) => { e.preventDefault(); handleFileTransferRequest(); }}>
           <div>
-            <label>Path: </label>
+            <label>Path (with file name): </label>
             <input
               type="text"
               value={fileUploadPath}

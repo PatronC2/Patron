@@ -16,6 +16,7 @@ services:
       - ./logs:/app/logs
       - ./certs:/app/certs
       - ./files:/app/files
+      - agent_files:/app/agent_files
     networks:
       - internal_c2_network
     ports:
@@ -54,6 +55,7 @@ services:
       - ./client/payloads.json:/app/payloads.json
       - ./redirector/resources:/app/resources
       - ./certs:/app/certs
+      - agent_files:/app/agent_files
     networks:
       - internal_c2_network
     depends_on:
@@ -133,3 +135,6 @@ networks:
       driver: default
       config:
         - subnet: "${DOCKER_INTERNAL}.0/16"
+
+volumes:
+  agent_files:
