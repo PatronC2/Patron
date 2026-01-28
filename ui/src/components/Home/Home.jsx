@@ -76,13 +76,12 @@ const Home = ({ isMenuOpen }) => {
     }, []);
 
     useEffect(() => {
-    // If filters changed and we’re not already on page 1, jump back
-    if (offset !== 0) {
-        setOffset(0);
-        return; // fetch will happen on next run with offset=0
-    }
+    setOffset(0);
+    }, [hostnameFilter, ipFilter, statusFilter, tagConditions, logic, sortField, sortDirection]);
+
+    useEffect(() => {
     fetchAgents();
-    }, [hostnameFilter, ipFilter, statusFilter, tagConditions, logic, sortField, sortDirection, offset]);
+    }, [offset, hostnameFilter, ipFilter, statusFilter, tagConditions, logic, sortField, sortDirection]);
 
 
     const handleSort = (field) => {
