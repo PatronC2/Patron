@@ -67,31 +67,20 @@ func InitDatabase() {
 		transport_protocol TEXT
 	);
 	CREATE OR REPLACE VIEW agents_status AS
-	SELECT 
-		agent_id,
-		uuid,
-		server_ip,
-		server_port,
-		callback_freq,
-		callback_jitter,
-		ip,
-		agent_user,
-		hostname,
-		os_type,
-		os_arch,
-		os_build,
-		cpus,
-		memory,
-		last_callback,
-		next_callback,
-		transport_protocol,
-		CASE 
-			WHEN next_callback IS NULL OR next_callback < NOW() - INTERVAL '5 seconds'
-				THEN 'Offline'
-			ELSE 'Online'
-		END AS status
-	FROM 
-		agents;
+	SELECT
+	a.*,
+	CASE
+		WHEN a.next_callback IS NULL THEN 'Offline'
+		WHEN a.next_callback < NOW() - (
+		make_interval(secs =>
+			5
+			+ COALESCE(NULLIF(a.callback_freq,'Unknown'),'0')::int
+			* (COALESCE(NULLIF(a.callback_jitter,'Unknown'),'0')::numeric / 100.0)
+		)
+		) THEN 'Offline'
+		ELSE 'Online'
+	END AS status
+	FROM agents a;
 	`
 	_, err := db.Exec(AgentSQL)
 	if err != nil {
