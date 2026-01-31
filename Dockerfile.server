@@ -1,5 +1,10 @@
-FROM golang:1.24.3 AS build
+ARG GOVERSION=SET_ME
 
+<<<<<<< HEAD
+=======
+FROM golang:${GOVERSION} AS build
+
+>>>>>>> 90fcf1a2a437f0d92078fb85fa4f369651342971
 ARG TCP_LISTENER_PORT
 
 ARG HTTP_PROXY
@@ -11,7 +16,11 @@ ENV NO_PROXY=${NO_PROXY}
 
 WORKDIR /app
 COPY . ./
+<<<<<<< HEAD
 RUN go mod tidy
+=======
+RUN go mod download
+>>>>>>> 90fcf1a2a437f0d92078fb85fa4f369651342971
 RUN go build -o app ./server/teamserver.go
 
 FROM alpine:latest

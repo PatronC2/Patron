@@ -13,6 +13,15 @@ import (
 	_ "github.com/lib/pq"
 )
 
+<<<<<<< HEAD
+=======
+type AgentCounts struct {
+	Total   int
+	Online  int
+	Offline int
+}
+
+>>>>>>> 90fcf1a2a437f0d92078fb85fa4f369651342971
 func CreateAgent(req *patronobuf.ConfigurationRequest) error {
 	CreateAgentSQL := `
 	INSERT INTO agents (
@@ -263,6 +272,19 @@ func Agents() ([]types.ConfigurationRequest, error) {
 	return agentList, nil
 }
 
+func GetAgentCounts() (AgentCounts, error) {
+	var c AgentCounts
+	const q = `
+		SELECT
+		  COUNT(*)::int AS total,
+		  SUM(CASE WHEN status = 'Online'  THEN 1 ELSE 0 END)::int AS online,
+		  SUM(CASE WHEN status = 'Offline' THEN 1 ELSE 0 END)::int AS offline
+		FROM agents_status;
+	`
+	err := db.QueryRow(q).Scan(&c.Total, &c.Online, &c.Offline)
+	return c, err
+}
+
 func FilterAgents(filters map[string]string, tagFilters []string, logic string, limit, offset int, sort string) ([]types.ConfigurationRequest, int, int, error) {
 	baseSelect := `
 		SELECT 
@@ -272,13 +294,11 @@ func FilterAgents(filters map[string]string, tagFilters []string, logic string, 
 		FROM agents_status a`
 
 	var (
-		args          []interface{}
-		conditions    []string
-		tagConditions []string
-		joinTags      bool
+		args       []interface{}
+		conditions []string
 	)
 
-	// Process basic filters
+	// Basic filters
 	if v := filters["hostname"]; v != "" {
 		args = append(args, "%"+v+"%")
 		conditions = append(conditions, fmt.Sprintf("a.hostname ILIKE $%d", len(args)))
@@ -292,27 +312,59 @@ func FilterAgents(filters map[string]string, tagFilters []string, logic string, 
 		conditions = append(conditions, fmt.Sprintf("a.status = $%d", len(args)))
 	}
 
-	// Handle tag filters
+	// Tag filters (EXISTS-based; no JOIN => no duplicates)
+	// Parse tagFilters into (key,val) pairs first
+	type kv struct{ k, v string }
+	pairs := make([]kv, 0, len(tagFilters))
 	for _, tf := range tagFilters {
 		parts := strings.SplitN(tf, ":", 2)
 		if len(parts) != 2 {
 			continue
 		}
-		key, val := parts[0], parts[1]
-		args = append(args, key, val)
-		tagConditions = append(tagConditions, fmt.Sprintf("(t.\"Key\" = $%d AND t.\"Value\" = $%d)", len(args)-1, len(args)))
-	}
-	joinTags = len(tagConditions) > 0
-
-	var whereClause string
-	if joinTags {
-		conditions = append(conditions, "("+strings.Join(tagConditions, " OR ")+")")
-	}
-	if len(conditions) > 0 {
-		whereClause = " WHERE " + strings.Join(conditions, " AND ")
+		k := strings.TrimSpace(parts[0])
+		v := strings.TrimSpace(parts[1])
+		if k == "" || v == "" {
+			continue
+		}
+		pairs = append(pairs, kv{k: k, v: v})
 	}
 
+	if len(pairs) > 0 {
+		if strings.ToLower(logic) == "and" {
+			// Require all tag pairs to exist
+			for _, p := range pairs {
+				args = append(args, p.k, p.v)
+				kIdx := len(args) - 1
+				vIdx := len(args)
+				conditions = append(conditions, fmt.Sprintf(`
+					EXISTS (
+						SELECT 1 FROM tags t
+						WHERE t."UUID" = a.uuid
+						  AND t."Key" = $%d
+						  AND t."Value" = $%d
+					)`, kIdx, vIdx))
+			}
+		} else {
+			// OR logic: any tag pair matches
+			orParts := make([]string, 0, len(pairs))
+			for _, p := range pairs {
+				args = append(args, p.k, p.v)
+				kIdx := len(args) - 1
+				vIdx := len(args)
+				orParts = append(orParts, fmt.Sprintf(`(t."Key" = $%d AND t."Value" = $%d)`, kIdx, vIdx))
+			}
+			conditions = append(conditions, `
+				EXISTS (
+					SELECT 1 FROM tags t
+					WHERE t."UUID" = a.uuid
+					  AND (`+strings.Join(orParts, " OR ")+`)
+				)`)
+		}
+	}
+
+	// WHERE
 	query := baseSelect
+<<<<<<< HEAD
 	if joinTags {
 		query += " JOIN tags t ON t.\"UUID\" = a.uuid"
 	}
@@ -327,9 +379,13 @@ func FilterAgents(filters map[string]string, tagFilters []string, logic string, 
 		         a.next_callback, a.status, a.transport_protocol
 		HAVING COUNT(DISTINCT t."Key") = $` + strconv.Itoa(havingIndex)
 		args = append(args, len(tagFilters))
+=======
+	if len(conditions) > 0 {
+		query += " WHERE " + strings.Join(conditions, " AND ")
+>>>>>>> 90fcf1a2a437f0d92078fb85fa4f369651342971
 	}
 
-	// Build count query
+	// Count query (now safe because query returns one row per agent)
 	countQuery := "SELECT COUNT(*) FROM (" + query + ") AS sub"
 
 	// Sorting
@@ -353,17 +409,19 @@ func FilterAgents(filters map[string]string, tagFilters []string, logic string, 
 	// Execute count query
 	var totalCount int
 	if err := db.QueryRow(countQuery, args...).Scan(&totalCount); err != nil {
+		logger.Logf(logger.Error, "Failed to run query: %v. Error: %v", countQuery, err)
 		return nil, 0, 0, fmt.Errorf("failed to count agents: %w", err)
 	}
 
 	// Execute main query
 	rows, err := db.Query(query, args...)
 	if err != nil {
+		logger.Logf(logger.Error, "Failed to run query: %v. Error: %v", query, err)
 		return nil, 0, 0, fmt.Errorf("query failed: %w", err)
 	}
 	defer rows.Close()
 
-	agents := make([]types.ConfigurationRequest, 0)
+	agents := make([]types.ConfigurationRequest, 0, limit)
 	for rows.Next() {
 		var agent types.ConfigurationRequest
 		err := rows.Scan(

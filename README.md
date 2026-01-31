@@ -29,6 +29,7 @@ Options:
   -s    <your_ip_address>   Server Ip address
   -b    Set up the discord bot
   -p    Prompts you to enter passwords
+  -m    Enable Prometheus metrics exporter
   -h    Show this help message
 ```
 
