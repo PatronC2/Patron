@@ -26,6 +26,7 @@ const Agent = () => {
   const [callbackPort, setCallbackPort] = useState('');
   const [callbackFreq, setCallbackFreq] = useState('');
   const [callbackJitter, setCallbackJitter] = useState('');
+  const [transportprotocol, setTransportProtocol] = useState('')
   const [saveError, setSaveError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -77,6 +78,7 @@ const Agent = () => {
         setCallbackPort(responseData.serverport || '');
         setCallbackFreq(responseData.callbackfrequency || '');
         setCallbackJitter(responseData.callbackjitter || '');
+        setTransportProtocol(responseData.transportprotocol || '');
       } else {
         setError('No data found');
       }
@@ -259,6 +261,7 @@ const Agent = () => {
         serverport: callbackPort,
         callbackfreq: callbackFreq,
         callbackjitter: callbackJitter,
+        transportprotocol: transportprotocol,
       };
 
       await axios.post(`/api/updateagent/${queryParam}`, updateBody, {
@@ -366,7 +369,7 @@ const Agent = () => {
         <h3>File Transfers</h3>
         <form onSubmit={(e) => { e.preventDefault(); handleFileTransferRequest(); }}>
           <div>
-            <label>Path: </label>
+            <label>Path (with file name): </label>
             <input
               type="text"
               value={fileUploadPath}
@@ -481,6 +484,18 @@ const Agent = () => {
                     onChange={(e) => setCallbackJitter(e.target.value)}
                     disabled={isSaving}
                 />
+            </div>
+            <div className="form-group">
+                <label htmlFor="transportprotocol">Transport Protocol</label>
+                <select
+                    id="transportprotocol"
+                    value={transportprotocol}
+                    onChange={(e) => setTransportProtocol(e.target.value)}
+                    disabled={isSaving}
+                >
+                    <option value="TCP">TCP</option>
+                    <option value="QUIC">QUIC</option>
+                </select>
             </div>
             <button type="button" onClick={handleSaveConfiguration} disabled={isSaving}>
                 {isSaving ? 'Saving...' : 'Save'}

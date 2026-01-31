@@ -155,7 +155,13 @@ func UpdateAgentHandler(c *gin.Context) {
 		return
 	}
 
-	data.UpdateAgentConfigNoNext(agentParam, body["serverip"], body["serverport"], body["callbackfreq"], body["callbackjitter"])
+	protocol := body["transportprotocol"]
+	if protocol != "TCP" && protocol != "QUIC" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid transport protocol, must be TCP or QUIC"})
+		return
+	}
+
+	data.UpdateAgentConfigNoNext(agentParam, body["serverip"], body["serverport"], body["callbackfreq"], body["callbackjitter"], protocol)
 	c.JSON(http.StatusOK, gin.H{"message": "Success"})
 }
 
@@ -192,7 +198,7 @@ func GetNoteHandler(c *gin.Context) {
 	agentParam := c.Param("agt")
 	notes, err := data.GetAgentNotes(agentParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error", "details": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error", "details": err.Error()})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"data": notes})
 	}
@@ -202,13 +208,13 @@ func PutNoteHandler(c *gin.Context) {
 	agentParam := c.Param("agt")
 	var body map[string]string
 	if err := c.BindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid request body"})
 		return
 	}
 	notes := body["notes"]
 	err := data.PutAgentNotes(agentParam, notes)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"message": "Success"})
 	}
@@ -218,7 +224,7 @@ func GetTagsHandler(c *gin.Context) {
 	agentParam := c.Param("agt")
 	tags, err := data.GetAgentTags(agentParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"tags": tags})
 	}

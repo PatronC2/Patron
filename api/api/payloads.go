@@ -41,6 +41,7 @@ func CreatePayloadHandler(c *gin.Context) {
 	publickey := os.Getenv("PUBLIC_KEY")
 	repo_dir := os.Getenv("REPO_DIR")
 	docker_https_proxy := os.Getenv("DOCKER_HTTPS_PROXY")
+	go_version := os.Getenv("GOVERSION")
 
 	configs, err := loadConfigurations("payloads.json")
 	if err != nil {
@@ -76,11 +77,12 @@ func CreatePayloadHandler(c *gin.Context) {
 	}
 
 	commandString := fmt.Sprintf(
-		"docker run --rm -v %s:/build -w /build -e HTTPS_PROXY=%s golang:1.24.3 sh -c '"+
-			"%s env %s go build %s \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s -X main.LoggingEnabled=%s\" "+
+		"docker run --rm -v %s:/build -w /build -e HTTPS_PROXY=%s golang:%s sh -c '"+
+			"%s env %s go build %s \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s -X main.LoggingEnabled=%s -X main.TransportProtocol=%s\" "+
 			"-o /build/payloads/%s /build/client/%s'",
 		repo_dir,
 		docker_https_proxy,
+		go_version,
 		dependencyCommands,
 		config.Environment,
 		config.Flags,
@@ -90,6 +92,7 @@ func CreatePayloadHandler(c *gin.Context) {
 		body["callbackjitter"],
 		publickey,
 		body["logging"],
+		body["transportprotocol"],
 		concat,
 		config.CodePath,
 	)
@@ -100,7 +103,7 @@ func CreatePayloadHandler(c *gin.Context) {
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error", "details": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error", "details": err.Error()})
 		return
 	}
 
@@ -117,7 +120,7 @@ func CreatePayloadHandler(c *gin.Context) {
 		}
 	}
 
-	data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat)
+	data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat, body["transportprotocol"])
 	c.JSON(http.StatusOK, gin.H{"data": "success"})
 }
 

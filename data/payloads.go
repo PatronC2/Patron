@@ -8,9 +8,9 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func CreatePayload(uuid string, name string, description string, ServerIP string, ServerPort string, CallBackFreq string, CallBackJitter string, Concat string) {
-	CreateAgentSQL := `INSERT INTO "Payloads" ("UUID", "Name", "Description", "ServerIP", "ServerPort", "CallbackFrequency", "CallbackJitter", "Concat")
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+func CreatePayload(uuid string, name string, description string, ServerIP string, ServerPort string, CallBackFreq string, CallBackJitter string, Concat string, TransportProtocol string) {
+	CreateAgentSQL := `INSERT INTO "Payloads" ("UUID", "Name", "Description", "ServerIP", "ServerPort", "CallbackFrequency", "CallbackJitter", "Concat", "transport_protocol")
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 
 	statement, err := db.Prepare(CreateAgentSQL)
 	if err != nil {
@@ -18,7 +18,7 @@ func CreatePayload(uuid string, name string, description string, ServerIP string
 		logger.Logf(logger.Info, "Error in DB\n")
 	}
 
-	_, err = statement.Exec(uuid, name, description, ServerIP, ServerPort, CallBackFreq, CallBackJitter, Concat)
+	_, err = statement.Exec(uuid, name, description, ServerIP, ServerPort, CallBackFreq, CallBackJitter, Concat, TransportProtocol)
 	if err != nil {
 		logger.Logf(logger.Error, "Error in DB: %s", err)
 	}
@@ -37,7 +37,8 @@ func Payloads() []types.Payload {
 		"ServerPort", 
 		"CallbackFrequency", 
 		"CallbackJitter",
-		"Concat" 
+		"Concat",
+		"transport_protocol" 
 	FROM "Payloads"
 	WHERE "isDeleted"='0'
 	`
@@ -58,6 +59,7 @@ func Payloads() []types.Payload {
 			&payloads.CallbackFrequency,
 			&payloads.CallbackJitter,
 			&payloads.Concat,
+			&payloads.TransportProtocol,
 		)
 		payloadAppend = append(payloadAppend, payloads)
 	}

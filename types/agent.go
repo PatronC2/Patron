@@ -1,6 +1,9 @@
 package types
 
-import "time"
+import (
+	"io"
+	"time"
+)
 
 // Defining request and response types
 type RequestType string
@@ -54,6 +57,7 @@ type ConfigurationRequest struct {
 	Status            string    `json:"status"`
 	Tags              []Tag     `json:"tags"`
 	NextCallback      time.Time `json:"nextcallback"`
+	TransportProtocol string    `json:"transportprotocol"`
 }
 
 // ConfigurationResponse is sent back to agent after a ConfigurationRequest
@@ -134,4 +138,10 @@ type FileToServer struct {
 type FileTransferStatusResponse struct {
 	FileID  string `json:"fileid"`
 	AgentID string `json:"uuid"`
+}
+
+type CommonStream interface {
+	io.Reader
+	io.Writer
+	io.Closer
 }

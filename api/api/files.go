@@ -6,14 +6,14 @@ import (
 	"net/http"
 
 	"github.com/PatronC2/Patron/data"
-	"github.com/PatronC2/Patron/lib/logger"	
+	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/gin-gonic/gin"
 )
 
 func ListFilesForUUIDHandler(c *gin.Context) {
 	uuid := c.Param("agt")
 	logger.Logf(logger.Info, "Listing files for %v", uuid)
-	
+
 	files, err := data.ListFilesForUUID(uuid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get files"})
@@ -46,7 +46,6 @@ func DownloadFileHandler(c *gin.Context) {
 	c.Header("Content-Type", "application/octet-stream")
 	c.Data(http.StatusOK, "application/octet-stream", content)
 }
-
 
 func UploadFileHandler(c *gin.Context) {
 	transfertype := c.PostForm("transfertype")

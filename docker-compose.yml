@@ -7,19 +7,23 @@ services:
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
       DB_NAME: ${DB_NAME}
-      C2SERVER_IP: patron_c2_server
-      C2SERVER_PORT: ${C2SERVER_PORT}
+      TCP_LISTENER_IP: patron_c2_server
+      TCP_LISTENER_PORT: ${TCP_LISTENER_PORT}
+      QUIC_LISTENER_IP: patron_c2_server
+      QUIC_LISTENER_PORT: ${QUIC_LISTENER_PORT}
     restart: always
     volumes:
       - ./logs:/app/logs
       - ./certs:/app/certs
       - ./files:/app/files
+      - agent_files:/app/agent_files
     networks:
       - internal_c2_network
     ports:
-      - "${C2SERVER_PORT}:${C2SERVER_PORT}"
+      - "${TCP_LISTENER_PORT}:${TCP_LISTENER_PORT}/tcp"
+      - "${QUIC_LISTENER_PORT}:${QUIC_LISTENER_PORT}/udp"
     depends_on:
-      patron_c2_postgres:
+      patron_c2_api:
         condition: service_healthy
 
   patron_c2_api:
@@ -39,7 +43,10 @@ services:
       REDIRECTOR_PORT: ${REDIRECTOR_PORT}
       REACT_APP_NGINX_IP: ${REACT_APP_NGINX_IP}
       REACT_APP_NGINX_PORT: ${REACT_APP_NGINX_PORT}
+      TCP_LISTENER_PORT: ${TCP_LISTENER_PORT}
+      QUIC_LISTENER_PORT: ${QUIC_LISTENER_PORT}
       DOCKER_HTTPS_PROXY: ${HTTPS_PROXY}
+      PROMETHEUS_ENABLED: ${PROMETHEUS_ENABLED}
     restart: always
     volumes:
       - ./logs:/app/logs
@@ -49,6 +56,7 @@ services:
       - ./client/payloads.json:/app/payloads.json
       - ./redirector/resources:/app/resources
       - ./certs:/app/certs
+      - agent_files:/app/agent_files
     networks:
       - internal_c2_network
     depends_on:
@@ -128,3 +136,6 @@ networks:
       driver: default
       config:
         - subnet: "${DOCKER_INTERNAL}.0/16"
+
+volumes:
+  agent_files:

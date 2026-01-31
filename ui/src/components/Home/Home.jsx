@@ -76,8 +76,12 @@ const Home = ({ isMenuOpen }) => {
     }, []);
 
     useEffect(() => {
+        setOffset(0);
+    }, [hostnameFilter, ipFilter, statusFilter, tagConditions, logic, sortField, sortDirection]);
+
+    useEffect(() => {
         fetchAgents();
-    }, [hostnameFilter, ipFilter, statusFilter, tagConditions, logic, offset, sortField, sortDirection]);
+    }, [offset, hostnameFilter, ipFilter, statusFilter, tagConditions, logic, sortField, sortDirection]);
 
     const handleSort = (field) => {
         if (sortField === field) {
