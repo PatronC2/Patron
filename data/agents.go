@@ -13,15 +13,12 @@ import (
 	_ "github.com/lib/pq"
 )
 
-<<<<<<< HEAD
-=======
 type AgentCounts struct {
 	Total   int
 	Online  int
 	Offline int
 }
 
->>>>>>> c94e29e3a513f383c5356dc5452f8f25b7131f31
 func CreateAgent(req *patronobuf.ConfigurationRequest) error {
 	CreateAgentSQL := `
 	INSERT INTO agents (
@@ -364,25 +361,8 @@ func FilterAgents(filters map[string]string, tagFilters []string, logic string, 
 
 	// WHERE
 	query := baseSelect
-<<<<<<< HEAD
-	if joinTags {
-		query += " JOIN tags t ON t.\"UUID\" = a.uuid"
-	}
-	query += whereClause
-
-	// If AND logic on tags, add GROUP BY + HAVING
-	if joinTags && logic == "and" {
-		havingIndex := len(args) + 1
-		query += `
-		GROUP BY a.agent_id, a.uuid, a.server_ip, a.server_port, a.callback_freq, a.callback_jitter,
-		         a.ip, a.agent_user, a.hostname, a.os_type, a.os_arch, a.os_build, a.cpus, a.memory,
-		         a.next_callback, a.status, a.transport_protocol
-		HAVING COUNT(DISTINCT t."Key") = $` + strconv.Itoa(havingIndex)
-		args = append(args, len(tagFilters))
-=======
 	if len(conditions) > 0 {
 		query += " WHERE " + strings.Join(conditions, " AND ")
->>>>>>> c94e29e3a513f383c5356dc5452f8f25b7131f31
 	}
 
 	// Count query (now safe because query returns one row per agent)
