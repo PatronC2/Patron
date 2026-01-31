@@ -291,13 +291,11 @@ func FilterAgents(filters map[string]string, tagFilters []string, logic string, 
 		FROM agents_status a`
 
 	var (
-		args          []interface{}
-		conditions    []string
-		tagConditions []string
-		joinTags      bool
+		args       []interface{}
+		conditions []string
 	)
 
-	// Process basic filters
+	// Basic filters
 	if v := filters["hostname"]; v != "" {
 		args = append(args, "%"+v+"%")
 		conditions = append(conditions, fmt.Sprintf("a.hostname ILIKE $%d", len(args)))
@@ -311,44 +309,63 @@ func FilterAgents(filters map[string]string, tagFilters []string, logic string, 
 		conditions = append(conditions, fmt.Sprintf("a.status = $%d", len(args)))
 	}
 
-	// Handle tag filters
+	// Tag filters (EXISTS-based; no JOIN => no duplicates)
+	// Parse tagFilters into (key,val) pairs first
+	type kv struct{ k, v string }
+	pairs := make([]kv, 0, len(tagFilters))
 	for _, tf := range tagFilters {
 		parts := strings.SplitN(tf, ":", 2)
 		if len(parts) != 2 {
 			continue
 		}
-		key, val := parts[0], parts[1]
-		args = append(args, key, val)
-		tagConditions = append(tagConditions, fmt.Sprintf("(t.\"Key\" = $%d AND t.\"Value\" = $%d)", len(args)-1, len(args)))
-	}
-	joinTags = len(tagConditions) > 0
-
-	var whereClause string
-	if joinTags {
-		conditions = append(conditions, "("+strings.Join(tagConditions, " OR ")+")")
-	}
-	if len(conditions) > 0 {
-		whereClause = " WHERE " + strings.Join(conditions, " AND ")
+		k := strings.TrimSpace(parts[0])
+		v := strings.TrimSpace(parts[1])
+		if k == "" || v == "" {
+			continue
+		}
+		pairs = append(pairs, kv{k: k, v: v})
 	}
 
+	if len(pairs) > 0 {
+		if strings.ToLower(logic) == "and" {
+			// Require all tag pairs to exist
+			for _, p := range pairs {
+				args = append(args, p.k, p.v)
+				kIdx := len(args) - 1
+				vIdx := len(args)
+				conditions = append(conditions, fmt.Sprintf(`
+					EXISTS (
+						SELECT 1 FROM tags t
+						WHERE t."UUID" = a.uuid
+						  AND t."Key" = $%d
+						  AND t."Value" = $%d
+					)`, kIdx, vIdx))
+			}
+		} else {
+			// OR logic: any tag pair matches
+			orParts := make([]string, 0, len(pairs))
+			for _, p := range pairs {
+				args = append(args, p.k, p.v)
+				kIdx := len(args) - 1
+				vIdx := len(args)
+				orParts = append(orParts, fmt.Sprintf(`(t."Key" = $%d AND t."Value" = $%d)`, kIdx, vIdx))
+			}
+			conditions = append(conditions, `
+				EXISTS (
+					SELECT 1 FROM tags t
+					WHERE t."UUID" = a.uuid
+					  AND (`+strings.Join(orParts, " OR ")+`)
+				)`)
+		}
+	}
+
+	// WHERE
 	query := baseSelect
-	if joinTags {
-		query += " JOIN tags t ON t.\"UUID\" = a.uuid"
-	}
-	query += whereClause
-
-	// If AND logic on tags, add GROUP BY + HAVING
-	if joinTags && logic == "and" {
-		havingIndex := len(args) + 1
-		query += `
-		GROUP BY a.agent_id, a.uuid, a.server_ip, a.server_port, a.callback_freq, a.callback_jitter,
-		         a.ip, a.agent_user, a.hostname, a.os_type, a.os_arch, a.os_build, a.cpus, a.memory,
-		         a.next_callback, a.status, a.transport_protocol
-		HAVING COUNT(DISTINCT t."Key") = $` + strconv.Itoa(havingIndex)
-		args = append(args, len(tagFilters))
+	if len(conditions) > 0 {
+		query += " WHERE " + strings.Join(conditions, " AND ")
 	}
 
-	// Build count query
+	// Count query (now safe because query returns one row per agent)
 	countQuery := "SELECT COUNT(*) FROM (" + query + ") AS sub"
 
 	// Sorting
@@ -372,17 +389,19 @@ func FilterAgents(filters map[string]string, tagFilters []string, logic string, 
 	// Execute count query
 	var totalCount int
 	if err := db.QueryRow(countQuery, args...).Scan(&totalCount); err != nil {
+		logger.Logf(logger.Error, "Failed to run query: %v. Error: %v", countQuery, err)
 		return nil, 0, 0, fmt.Errorf("failed to count agents: %w", err)
 	}
 
 	// Execute main query
 	rows, err := db.Query(query, args...)
 	if err != nil {
+		logger.Logf(logger.Error, "Failed to run query: %v. Error: %v", query, err)
 		return nil, 0, 0, fmt.Errorf("query failed: %w", err)
 	}
 	defer rows.Close()
 
-	agents := make([]types.ConfigurationRequest, 0)
+	agents := make([]types.ConfigurationRequest, 0, limit)
 	for rows.Next() {
 		var agent types.ConfigurationRequest
 		err := rows.Scan(
