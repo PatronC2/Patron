@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,6 +14,7 @@ import (
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/gin-gonic/gin"
+	ginprometheus "github.com/zsais/go-gin-prometheus"
 )
 
 func main() {
@@ -27,11 +30,27 @@ func main() {
 	data.InitDatabase()
 	api.CreateAdminUser()
 
+	api.RegisterMetrics()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	api.StartAgentCountUpdater(ctx, 10*time.Second)
+
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
 	// Apply CORS middleware
 	r.Use(CORS())
+
+	// Prometheus instrumentation
+	if enabled, _ := strconv.ParseBool(os.Getenv("PROMETHEUS_ENABLED")); enabled {
+		logger.Logf(logger.Info, "Starting metrics server")
+		p := ginprometheus.NewPrometheus("patron_api")
+		p.Use(r)
+	} else {
+		logger.Logf(logger.Warning, "Metrics server is disabled")
+	}
 
 	// Start up config refresher
 	Refresh(appName)

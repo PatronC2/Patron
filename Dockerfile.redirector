@@ -1,4 +1,6 @@
-FROM golang:1.24.3 AS build
+ARG GOVERSION=SET_ME
+
+FROM golang:${GOVERSION} AS build
 
 ARG REDIRECTOR_PORT
 

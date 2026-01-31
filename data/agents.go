@@ -13,6 +13,12 @@ import (
 	_ "github.com/lib/pq"
 )
 
+type AgentCounts struct {
+	Total   int
+	Online  int
+	Offline int
+}
+
 func CreateAgent(req *patronobuf.ConfigurationRequest) error {
 	CreateAgentSQL := `
 	INSERT INTO agents (
@@ -261,6 +267,19 @@ func Agents() ([]types.ConfigurationRequest, error) {
 	}
 
 	return agentList, nil
+}
+
+func GetAgentCounts() (AgentCounts, error) {
+	var c AgentCounts
+	const q = `
+		SELECT
+		  COUNT(*)::int AS total,
+		  SUM(CASE WHEN status = 'Online'  THEN 1 ELSE 0 END)::int AS online,
+		  SUM(CASE WHEN status = 'Offline' THEN 1 ELSE 0 END)::int AS offline
+		FROM agents_status;
+	`
+	err := db.QueryRow(q).Scan(&c.Total, &c.Online, &c.Offline)
+	return c, err
 }
 
 func FilterAgents(filters map[string]string, tagFilters []string, logic string, limit, offset int, sort string) ([]types.ConfigurationRequest, int, int, error) {

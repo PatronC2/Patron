@@ -18,6 +18,7 @@ function show_help {
    echo "  -s    <your_ip_address>   Server IP address"
    echo "  -p    Prompts you to enter passwords"
    echo "  -b    Prompt for Discord Bot Token and start the bot container"
+   echo "  -m    Enable Prometheus metrics"
    echo "  -h    Show this help message"
 }
 
@@ -39,6 +40,7 @@ function set_global_default_variable {
    dbport="5432"
    dbname="patron"
    patronUsername="patron"
+   prometheus_enabled="false"
 }
 
 function ask_prompt {
@@ -174,7 +176,7 @@ postgres_pass=""
 run_bot=""
 
 # Parse command line arguments using getopts
-while getopts "dws:pbh" opt; do
+while getopts "dws:pbmh" opt; do
    case $opt in
       d)
          set_global_default_variable
@@ -194,6 +196,9 @@ while getopts "dws:pbh" opt; do
       b)
          prompt_bot_token
          run_bot="y"
+         ;;
+      m)
+         prometheus_enabled="true"
          ;;
       h)
          show_help
@@ -310,6 +315,7 @@ REDIRECTOR_PORT=$redirectorport
 HTTP_PROXY=$http_proxy
 HTTPS_PROXY=$https_proxy
 NO_PROXY=$no_proxy
+PROMETHEUS_ENABLED=$prometheus_enabled
 EOF
 
 export $(grep -v '^#' .env | xargs)
