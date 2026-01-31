@@ -427,17 +427,30 @@ const Agent = () => {
 
   const renderKeylogsTab = () => (
     <div className="keylogs-list">
-      {keylogs.length === 0 ? (
-        <p>No keylogs available.</p>
-      ) : (
-        <ul>
-          {keylogs.map((keylog) => (
-            <li key={keylog.uuid}>
-              {keylog.keys || 'No keys recorded'}
-            </li>
-          ))}
-        </ul>
-      )}
+      <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+        {keylogs.length === 0 ? (
+          <p>No keylogs available.</p>
+        ) : (
+          <ul>
+            {keylogs.map((keylog) => {
+              const formattedTime = new Date(keylog.created_at).toLocaleString();
+
+              return (
+                <li key={keylog.keylog_id}>
+                  <div className="keylog-entry">
+                    <div className="keylog-meta">
+                      <span className="keylog-time">{formattedTime}</span>
+                    </div>
+                    <div className="keylog-content">
+                      {keylog.contents || "No keylogs recorded"}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
     </div>
   );
 

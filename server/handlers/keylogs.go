@@ -20,7 +20,7 @@ func (h *KeysHandler) Handle(request *patronobuf.Request, stream types.CommonStr
 		}
 	}
 
-	err := data.UpdateAgentKeys(keyReq)
+	err := data.InsertKeylog(keyReq)
 	if err != nil {
 		logger.Logf(logger.Error, "Failed to update keys: %v", err)
 	}

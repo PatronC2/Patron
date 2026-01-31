@@ -32,8 +32,6 @@ func validateOrCreateAgent(c *patronobuf.ConfigurationRequest) (*patronobuf.Conf
 			return &patronobuf.ConfigurationResponse{}, false
 		}
 
-		data.CreateKeys(c.GetUuid())
-
 		fetch, err = data.FetchOneAgent(c.GetUuid())
 		if err != nil {
 			logger.Logf(logger.Warning, "Couldn't fetch agent after creation: %v\n", err)
