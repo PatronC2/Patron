@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -27,6 +28,13 @@ func main() {
 	data.OpenDatabase()
 	data.InitDatabase()
 	api.CreateAdminUser()
+
+	api.RegisterMetrics()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	api.StartAgentCountUpdater(ctx, 10*time.Second)
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
