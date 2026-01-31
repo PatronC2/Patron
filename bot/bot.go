@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -20,6 +21,7 @@ type Credential struct {
 }
 
 const credentialsPath = ".patron/credentials"
+const discordMsgLimit = 2000
 
 var (
 	botToken            = os.Getenv("DISCORD_BOT_TOKEN")
@@ -185,20 +187,46 @@ func handlePatronCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 
 	log.Printf("Command executed successfully. Output: %s", string(output))
-	sendResponse(s, i, fmt.Sprintf("Command executed successfully!\nOutput:\n%s", string(output)))
+	sendResponse(s, i, fmt.Sprintf("%s", string(output)))
 }
 
 func sendResponse(s *discordgo.Session, i *discordgo.InteractionCreate, content string) {
+	if len(content) <= discordMsgLimit {
+		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: content,
+			},
+		})
+		if err != nil {
+			log.Printf("Failed to send interaction response: %v", err)
+			return
+		}
+		log.Printf("Response sent (%d chars)", len(content))
+		return
+	}
+
+	filename := "output.txt"
+	fileBytes := []byte(content)
+
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: content,
+			Content: "Output was too large to send as a message; attached as a file.",
+			Files: []*discordgo.File{
+				{
+					Name:   filename,
+					Reader: bytes.NewReader(fileBytes),
+				},
+			},
 		},
 	})
 	if err != nil {
-		log.Printf("Failed to send interaction response: %v", err)
+		log.Printf("Failed to send interaction response with file: %v", err)
+		return
 	}
-	log.Printf("Response sent: %s", content)
+
+	log.Printf("Response sent as file (%d chars)", len(content))
 }
 
 func saveCredential(newCred Credential) error {

@@ -114,7 +114,7 @@ services:
   patron_c2_bot:
     image: patronc2/bot
     environment:
-      - PATRON_IP=${REACT_APP_NGINX_IP}
+      - PATRON_IP=patron_c2_nginx
       - PATRON_PORT=${REACT_APP_NGINX_PORT}
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
       - HTTPS_PROXY=${HTTPS_PROXY}
