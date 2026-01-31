@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -43,8 +44,13 @@ func main() {
 	r.Use(CORS())
 
 	// Prometheus instrumentation
-	p := ginprometheus.NewPrometheus("patron_api")
-	p.Use(r)
+	if enabled, _ := strconv.ParseBool(os.Getenv("PROMETHEUS_ENABLED")); enabled {
+		logger.Logf(logger.Info, "Starting metrics server")
+		p := ginprometheus.NewPrometheus("patron_api")
+		p.Use(r)
+	} else {
+		logger.Logf(logger.Warning, "Metrics server is disabled")
+	}
 
 	// Start up config refresher
 	Refresh(appName)
