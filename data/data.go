@@ -122,12 +122,15 @@ func InitDatabase() {
 	logger.Logf(logger.Info, "Files table initialized")
 
 	KeylogSQL := `
-	CREATE TABLE IF NOT EXISTS "Keylog" (
-		"KeylogID" SERIAL PRIMARY KEY,
-		"UUID" TEXT,
-		"Keys" TEXT,
-		FOREIGN KEY ("UUID") REFERENCES "agents" ("uuid")
+	CREATE TABLE IF NOT EXISTS keylogs (
+		keylog_id		SERIAL PRIMARY KEY,
+		uuid			TEXT REFERENCES agents(uuid) ON DELETE CASCADE,
+		created_at		TIMESTAMPTZ NOT NULL DEFAULT now(),
+		contents		TEXT
 	);
+
+	CREATE INDEX IF NOT EXISTS idx_logs_uuid_created_at
+		ON keylogs (uuid, created_at DESC);
 	`
 	_, err = db.Exec(KeylogSQL)
 	if err != nil {

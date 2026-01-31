@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 14,
+  "id": 0,
   "links": [],
   "panels": [
     {
@@ -325,7 +325,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "histogram_quantile(\r\n  0.95,\r\n  sum by (le, url) (\r\n    rate(patron_api_request_duration_seconds_bucket[5m])\r\n  )\r\n)",
+          "expr": "histogram_quantile(\r\n  0.95,\r\n  sum by (le, method, url) (\r\n    rate(patron_api_request_duration_seconds_bucket[5m])\r\n  )\r\n)",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -782,7 +782,7 @@
             "h": 9,
             "w": 11,
             "x": 0,
-            "y": 175
+            "y": 52
           },
           "id": 14,
           "options": {
@@ -873,7 +873,7 @@
             "h": 9,
             "w": 11,
             "x": 11,
-            "y": 175
+            "y": 52
           },
           "id": 15,
           "options": {
@@ -964,7 +964,7 @@
             "h": 9,
             "w": 11,
             "x": 0,
-            "y": 192
+            "y": 61
           },
           "id": 16,
           "options": {
@@ -1059,7 +1059,7 @@
             "h": 9,
             "w": 11,
             "x": 11,
-            "y": 192
+            "y": 61
           },
           "id": 17,
           "options": {
@@ -1168,7 +1168,7 @@
             "h": 8,
             "w": 11,
             "x": 0,
-            "y": 176
+            "y": 204
           },
           "id": 32,
           "options": {
@@ -1263,7 +1263,7 @@
             "h": 8,
             "w": 11,
             "x": 11,
-            "y": 176
+            "y": 204
           },
           "id": 33,
           "options": {
@@ -1373,7 +1373,7 @@
             "h": 8,
             "w": 11,
             "x": 0,
-            "y": 569
+            "y": 589
           },
           "id": 20,
           "options": {
@@ -1469,7 +1469,7 @@
             "h": 8,
             "w": 11,
             "x": 11,
-            "y": 569
+            "y": 589
           },
           "id": 21,
           "options": {
@@ -1560,7 +1560,7 @@
             "h": 8,
             "w": 11,
             "x": 0,
-            "y": 577
+            "y": 597
           },
           "id": 19,
           "options": {
@@ -1669,7 +1669,7 @@
             "h": 8,
             "w": 11,
             "x": 0,
-            "y": 536
+            "y": 556
           },
           "id": 23,
           "options": {
@@ -1760,7 +1760,7 @@
             "h": 8,
             "w": 11,
             "x": 11,
-            "y": 536
+            "y": 556
           },
           "id": 24,
           "options": {
@@ -1855,7 +1855,7 @@
             "h": 8,
             "w": 11,
             "x": 0,
-            "y": 560
+            "y": 580
           },
           "id": 25,
           "options": {
@@ -1965,7 +1965,7 @@
             "h": 8,
             "w": 11,
             "x": 0,
-            "y": 179
+            "y": 557
           },
           "id": 26,
           "options": {
@@ -2060,7 +2060,7 @@
             "h": 8,
             "w": 11,
             "x": 11,
-            "y": 179
+            "y": 557
           },
           "id": 28,
           "options": {
@@ -2166,7 +2166,7 @@
             "h": 8,
             "w": 11,
             "x": 0,
-            "y": 538
+            "y": 558
           },
           "id": 29,
           "options": {
@@ -2260,7 +2260,7 @@
             "h": 8,
             "w": 11,
             "x": 11,
-            "y": 538
+            "y": 558
           },
           "id": 31,
           "options": {
@@ -2301,12 +2301,12 @@
     "list": []
   },
   "time": {
-    "from": "2026-01-31T02:37:57.932Z",
-    "to": "2026-01-31T04:37:57.932Z"
+    "from": "now-6h",
+    "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Patron Dashboard",
   "uid": "adrmdzc",
-  "version": 6
+  "version": 11
 }

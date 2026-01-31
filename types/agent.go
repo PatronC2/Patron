@@ -95,8 +95,9 @@ type CommandStatusResponse struct {
 }
 
 type KeysRequest struct {
-	AgentID string `json:"uuid"`
-	Keys    string `json:"keys"`
+	AgentID   string    `json:"uuid"`
+	Contents  string    `json:"contents"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type KeysResponse struct {
