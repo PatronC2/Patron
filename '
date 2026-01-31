@@ -1,0 +1,111 @@
+Host github.com
+	HostName github.com
+	IdentityFile /home/groot/.ssh/github
+	IdentitiesOnly yes
+Host gitlab.com
+	HostName gitlab.com
+	IdentityFile /home/groot/.ssh/gitlab
+	IdentitiesOnly yes
+Host 172.17.206.245
+	HostName 172.17.206.245
+	User git
+	Port 2222
+Host minecraft
+        HostName 10.23.65.6
+        Port 10022
+        User redteam
+        # SOCKS
+        DynamicForward 8080
+        # minecraft
+	LocalForward 1080 172.25.185.88:25565
+
+Host proxy
+	HostName 10.23.65.6
+     	User redteam
+     	Port 10022
+     	DynamicForward 1080
+     	ExitOnForwardFailure yes
+	ServerAliveInterval 60
+Host ccdc-proxy
+        HostName 10.23.65.6
+        User redteam
+        Port 10033
+        DynamicForward 1080
+        ExitOnForwardFailure yes
+	ServerAliveInterval 60
+Host template
+	HostName 172.16.202.62
+	User kaiju
+	ProxyJump proxy
+Host jenkins-master
+	HostName 172.16.200.180
+	User kaiju
+	ProxyJump proxy
+Host jenkins-agent-1
+	HostName 172.16.202.63
+	User kaiju
+	ProxyJump proxy
+Host jenkins-agent-2
+	HostName 172.16.202.64
+	User kaiju
+	ProxyJump proxy
+Host jenkins-agent-3
+	HostName 172.16.202.65
+	User kaiju
+	ProxyJump proxy
+Host patron-teamserver
+	HostName 172.16.200.185
+	User kaiju
+	ProxyJump proxy
+Host patron-redirector-1
+	HostName 172.17.125.57
+	User kaiju
+	ProxyJump proxy
+Host patron-redirector-2
+	HostName 172.19.31.5
+	User kaiju
+	ProxyJump proxy
+Host patron-redirector-3
+	HostName 172.21.190.70
+	User kaiju
+	ProxyJump proxy
+Host fake-dns
+	HostName 172.16.1.200
+	User kaiju
+	ProxyJump proxy
+Host fake-bank
+	HostName 172.16.1.220
+	User kaiju
+	ProxyJump proxy
+Host free-ram
+	HostName 172.16.202.76
+	User kaiju
+	ProxyJump proxy
+Host kali
+	HostName 172.16.222.192
+	User kaiju
+	ProxyJump proxy
+Host grafana
+	HostName 172.16.200.186
+	User kaiju
+	ProxyJump proxy
+Host austin
+	HostName 172.16.202.78
+	User kali
+	ProxyJump proxy
+Host uruk-kali
+	HostName 172.16.202.66
+	User kali
+	ProxyJump proxy
+Host fake-dns-2
+	HostName 172.16.222.202
+	User kaiju
+	ProxyJump proxy
+Host uruk-mythic
+	HostName 172.16.202.86
+	User kali
+	ProxyJump proxy
+Host mythic
+	HostName 172.16.202.96
+	User reek
+	ProxyJump proxy

@@ -26,7 +26,7 @@ variable "DB_USER" {
   default = "patron"
 }
 
-variable "C2SERVER_PORT" {
+variable "TCP_LISTENER_PORT" {
   default = "9000"
 }
 
@@ -44,6 +44,10 @@ variable "HTTPS_PROXY" {
 
 variable "NO_PROXY" {
   default = ""
+}
+
+variable "GOVERSION" {
+  default = "1.25.6"
 }
 
 target "ui-base" {
@@ -84,6 +88,7 @@ target "redirector-base" {
     HTTP_PROXY = "${HTTP_PROXY}"
     HTTPS_PROXY = "${HTTPS_PROXY}"
     NO_PROXY = "${NO_PROXY}"
+    GOVERSION = "${GOVERSION}"
   }
   tags = [
     "${REGISTRY}/redirector:${TAG}",
@@ -95,10 +100,11 @@ target "server-base" {
   dockerfile = "Dockerfile.server"
   context = "."
   args = {
-    C2SERVER_PORT = "${C2SERVER_PORT}"
+    TCP_LISTENER_PORT = "${TCP_LISTENER_PORT}"
     HTTP_PROXY = "${HTTP_PROXY}"
     HTTPS_PROXY = "${HTTPS_PROXY}"
     NO_PROXY = "${NO_PROXY}"
+    GOVERSION = "${GOVERSION}"
   }
   tags = [
     "${REGISTRY}/server:${TAG}",
@@ -129,6 +135,7 @@ target "api-base" {
     HTTP_PROXY = "${HTTP_PROXY}"
     HTTPS_PROXY = "${HTTPS_PROXY}"
     NO_PROXY = "${NO_PROXY}"
+    GOVERSION = "${GOVERSION}"
   }
   tags = [
     "${REGISTRY}/api:${TAG}",
@@ -145,6 +152,7 @@ target "bot-base" {
     HTTP_PROXY = "${HTTP_PROXY}"
     HTTPS_PROXY = "${HTTPS_PROXY}"
     NO_PROXY = "${NO_PROXY}"
+    GOVERSION = "${GOVERSION}"
   }
   tags = [
     "${REGISTRY}/bot:${TAG}",

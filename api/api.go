@@ -12,6 +12,7 @@ import (
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/gin-gonic/gin"
+	ginprometheus "github.com/zsais/go-gin-prometheus"
 )
 
 func main() {
@@ -32,6 +33,10 @@ func main() {
 
 	// Apply CORS middleware
 	r.Use(CORS())
+
+	// Prometheus instrumentation
+	p := ginprometheus.NewPrometheus("patron_api")
+	p.Use(r)
 
 	// Start up config refresher
 	Refresh(appName)
