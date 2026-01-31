@@ -2,6 +2,10 @@ variable "TAG" {
   default = "snapshot"
 }
 
+variable "LATEST_TAG" {
+  default = "latest"
+}
+
 variable "REGISTRY" {
   default = "patronc2"
 }
@@ -61,7 +65,7 @@ target "ui-base" {
   }
   tags = [
     "${REGISTRY}/ui:${TAG}",
-    "${REGISTRY}/ui:latest"
+    "${REGISTRY}/ui:${LATEST_TAG}"
   ]
 }
 
@@ -76,7 +80,7 @@ target "nginx-base" {
   }
   tags = [
     "${REGISTRY}/nginx:${TAG}",
-    "${REGISTRY}/nginx:latest"
+    "${REGISTRY}/nginx:${LATEST_TAG}"
   ]
 }
 
@@ -92,7 +96,7 @@ target "redirector-base" {
   }
   tags = [
     "${REGISTRY}/redirector:${TAG}",
-    "${REGISTRY}/redirector:latest"
+    "${REGISTRY}/redirector:${LATEST_TAG}"
   ]
 }
 
@@ -108,7 +112,7 @@ target "server-base" {
   }
   tags = [
     "${REGISTRY}/server:${TAG}",
-    "${REGISTRY}/server:latest"
+    "${REGISTRY}/server:${LATEST_TAG}"
   ]
 }
 
@@ -123,7 +127,7 @@ target "postgres-base" {
   }
   tags = [
     "${REGISTRY}/postgres:${TAG}",
-    "${REGISTRY}/postgres:latest"
+    "${REGISTRY}/postgres:${LATEST_TAG}"
   ]
 }
 
@@ -139,7 +143,7 @@ target "api-base" {
   }
   tags = [
     "${REGISTRY}/api:${TAG}",
-    "${REGISTRY}/api:latest"
+    "${REGISTRY}/api:${LATEST_TAG}"
   ]
 }
 
@@ -156,7 +160,7 @@ target "bot-base" {
   }
   tags = [
     "${REGISTRY}/bot:${TAG}",
-    "${REGISTRY}/bot:latest"
+    "${REGISTRY}/bot:${LATEST_TAG}"
   ]
 }
 
