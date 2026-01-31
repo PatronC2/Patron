@@ -3,7 +3,7 @@ variable "TAG" {
 }
 
 variable "LATEST_TAG" {
-  default = "rc2.0.0-8"
+  default = "latest"
 }
 
 variable "REGISTRY" {
