@@ -46,6 +46,7 @@ services:
       TCP_LISTENER_PORT: ${TCP_LISTENER_PORT}
       QUIC_LISTENER_PORT: ${QUIC_LISTENER_PORT}
       DOCKER_HTTPS_PROXY: ${HTTPS_PROXY}
+      PROMETHEUS_ENABLED: ${PROMETHEUS_ENABLED}
     restart: always
     volumes:
       - ./logs:/app/logs
