@@ -76,7 +76,6 @@ const Home = ({ isMenuOpen }) => {
     }, []);
 
     useEffect(() => {
-<<<<<<< HEAD
     setOffset(0);
     }, [hostnameFilter, ipFilter, statusFilter, tagConditions, logic, sortField, sortDirection]);
 
@@ -84,14 +83,6 @@ const Home = ({ isMenuOpen }) => {
     fetchAgents();
     }, [offset, hostnameFilter, ipFilter, statusFilter, tagConditions, logic, sortField, sortDirection]);
 
-=======
-        setOffset(0);
-    }, [hostnameFilter, ipFilter, statusFilter, tagConditions, logic, sortField, sortDirection]);
-
-    useEffect(() => {
-        fetchAgents();
-    }, [offset, hostnameFilter, ipFilter, statusFilter, tagConditions, logic, sortField, sortDirection]);
->>>>>>> 90fcf1a2a437f0d92078fb85fa4f369651342971
 
     const handleSort = (field) => {
         if (sortField === field) {

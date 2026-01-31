@@ -77,11 +77,7 @@ func CreatePayloadHandler(c *gin.Context) {
 	}
 
 	commandString := fmt.Sprintf(
-<<<<<<< HEAD
-		"docker run --rm -v %s:/build -w /build -e HTTPS_PROXY=%s golang:1.24.3 sh -c '"+
-=======
 		"docker run --rm -v %s:/build -w /build -e HTTPS_PROXY=%s golang:%s sh -c '"+
->>>>>>> 90fcf1a2a437f0d92078fb85fa4f369651342971
 			"%s env %s go build %s \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s -X main.LoggingEnabled=%s -X main.TransportProtocol=%s\" "+
 			"-o /build/payloads/%s /build/client/%s'",
 		repo_dir,
