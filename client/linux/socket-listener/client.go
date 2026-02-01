@@ -128,11 +128,17 @@ func main() {
 	})
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
 	errCh := make(chan error, 1)
+
 	go func() {
 		errCh <- sock.Run(ctx)
+	}()
+
+	go func() {
+		<-ctx.Done()
+		logger.Log(logger.Info, "Signal received, stopping socket...")
+		sock.Stop()
+		stop()
 	}()
 
 	agentID, hostname, username := client_utils.GenerateAgentMetadata()
