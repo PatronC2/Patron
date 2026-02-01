@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -173,41 +172,6 @@ func validateCreatePayload(req types.CreatePayloadRequest) error {
 	if req.Compression != "" && req.Compression != "upx" {
 		return fmt.Errorf("compression must be empty or 'upx'")
 	}
-	return nil
-}
-
-func validateBody(body map[string]string) error {
-	if net.ParseIP(body["serverip"]) == nil {
-		return fmt.Errorf("invalid IP address")
-	}
-
-	port, err := strconv.Atoi(body["serverport"])
-	if err != nil || port < 1 || port > 65535 {
-		return fmt.Errorf("invalid port")
-	}
-
-	callbackFrequency, err := strconv.Atoi(body["callbackfrequency"])
-	if err != nil || callbackFrequency < 0 || callbackFrequency > 3600 {
-		return fmt.Errorf("callbackfrequency must be a number between 0 and 3600")
-	}
-
-	callbackJitter, err := strconv.Atoi(body["callbackjitter"])
-	if err != nil || callbackJitter < 1 || callbackJitter > 99 {
-		return fmt.Errorf("callbackjitter must be a number between 1 and 99")
-	}
-
-	if strings.Contains(body["name"], " ") {
-		return fmt.Errorf("name must not contain spaces")
-	}
-
-	if body["logging"] != "true" && body["logging"] != "false" {
-		return fmt.Errorf("logging must be either 'true' or 'false'")
-	}
-
-	if body["compression"] != "none" && body["compression"] != "upx" {
-		return fmt.Errorf("logging must be either 'none' or 'upx'")
-	}
-
 	return nil
 }
 
