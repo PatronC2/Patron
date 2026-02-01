@@ -268,13 +268,21 @@ func PutTagsHandler(c *gin.Context) {
 }
 
 func DeleteTagHandler(c *gin.Context) {
-	tagid := c.Param("tagid")
-	err := data.DeleteTag(tagid)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal Server Error"})
-	} else {
-		c.JSON(http.StatusOK, gin.H{"message": "deleted tag successfully"})
+	tagIDStr := c.Param("tagid")
+
+	tagID, err := strconv.ParseInt(tagIDStr, 10, 64)
+	if err != nil || tagID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid tagid"})
+		return
 	}
+
+	err = data.DeleteTag(tagID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete tag"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "deleted tag successfully"})
 }
 
 func GetTagKeyValuesHandler(c *gin.Context) {

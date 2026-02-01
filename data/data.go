@@ -205,14 +205,21 @@ func InitDatabase() {
 	logger.Logf(logger.Info, "Notes table initialized")
 
 	TagsSQL := `
-	CREATE TABLE IF NOT EXISTS "tags" (
-		"TagID" SERIAL PRIMARY KEY,
-		"UUID" TEXT NOT NULL,
-		"Key" TEXT NOT NULL,
-		"Value" TEXT,
-		FOREIGN KEY ("UUID") REFERENCES "agents" ("uuid"),
-		UNIQUE ("UUID", "Key")
+	CREATE TABLE IF NOT EXISTS agent_tags (
+		tag_id     BIGSERIAL PRIMARY KEY,
+		uuid       TEXT NOT NULL REFERENCES agents(uuid) ON DELETE CASCADE,
+		key        TEXT NOT NULL,
+		value      TEXT,
+		created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+		updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+		UNIQUE (uuid, key)
 	);
+
+	CREATE INDEX IF NOT EXISTS idx_agent_tags_uuid
+		ON agent_tags (uuid);
+
+	CREATE INDEX IF NOT EXISTS idx_agent_tags_key_value
+		ON agent_tags (key, value);
 	`
 	_, err = db.Exec(TagsSQL)
 	if err != nil {

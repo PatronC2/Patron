@@ -51,7 +51,7 @@ type Note struct {
 }
 
 type Tag struct {
-	TagID int    `json:"tagid"`
+	TagID int64  `json:"tagid"`
 	Key   string `json:"key"`
 	Value string `json:"value"`
 }
