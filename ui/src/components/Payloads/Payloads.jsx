@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo, useState, useContext } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAxios } from '../../context/AxiosProvider';
-import AuthContext from '../../context/AuthProvider';
 import NewPayloadForm from './NewPayloadForm';
 import { useTable } from 'react-table';
 import { ResizableBox } from 'react-resizable';
@@ -11,7 +10,6 @@ const Payloads = () => {
     const cfg = window.runtimeConfig;
     const FILE_SERVER = `https://${cfg.REACT_APP_NGINX_IP}:${cfg.REACT_APP_NGINX_PORT}/fileserver/`;
     const axios = useAxios();
-    const { auth } = useContext(AuthContext);
     const [data, setData] = useState([]);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('current_payloads');

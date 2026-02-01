@@ -1,107 +1,137 @@
 package data
 
 import (
-	"log"
+	"database/sql"
+	"fmt"
 
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
-	_ "github.com/lib/pq"
 )
 
-func CreatePayload(uuid string, name string, description string, ServerIP string, ServerPort string, CallBackFreq string, CallBackJitter string, Concat string, TransportProtocol string) {
-	CreateAgentSQL := `INSERT INTO "Payloads" ("UUID", "Name", "Description", "ServerIP", "ServerPort", "CallbackFrequency", "CallbackJitter", "Concat", "transport_protocol")
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
-
-	statement, err := db.Prepare(CreateAgentSQL)
-	if err != nil {
-
-		logger.Logf(logger.Info, "Error in DB\n")
-	}
-
-	_, err = statement.Exec(uuid, name, description, ServerIP, ServerPort, CallBackFreq, CallBackJitter, Concat, TransportProtocol)
-	if err != nil {
-		logger.Logf(logger.Error, "Error in DB: %s", err)
-	}
-	logger.Logf(logger.Info, "New Payload created in DB\n")
-}
-
-func Payloads() []types.Payload {
-	var payloads types.Payload
-	FetchSQL := `
-	SELECT
-		"PayloadID",
-		"UUID", 
-		"Name",
-		"Description",
-		"ServerIP", 
-		"ServerPort", 
-		"CallbackFrequency", 
-		"CallbackJitter",
-		"Concat",
-		"transport_protocol" 
-	FROM "Payloads"
-	WHERE "isDeleted"='0'
+func CreatePayload(p types.Payload) error {
+	const q = `
+		INSERT INTO payloads
+			(uuid, name, description, server_ip, server_port, callback_frequency, callback_jitter, concat, transport_protocol)
+		VALUES
+			($1,$2,$3,$4,$5,$6,$7,$8,$9);
 	`
-	row, err := db.Query(FetchSQL)
-	if err != nil {
-		logger.Logf(logger.Error, "Error in DB: %s", err)
-	}
-	defer row.Close()
-	var payloadAppend []types.Payload
-	for row.Next() {
-		row.Scan(
-			&payloads.PayloadID,
-			&payloads.Uuid,
-			&payloads.Name,
-			&payloads.Description,
-			&payloads.ServerIP,
-			&payloads.ServerPort,
-			&payloads.CallbackFrequency,
-			&payloads.CallbackJitter,
-			&payloads.Concat,
-			&payloads.TransportProtocol,
-		)
-		payloadAppend = append(payloadAppend, payloads)
-	}
-	return payloadAppend
-}
 
-func DeletePayload(payloadid string) error {
-	DeleteSQL := `
-    UPDATE "Payloads"
-    SET "isDeleted" = 1
-    WHERE "PayloadID" = $1`
-
-	statement, err := db.Prepare(DeleteSQL)
+	_, err := db.Exec(q,
+		p.Uuid,
+		p.Name,
+		p.Description,
+		p.ServerIP,
+		p.ServerPort,
+		p.CallbackFrequency,
+		p.CallbackJitter,
+		p.Concat,
+		p.TransportProtocol,
+	)
 	if err != nil {
-		logger.Logf(logger.Error, "Error preparing statement: %s", err)
-		return err
-	}
-	defer statement.Close()
-
-	_, err = statement.Exec(payloadid)
-	if err != nil {
-		logger.Logf(logger.Error, "Error executing statement: %s", err)
+		logger.Logf(logger.Error, "CreatePayload failed: %v", err)
 		return err
 	}
 
-	logger.Logf(logger.Info, "Payload with ID %s marked as deleted in DB", payloadid)
+	logger.Logf(logger.Info, "New payload created in DB")
 	return nil
 }
 
-func GetPayloadConcat(payloadID string) (string, error) {
-	var payloadConcat string
-	FetchNameSQL := `
-    SELECT "Concat"
-    FROM "Payloads"
-    WHERE "PayloadID" = $1 AND "isDeleted" = 0
-    `
+func GetPayloads() ([]types.Payload, error) {
+	const q = `
+		SELECT
+			payload_id,
+			uuid,
+			name,
+			description,
+			server_ip,
+			server_port,
+			callback_frequency,
+			callback_jitter,
+			concat,
+			transport_protocol
+		FROM payloads
+		WHERE deleted_at IS NULL
+		ORDER BY created_at DESC;
+	`
 
-	err := db.QueryRow(FetchNameSQL, payloadID).Scan(&payloadConcat)
+	rows, err := db.Query(q)
 	if err != nil {
-		log.Println("Error fetching payload name:", err)
-		return "", err
+		logger.Logf(logger.Error, "Payloads query failed: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := make([]types.Payload, 0, 32)
+	for rows.Next() {
+		var p types.Payload
+		if err := rows.Scan(
+			&p.PayloadID,
+			&p.Uuid,
+			&p.Name,
+			&p.Description,
+			&p.ServerIP,
+			&p.ServerPort,
+			&p.CallbackFrequency,
+			&p.CallbackJitter,
+			&p.Concat,
+			&p.TransportProtocol,
+		); err != nil {
+			logger.Logf(logger.Error, "Payloads scan failed: %v", err)
+			return nil, err
+		}
+		out = append(out, p)
 	}
 
-	return payloadConcat, nil
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func DeletePayload(payloadID int64) error {
+	const q = `
+		UPDATE payloads
+		SET deleted_at = now()
+		WHERE payload_id = $1
+		  AND deleted_at IS NULL;
+	`
+
+	res, err := db.Exec(q, payloadID)
+	if err != nil {
+		logger.Logf(logger.Error, "DeletePayload failed: %v", err)
+		return err
+	}
+
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+
+	logger.Logf(logger.Info, "Payload %d marked deleted", payloadID)
+	return nil
+}
+
+func GetPayloadConcat(payloadID int64) (string, error) {
+	const q = `
+		SELECT concat
+		FROM payloads
+		WHERE payload_id = $1
+		  AND deleted_at IS NULL;
+	`
+
+	var concat sql.NullString
+	err := db.QueryRow(q, payloadID).Scan(&concat)
+	if err != nil {
+		return "", err
+	}
+	if !concat.Valid {
+		return "", nil
+	}
+	return concat.String, nil
+}
+
+func ParsePayloadID(s string) (int64, error) {
+	var id int64
+	_, err := fmt.Sscanf(s, "%d", &id)
+	return id, err
 }
