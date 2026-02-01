@@ -336,7 +336,7 @@ func FilterAgents(filters map[string]string, tagFilters []string, logic string, 
 				vIdx := len(args)
 				conditions = append(conditions, fmt.Sprintf(`
 					EXISTS (
-						SELECT 1 FROM tags t
+						SELECT 1 FROM agent_tags t
 						WHERE t.uuid = a.uuid
 						  AND t.key = $%d
 						  AND t.value = $%d
@@ -353,7 +353,7 @@ func FilterAgents(filters map[string]string, tagFilters []string, logic string, 
 			}
 			conditions = append(conditions, `
 				EXISTS (
-					SELECT 1 FROM tags t
+					SELECT 1 FROM agent_tags t
 					WHERE t.uuid = a.uuid
 					  AND (`+strings.Join(orParts, " OR ")+`)
 				)`)
