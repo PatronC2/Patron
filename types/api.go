@@ -1,6 +1,8 @@
 package types
 
 import (
+	"time"
+
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -43,8 +45,9 @@ type UpdateUserRequest struct {
 }
 
 type Note struct {
-	NoteID int    `json:"noteid"`
-	Note   string `json:"note"`
+	Uuid      string    `json:"uuid"`
+	Note      string    `json:"note"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type Tag struct {

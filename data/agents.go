@@ -57,6 +57,11 @@ func CreateAgent(req *patronobuf.ConfigurationRequest) error {
 		}
 	}
 
+	err = PutAgentNotes(uuid, "")
+	if err != nil {
+		logger.Logf(logger.Error, "Error initializing notes for %v: %v", uuid, err)
+	}
+
 	logger.Logf(logger.Info, "New agent created in DB: %s", req.GetUuid())
 	return nil
 }
