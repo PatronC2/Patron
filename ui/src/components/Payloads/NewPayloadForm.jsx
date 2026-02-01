@@ -115,12 +115,12 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
             });
 
             if (response.status === 200) {
-            setNotification('Payload created successfully!');
-            setNotificationType('success');
-            fetchData();
-            setTimeout(() => setActiveTab('current_payloads'), 3000);
+                setNotification('Payload created successfully!');
+                setNotificationType('success');
+                fetchData();
+                setTimeout(() => setActiveTab('current_payloads'), 3000);
             } else {
-            throw new Error(`Unexpected status code: ${response.status}`);
+                throw new Error(`Unexpected status code: ${response.status}`);
             }
         } catch (error) {
             if (error.response) {
