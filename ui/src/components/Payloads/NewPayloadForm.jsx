@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useContext, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAxios } from '../../context/AxiosProvider';
-import AuthContext from '../../context/AuthProvider';
 import './NewPayloadForm.css';
 
 const NewPayloadForm = ({ fetchData, setActiveTab }) => {
@@ -8,7 +7,6 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
     const PATRON_C2_IP = `${cfg.REACT_APP_NGINX_IP}`;
     const PATRON_C2_PORT = `${cfg.REACT_APP_C2SERVER_PORT}`;
     const axios = useAxios();
-    const { auth } = useContext(AuthContext);
     const [notification, setNotification] = useState('');
     const [notificationType, setNotificationType] = useState('');
     const [selectedListenerIndex, setSelectedListenerIndex] = useState('');
@@ -110,7 +108,6 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
             const response = await axios.post(url, payload, {
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: `${auth.accessToken}`,
             },
             });
 
