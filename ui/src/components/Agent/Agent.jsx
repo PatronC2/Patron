@@ -122,11 +122,7 @@ const Agent = () => {
       } else {
         setKeylogs([]);
       }
-      if (notesResponse.data.data && notesResponse.data.data.length > 0) {
-        setNotes(notesResponse.data.data[0].note || '');
-      } else {
-        setNotes('');
-      }
+      setNotes(notesResponse.data?.data?.note ?? '');
       if (Array.isArray(tagsData)) {
         setTags(tagsData);
       } else {

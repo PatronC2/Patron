@@ -1,49 +1,36 @@
 package data
 
 import (
-	"log"
-
-	"github.com/PatronC2/Patron/types"	
-	"github.com/PatronC2/Patron/lib/logger"	
+	"github.com/PatronC2/Patron/lib/logger"
+	"github.com/PatronC2/Patron/types"
 	_ "github.com/lib/pq"
 )
 
-func GetAgentNotes(uuid string) (infoAppend []types.Note, err error) {
-	var info types.Note
-	FetchSQL := `
-	SELECT 
-		"NoteID",
-		"Note"
-	FROM "notes" WHERE "UUID"=$1
+func GetAgentNotes(uuid string) (types.Note, error) {
+	const q = `
+		SELECT uuid, note, updated_at
+		FROM agent_notes
+		WHERE uuid = $1;
 	`
-	row, err := db.Query(FetchSQL, uuid)
+
+	var n types.Note
+	err := db.QueryRow(q, uuid).Scan(&n.Uuid, &n.Note, &n.UpdatedAt)
 	if err != nil {
-		log.Fatal(err)
+		logger.Logf(logger.Error, "Error fetching notes for agent %v: %v", uuid, err)
 	}
-	defer row.Close()
-	for row.Next() {
-		row.Scan(
-			&info.NoteID,
-			&info.Note,
-		)
-	}
-	infoAppend = append(infoAppend, info)
-	logger.Logf(logger.Info, "%v\n", info)
-	return infoAppend, err
+	return n, err
 }
 
-func PutAgentNotes(uuid string, note string) error {
-    UpsertSQL := `
-    INSERT INTO "notes" ("UUID", "Note")
-    VALUES ($1, $2)
-    ON CONFLICT ("UUID")
-    DO UPDATE SET "Note" = $2;
-    `
-    _, err := db.Exec(UpsertSQL, uuid, note)
-    if err != nil {
-        log.Fatalln(err)
-        return err
-    }
-    logger.Logf(logger.Info, "Notes for UUID %v have been updated in DB\n", uuid)
-    return nil
+func PutAgentNotes(uuid, note string) error {
+	const q = `
+		INSERT INTO agent_notes (uuid, note, updated_at)
+		VALUES ($1, $2, now())
+		ON CONFLICT (uuid)
+		DO UPDATE SET note = EXCLUDED.note, updated_at = now();
+	`
+	_, err := db.Exec(q, uuid, note)
+	if err != nil {
+		logger.Logf(logger.Error, "Error putting notes for agent %v: %v", uuid, note)
+	}
+	return err
 }

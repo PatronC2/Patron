@@ -192,12 +192,10 @@ func InitDatabase() {
 	logger.Logf(logger.Info, "Users table initialized")
 
 	NotesSQL := `
-	CREATE TABLE IF NOT EXISTS "notes" (
-		"NoteID" SERIAL PRIMARY KEY,
-		"UUID" TEXT NOT NULL,
-		"Note" TEXT,
-		FOREIGN KEY ("UUID") REFERENCES "agents" ("uuid"),
-		UNIQUE ("UUID")
+	CREATE TABLE IF NOT EXISTS agent_notes (
+		uuid       TEXT PRIMARY KEY REFERENCES agents(uuid) ON DELETE CASCADE,
+		note       TEXT NOT NULL DEFAULT '',
+		updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 	);
 	`
 	_, err = db.Exec(NotesSQL)
