@@ -1,6 +1,6 @@
 services:
   patron_c2_server:
-    image: patronc2/server
+    image: patronc2/server:v1.3.6
     environment:
       DB_HOST: patron_c2_postgres
       DB_PORT: ${DB_PORT}
@@ -23,7 +23,7 @@ services:
         condition: service_healthy
 
   patron_c2_api:
-    image: patronc2/api
+    image: patronc2/api:v1.3.6
     environment:
       DB_HOST: patron_c2_postgres
       DB_PORT: ${DB_PORT}
@@ -56,7 +56,7 @@ services:
         condition: service_healthy
 
   patron_c2_frontend:
-    image: patronc2/ui
+    image: patronc2/ui:v1.3.6
     working_dir: /app
     restart: always
     volumes:
@@ -71,7 +71,7 @@ services:
         condition: service_healthy
 
   patron_c2_postgres:
-    image: patronc2/postgres
+    image: patronc2/postgres:v1.3.6
     restart: always
     environment:
       POSTGRES_USER: ${DB_USER}
@@ -85,7 +85,7 @@ services:
       - internal_c2_network
 
   patron_c2_nginx:
-    image: patronc2/nginx
+    image: patronc2/nginx:v1.3.6
     restart: always
     volumes:
       - ./nginx/conf.d/default.conf.template:/etc/nginx/templates/default.conf.template
@@ -104,7 +104,7 @@ services:
         condition: service_healthy
 
   patron_c2_bot:
-    image: patronc2/bot
+    image: patronc2/bot:v1.3.6
     environment:
       - PATRON_IP=${REACT_APP_NGINX_IP}
       - PATRON_PORT=${REACT_APP_NGINX_PORT}
