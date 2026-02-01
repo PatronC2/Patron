@@ -182,7 +182,7 @@ func main() {
 			continue
 		}
 
-		if err := handleCacheSocketRequest(beacon, agentID); err != nil {
+		if err := handleCacheSocketRequest(beacon, agentID, &mu, &builder); err != nil {
 			client_utils.HandleError(beacon, "cachesocket", err)
 			continue
 		}
