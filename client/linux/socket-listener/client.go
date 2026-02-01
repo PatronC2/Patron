@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -131,9 +132,28 @@ func main() {
 	defer stop()
 
 	errCh := make(chan error, 1)
+
 	go func() {
 		errCh <- sock.Run(ctx)
 	}()
+
+	select {
+	case <-ctx.Done():
+		logger.Log(logger.Info, "Interrupt received, stopping socket...")
+		sock.Stop()
+
+	case err := <-errCh:
+		if err != nil {
+			logger.Logf(logger.Error, "Socket exited with error: %v", err)
+		}
+	}
+
+	err = <-errCh
+	if err != nil && !errors.Is(err, context.Canceled) {
+		logger.Logf(logger.Error, "Final socket error: %v", err)
+	}
+
+	logger.Log(logger.Info, "Socket shutdown complete.")
 
 	agentID, hostname, username := client_utils.GenerateAgentMetadata()
 	logger.Logf(logger.Info, "Created AgentID: %v. Hostname: %v. Username: %v", agentID, hostname, username)
