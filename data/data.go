@@ -89,16 +89,26 @@ func InitDatabase() {
 	logger.Logf(logger.Info, "agents table initialized")
 
 	CommandSQL := `
-	CREATE TABLE IF NOT EXISTS "Commands" (
-		"CommandID" SERIAL PRIMARY KEY,
-		"UUID" TEXT,
-		"Result" TEXT,
-		"CommandType" TEXT,
-		"Command" TEXT,
-		"CommandUUID" TEXT,
-		"Output" TEXT DEFAULT 'Pending',
-		FOREIGN KEY ("UUID") REFERENCES "agents" ("uuid")
+	CREATE TABLE IF NOT EXISTS commands (
+		command_id     BIGSERIAL PRIMARY KEY,
+		uuid           TEXT NOT NULL REFERENCES agents(uuid) ON DELETE CASCADE,
+
+		command_uuid   TEXT NOT NULL UNIQUE,
+		command_type   TEXT NOT NULL,
+		command        TEXT NOT NULL,
+
+		result         TEXT NOT NULL DEFAULT '0',
+		output         TEXT NOT NULL DEFAULT 'Pending',
+
+		created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+		updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 	);
+
+	CREATE INDEX IF NOT EXISTS idx_commands_uuid_command_id
+		ON commands (uuid, command_id ASC);
+
+	CREATE INDEX IF NOT EXISTS idx_commands_uuid_result_command_id
+		ON commands (uuid, result, command_id ASC);
 	`
 	_, err = db.Exec(CommandSQL)
 	if err != nil {

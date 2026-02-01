@@ -21,7 +21,11 @@ func (h *CommandHandler) Handle(request *patronobuf.Request, stream types.Common
 		}
 	}
 
-	command := data.FetchNextCommand(commandReq.GetUuid())
+	command, err := data.FetchNextCommand(commandReq.GetUuid())
+
+	if err != nil {
+		logger.Logf(logger.Error, "Error fetching command from database: %v", err)
+	}
 
 	return &patronobuf.Response{
 		Type: patronobuf.ResponseType_COMMAND_RESPONSE,
@@ -42,14 +46,9 @@ func (h *CommandStatusHandler) Handle(request *patronobuf.Request, stream types.
 		}
 	}
 
-	err := data.UpdateAgentCommand(
-		status.GetCommandid(),
-		status.GetResult(),
-		status.GetOutput(),
-		status.GetUuid(),
-	)
+	err := data.UpdateAgentCommand(status)
 	if err != nil {
-		logger.Logf(logger.Error, "Failed to update command: %v", err)
+		logger.Logf(logger.Error, "Failed to update command for agent %v: %v", status.GetUuid(), err)
 	}
 
 	return &patronobuf.Response{
