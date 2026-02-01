@@ -1,91 +1,62 @@
 package data
 
 import (
-	"log"
-
-	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 )
 
-func GetAgentTags(uuid string) (infoAppend []types.Tag, err error) {
-	var info types.Tag
-	FetchSQL := `
-	SELECT
-		"TagID",
-		"Key",
-		"Value"
-	FROM "tags" WHERE "UUID"=$1
+func GetAgentTags(uuid string) ([]types.Tag, error) {
+	const q = `
+		SELECT tag_id, key, value
+		FROM agent_tags
+		WHERE uuid = $1
+		ORDER BY tag_id ASC;
 	`
-	rows, err := db.Query(FetchSQL, uuid)
+
+	rows, err := db.Query(q, uuid)
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
 	}
 	defer rows.Close()
 
+	out := make([]types.Tag, 0, 16)
 	for rows.Next() {
-		err := rows.Scan(
-			&info.TagID,
-			&info.Key,
-			&info.Value,
-		)
-		if err != nil {
-			log.Println("Error scanning row:", err)
+		var t types.Tag
+		if err := rows.Scan(&t.TagID, &t.Key, &t.Value); err != nil {
 			return nil, err
 		}
-		infoAppend = append(infoAppend, info)
+		out = append(out, t)
 	}
-
-	if err := rows.Err(); err != nil {
-		log.Println("Error iterating over rows:", err)
-		return nil, err
-	}
-
-	logger.Logf(logger.Info, "Tags for %v: %+v\n", uuid, infoAppend)
-	return infoAppend, nil
+	return out, rows.Err()
 }
 
-func PutAgentTags(uuid string, key string, value string) error {
-	PutTagsSQL := `
-    INSERT INTO "tags" ("UUID", "Key", "Value")
-    VALUES ($1, $2, $3)
-    ON CONFLICT ("UUID", "Key") DO UPDATE 
-    SET "Value" = EXCLUDED."Value"
-    `
-	_, err := db.Exec(PutTagsSQL, uuid, key, value)
-	if err != nil {
-		log.Fatalln(err)
-		return err
-	}
-	logger.Logf(logger.Info, "Tags for %v have been updated in DB\n", uuid)
-	return nil
+func PutAgentTags(uuid, key, value string) error {
+	const q = `
+		INSERT INTO agent_tags (uuid, key, value, updated_at)
+		VALUES ($1, $2, $3, now())
+		ON CONFLICT (uuid, key) DO UPDATE
+		SET value = EXCLUDED.value,
+		    updated_at = now();
+	`
+	_, err := db.Exec(q, uuid, key, value)
+	return err
 }
 
-func DeleteTag(tagid string) error {
-	DeleteTagsSQL := `
-    DELETE FROM "tags"
-	WHERE "TagID" = $1
-    `
-	_, err := db.Exec(DeleteTagsSQL, tagid)
-	if err != nil {
-		log.Fatalln(err)
-		return err
-	}
-	logger.Logf(logger.Info, "Tag %d has been deleted\n", tagid)
-	return nil
+func DeleteTag(tagID int64) error {
+	const q = `DELETE FROM agent_tags WHERE tag_id = $1;`
+	_, err := db.Exec(q, tagID)
+	return err
 }
-
 func GetTagKeyValues() ([]types.TagKeyValues, error) {
-	query := `
-		SELECT "Key", array_agg(DISTINCT "Value") AS values
-		FROM tags
-		GROUP BY "Key"
-		ORDER BY "Key";
+	const q = `
+		SELECT key, array_agg(DISTINCT value) AS values
+		FROM agent_tags
+		GROUP BY key
+		ORDER BY key;
 	`
 
-	rows, err := db.Query(query)
+	rows, err := db.Query(q)
 	if err != nil {
 		return nil, err
 	}
@@ -94,12 +65,10 @@ func GetTagKeyValues() ([]types.TagKeyValues, error) {
 	var results []types.TagKeyValues
 	for rows.Next() {
 		var kv types.TagKeyValues
-		err := rows.Scan(&kv.Key, pq.Array(&kv.Values))
-		if err != nil {
+		if err := rows.Scan(&kv.Key, pq.Array(&kv.Values)); err != nil {
 			return nil, err
 		}
 		results = append(results, kv)
 	}
-
-	return results, nil
+	return results, rows.Err()
 }

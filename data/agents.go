@@ -196,11 +196,11 @@ func Agents() ([]types.ConfigurationRequest, error) {
 		a.memory,
 		a.next_callback,
 		a.status,
-		t."TagID",
-		t."Key",
-		t."Value"
+		t.tag_id,
+		t.key,
+		t.value
 	FROM agents_status a
-	LEFT JOIN tags t ON a.uuid = t."UUID"
+	LEFT JOIN agent_tags t ON a.uuid = t.uuid
 	`
 
 	rows, err := db.Query(query)
@@ -218,7 +218,8 @@ func Agents() ([]types.ConfigurationRequest, error) {
 			osType, osArch, osBuild, cpus, memory                                             string
 			nextCallback                                                                      time.Time
 			status, transportProtocol                                                         string
-			tagID, tagKey, tagValue                                                           sql.NullString
+			tagID                                                                             sql.NullInt64
+			tagKey, tagValue                                                                  sql.NullString
 		)
 
 		err := rows.Scan(&uuid, &serverIP, &serverPort, &callbackFreq, &callbackJitter, &ip, &agentUser,
@@ -252,16 +253,11 @@ func Agents() ([]types.ConfigurationRequest, error) {
 		}
 
 		if tagID.Valid && tagKey.Valid && tagValue.Valid {
-			tagIDInt, err := strconv.Atoi(tagID.String)
-			if err != nil {
-				logger.Logf(logger.Error, "Invalid TagID for agent %s: %v", uuid, err)
-			} else {
-				agentMap[uuid].Tags = append(agentMap[uuid].Tags, types.Tag{
-					TagID: tagIDInt,
-					Key:   tagKey.String,
-					Value: tagValue.String,
-				})
-			}
+			agentMap[uuid].Tags = append(agentMap[uuid].Tags, types.Tag{
+				TagID: int64(tagID.Int64),
+				Key:   tagKey.String,
+				Value: tagValue.String,
+			})
 		}
 	}
 
@@ -341,9 +337,9 @@ func FilterAgents(filters map[string]string, tagFilters []string, logic string, 
 				conditions = append(conditions, fmt.Sprintf(`
 					EXISTS (
 						SELECT 1 FROM tags t
-						WHERE t."UUID" = a.uuid
-						  AND t."Key" = $%d
-						  AND t."Value" = $%d
+						WHERE t.uuid = a.uuid
+						  AND t.key = $%d
+						  AND t.value = $%d
 					)`, kIdx, vIdx))
 			}
 		} else {
@@ -353,12 +349,12 @@ func FilterAgents(filters map[string]string, tagFilters []string, logic string, 
 				args = append(args, p.k, p.v)
 				kIdx := len(args) - 1
 				vIdx := len(args)
-				orParts = append(orParts, fmt.Sprintf(`(t."Key" = $%d AND t."Value" = $%d)`, kIdx, vIdx))
+				orParts = append(orParts, fmt.Sprintf(`(t.key = $%d AND t.value = $%d)`, kIdx, vIdx))
 			}
 			conditions = append(conditions, `
 				EXISTS (
 					SELECT 1 FROM tags t
-					WHERE t."UUID" = a.uuid
+					WHERE t.uuid = a.uuid
 					  AND (`+strings.Join(orParts, " OR ")+`)
 				)`)
 		}
