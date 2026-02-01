@@ -1,7 +1,9 @@
 package api
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -39,9 +41,9 @@ func loadConfigurations(filePath string) (types.PayloadConfigurations, error) {
 
 func CreatePayloadHandler(c *gin.Context) {
 	publickey := os.Getenv("PUBLIC_KEY")
-	repo_dir := os.Getenv("REPO_DIR")
-	docker_https_proxy := os.Getenv("DOCKER_HTTPS_PROXY")
-	go_version := os.Getenv("GOVERSION")
+	repoDir := os.Getenv("REPO_DIR")
+	dockerHTTPSProxy := os.Getenv("DOCKER_HTTPS_PROXY")
+	goVersion := os.Getenv("GOVERSION")
 
 	configs, err := loadConfigurations("payloads.json")
 	if err != nil {
@@ -50,78 +52,128 @@ func CreatePayloadHandler(c *gin.Context) {
 	}
 
 	newPayID := uuid.New().String()
-	var body map[string]string
-	if err := c.BindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
-		return
-	}
 
-	if err := validateBody(body); err != nil {
+	var req types.CreatePayloadRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	key := body["type"]
-	config, exists := configs[key]
+	if err := validateCreatePayload(req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	config, exists := configs[req.Type]
 	if !exists {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid type"})
 		return
 	}
 
+	// Build output filename
 	tag := strings.Split(newPayID, "-")
-	concat := body["name"] + "_" + tag[0] + config.FileSuffix
+	concat := req.Name + "_" + tag[0] + config.FileSuffix
 
-	dependencyCommands := ""
-	for _, dep := range config.Dependencies {
-		dependencyCommands += fmt.Sprintf("go get %s && ", dep)
+	// Dependencies
+	var depCmd string
+	if len(config.Dependencies) > 0 {
+		parts := make([]string, 0, len(config.Dependencies))
+		for _, dep := range config.Dependencies {
+			parts = append(parts, fmt.Sprintf("go get %s", dep))
+		}
+		depCmd = strings.Join(parts, " && ") + " && "
 	}
 
+	// Build command
 	commandString := fmt.Sprintf(
-		"docker run --rm -v %s:/build -w /build -e HTTPS_PROXY=%s golang:%s sh -c '"+
-			"%s env %s go build %s \"-s -w -X main.ServerIP=%s -X main.ServerPort=%s -X main.CallbackFrequency=%s -X main.CallbackJitter=%s -X main.RootCert=%s -X main.LoggingEnabled=%s -X main.TransportProtocol=%s\" "+
+		"docker run --rm -v %s:/build -w /build -e HTTPS_PROXY=%s golang:%s sh -c '%s env %s go build %s \"-s -w "+
+			"-X main.ServerIP=%s "+
+			"-X main.ServerPort=%d "+
+			"-X main.CallbackFrequency=%d "+
+			"-X main.CallbackJitter=%d "+
+			"-X main.RootCert=%s "+
+			"-X main.LoggingEnabled=%t "+
+			"-X main.TransportProtocol=%s\" "+
 			"-o /build/payloads/%s /build/client/%s'",
-		repo_dir,
-		docker_https_proxy,
-		go_version,
-		dependencyCommands,
+		repoDir,
+		dockerHTTPSProxy,
+		goVersion,
+		depCmd,
 		config.Environment,
 		config.Flags,
-		body["serverip"],
-		body["serverport"],
-		body["callbackfrequency"],
-		body["callbackjitter"],
+		req.ServerIP,
+		req.ServerPort,
+		req.CallbackFrequency,
+		req.CallbackJitter,
 		publickey,
-		body["logging"],
-		body["transportprotocol"],
+		req.Logging,
+		req.TransportProtocol,
 		concat,
 		config.CodePath,
 	)
 
 	logger.Logf(logger.Debug, "Running build command: %s", commandString)
+
 	cmd := exec.Command("sh", "-c", commandString)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err = cmd.Run()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error", "details": err.Error()})
+	if err := cmd.Run(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Build failed",
+			"details": err.Error(),
+		})
 		return
 	}
 
-	if body["compression"] == "upx" {
+	// Optional UPX compression
+	if req.Compression == "upx" {
 		upxCommand := fmt.Sprintf("upx --best --lzma /app/payloads/%s%s", concat, config.FileSuffix)
 		logger.Logf(logger.Debug, "Running UPX command: %s", upxCommand)
+
 		upxCmd := exec.Command("sh", "-c", upxCommand)
 		upxCmd.Stdout = os.Stdout
 		upxCmd.Stderr = os.Stderr
-		err = upxCmd.Run()
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "UPX compression failed", "details": err.Error()})
+		if err := upxCmd.Run(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   "UPX compression failed",
+				"details": err.Error(),
+			})
 			return
 		}
 	}
 
-	data.CreatePayload(newPayID, body["name"], body["description"], body["serverip"], body["serverport"], body["callbackfrequency"], body["callbackjitter"], concat, body["transportprotocol"])
+	p := types.Payload{
+		Uuid:              newPayID,
+		Name:              req.Name,
+		Description:       req.Description,
+		ServerIP:          req.ServerIP,
+		Concat:            concat,
+		TransportProtocol: req.TransportProtocol,
+	}
+
+	p.ServerPort = req.ServerPort
+	p.CallbackFrequency = req.CallbackFrequency
+	p.CallbackJitter = req.CallbackJitter
+
+	if err := data.CreatePayload(p); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store payload"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"data": "success"})
+}
+
+func validateCreatePayload(req types.CreatePayloadRequest) error {
+	if req.ServerPort == 0 {
+		return fmt.Errorf("serverport must be 1-65535")
+	}
+	if req.CallbackJitter > 100 {
+		return fmt.Errorf("callbackjitter must be 0-100")
+	}
+	if req.Compression != "" && req.Compression != "upx" {
+		return fmt.Errorf("compression must be empty or 'upx'")
+	}
+	return nil
 }
 
 func validateBody(body map[string]string) error {
@@ -169,32 +221,48 @@ func GetConfigurationsHandler(c *gin.Context) {
 }
 
 func GetPayloadsHandler(c *gin.Context) {
-	payloads := data.Payloads()
+	payloads, err := data.GetPayloads()
+	if err != nil {
+		logger.Logf(logger.Error, "Failed to get payloads from db: %v", err)
+	}
 	c.JSON(http.StatusOK, gin.H{"data": payloads})
 }
 
 func DeletePayloadHandler(c *gin.Context) {
-	payloadID := c.Param("payloadid")
+	payloadIDStr := c.Param("payloadid")
 
-	payloadConcat, err := data.GetPayloadConcat(payloadID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch payload name"})
+	payloadID, err := strconv.ParseInt(payloadIDStr, 10, 64)
+	if err != nil || payloadID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payloadid"})
 		return
 	}
 
-	err = data.DeletePayload(payloadID)
+	payloadConcat, err := data.GetPayloadConcat(payloadID)
 	if err != nil {
+		// If your DB returns sql.ErrNoRows, treat it as 404
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "payload not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch payload concat"})
+		return
+	}
+
+	if err := data.DeletePayload(payloadID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "payload not found"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete payload"})
 		return
 	}
 
-	payloadPath := fmt.Sprintf("/app/payloads/%s", payloadConcat)
-	cmd := exec.Command("rm", "-f", payloadPath)
-
-	err = cmd.Run()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete payload from disk"})
-		return
+	if payloadConcat != "" {
+		payloadPath := fmt.Sprintf("/app/payloads/%s", payloadConcat)
+		if err := exec.Command("rm", "-f", payloadPath).Run(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete payload from disk"})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Payload deleted successfully"})

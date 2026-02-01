@@ -149,19 +149,27 @@ func InitDatabase() {
 	logger.Logf(logger.Info, "Keylog table initialized")
 
 	PayloadSQL := `
-	CREATE TABLE IF NOT EXISTS "Payloads" (
-		"PayloadID" SERIAL PRIMARY KEY,
-		"UUID" TEXT,
-		"Name" TEXT,
-		"Description" TEXT,
-		"ServerIP" TEXT,
-		"ServerPort" TEXT,
-		"CallbackFrequency" TEXT,
-		"CallbackJitter" TEXT,
-		"Concat" TEXT,
-		"transport_protocol" TEXT,
-		"isDeleted" INTEGER NOT NULL DEFAULT 0
+	CREATE TABLE IF NOT EXISTS payloads (
+		payload_id          BIGSERIAL PRIMARY KEY,
+		uuid                TEXT,
+		name                TEXT NOT NULL,
+		description         TEXT,
+
+		server_ip           TEXT NOT NULL,
+		server_port         INTEGER NOT NULL,
+		callback_frequency  INTEGER NOT NULL,
+		callback_jitter     INTEGER NOT NULL,
+
+		concat              TEXT,
+		transport_protocol  TEXT,
+
+		deleted_at          TIMESTAMPTZ,
+		created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 	);
+
+	CREATE INDEX IF NOT EXISTS idx_payloads_active_id
+		ON payloads (payload_id)
+		WHERE deleted_at IS NULL;
 	`
 	_, err = db.Exec(PayloadSQL)
 	if err != nil {

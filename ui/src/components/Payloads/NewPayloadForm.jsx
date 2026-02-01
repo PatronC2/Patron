@@ -98,22 +98,29 @@ const NewPayloadForm = ({ fetchData, setActiveTab }) => {
         setLoading(true);
 
         try {
-            const response = await axios.post(url, formData, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `${auth.accessToken}`,
-                },
+            const payload = {
+            ...formData,
+            serverport: Number(formData.serverport),
+            callbackfrequency: Number(formData.callbackfrequency),
+            callbackjitter: Number(formData.callbackjitter),
+            logging: formData.logging === 'true',
+            compression: formData.compression === 'none' ? '' : formData.compression,
+            };
+
+            const response = await axios.post(url, payload, {
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `${auth.accessToken}`,
+            },
             });
 
             if (response.status === 200) {
-                setNotification('Payload created successfully!');
-                setNotificationType('success');
-                fetchData();
-                setTimeout(() => {
-                    setActiveTab('current_payloads');
-                }, 3000);
+            setNotification('Payload created successfully!');
+            setNotificationType('success');
+            fetchData();
+            setTimeout(() => setActiveTab('current_payloads'), 3000);
             } else {
-                throw new Error(`Unexpected status code: ${response.status}`);
+            throw new Error(`Unexpected status code: ${response.status}`);
             }
         } catch (error) {
             if (error.response) {
