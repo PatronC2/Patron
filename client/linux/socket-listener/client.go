@@ -236,6 +236,7 @@ func handleCacheSocketRequest(beacon io.ReadWriteCloser, agentID string, mu *syn
 	mu.Lock()
 
 	if builder.Len() == 0 {
+		logger.Logf(logger.Info, "No logs to send, skipping socket cache request")
 		mu.Unlock()
 		return nil
 	}
