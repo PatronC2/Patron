@@ -24,7 +24,6 @@ type Server struct {
 }
 
 // New creates a server that listens on \\.\pipe\<name> and invokes handler for each line.
-// Pass either "bang_log" or full "\\\\.\\pipe\\bang_log".
 func New(pipeName string, handler Handler) *Server {
 	// normalize
 	full := pipeName
@@ -41,9 +40,6 @@ func (s *Server) Start() error {
 	}
 
 	ln, err := winio.ListenPipe(s.name, &winio.PipeConfig{
-		// Restrictive by default: LocalSystem + Administrators.
-		// If your client runs as a normal user and gets ACCESS_DENIED,
-		// loosen this to include that user/group.
 		SecurityDescriptor: "D:P(A;;GA;;;SY)(A;;GA;;;BA)",
 		MessageMode:        false, // byte stream mode
 		InputBufferSize:    64 * 1024,
