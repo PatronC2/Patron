@@ -5,6 +5,7 @@ go 1.25
 toolchain go1.25.6
 
 require (
+	github.com/Microsoft/go-winio v0.6.2
 	github.com/PatronC2/linux-keylogger-1 v1.1.0
 	github.com/TheTitanrain/w32 v0.0.0-20200114052255-2654d97dbd3d
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
@@ -13,6 +14,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/kardianos/service v1.2.2
 	github.com/lib/pq v1.10.9
+	github.com/prometheus/client_golang v1.22.0
 	github.com/quic-go/quic-go v0.52.0
 	github.com/zsais/go-gin-prometheus v1.0.2
 	golang.org/x/crypto v0.39.0
@@ -40,7 +42,6 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/onsi/ginkgo/v2 v2.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
-	github.com/prometheus/client_golang v1.22.0 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.65.0 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect

