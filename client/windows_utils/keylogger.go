@@ -1,9 +1,13 @@
-package keylogger
+//go:build windows
+// +build windows
+
+package windows_utils
 
 import (
 	"syscall"
 	"unicode/utf8"
 	"unsafe"
+
 	"github.com/TheTitanrain/w32"
 )
 

