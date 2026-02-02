@@ -23,8 +23,8 @@ import (
 	"github.com/quic-go/quic-go"
 
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
-	"github.com/PatronC2/Patron/client/client_utils/linux/linux_utils"
-	"github.com/PatronC2/Patron/client/client_utils/windows/windows_utils"
+	"github.com/PatronC2/Patron/client/linux_utils"
+	"github.com/PatronC2/Patron/client/windows_utils"
 	"github.com/PatronC2/Patron/lib/common"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"

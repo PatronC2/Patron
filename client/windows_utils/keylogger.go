@@ -1,9 +1,10 @@
-package keylogger
+package windows_utils
 
 import (
 	"syscall"
 	"unicode/utf8"
 	"unsafe"
+
 	"github.com/TheTitanrain/w32"
 )
 
