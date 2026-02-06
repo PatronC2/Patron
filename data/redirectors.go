@@ -59,6 +59,44 @@ func GetRedirectors() ([]types.Redirector, error) {
 	return redirectors, nil
 }
 
+type RedirectorCounts struct {
+	Total   int
+	Online  int
+	Offline int
+}
+
+func GetRedirectorCounts() (RedirectorCounts, error) {
+	var c RedirectorCounts
+	const q = `
+		WITH per_redirector AS (
+			SELECT
+				r.redirector_id,
+				CASE
+					WHEN r.is_teamserver THEN 'Online'
+					WHEN MAX(
+						CASE
+							WHEN l.last_report IS NOT NULL
+								AND l.last_report >= NOW() - INTERVAL '10 minutes'
+							THEN 1 ELSE 0
+						END
+					) = 1 THEN 'Online'
+					ELSE 'Offline'
+				END AS status
+			FROM redirectors r
+			LEFT JOIN redirector_listeners l
+				ON r.redirector_id = l.redirector_id
+			GROUP BY r.redirector_id, r.is_teamserver
+		)
+		SELECT
+			COUNT(*)::int AS total,
+			COALESCE(SUM(CASE WHEN status = 'Online'  THEN 1 ELSE 0 END), 0)::int AS online,
+			COALESCE(SUM(CASE WHEN status = 'Offline' THEN 1 ELSE 0 END), 0)::int AS offline
+		FROM per_redirector;
+	`
+	err := db.QueryRow(q).Scan(&c.Total, &c.Online, &c.Offline)
+	return c, err
+}
+
 func CreateRedirector(
 	RedirectorID,
 	Name,

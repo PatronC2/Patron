@@ -36,6 +36,7 @@ func main() {
 	defer cancel()
 
 	api.StartAgentCountUpdater(ctx, 10*time.Second)
+	api.StartRedirectorCountUpdater(ctx, 10*time.Second)
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
