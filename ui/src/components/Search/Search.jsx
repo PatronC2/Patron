@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import qs from 'qs';
 import { useAxios } from '../../context/AxiosProvider';
@@ -8,9 +8,11 @@ const Search = () => {
     const axios = useAxios();
 
     const [q, setQ] = useState('');
-    const [uuid, setUuid] = useState('');
     const [ip, setIp] = useState('');
     const [tagsInput, setTagsInput] = useState('');
+    const [tagOptions, setTagOptions] = useState([]);
+    const [tagKey, setTagKey] = useState('');
+    const [tagValue, setTagValue] = useState('');
     const [tagLogic, setTagLogic] = useState('and');
     const [startDate, setStartDate] = useState('');
     const [startTime, setStartTime] = useState('');
@@ -32,6 +34,20 @@ const Search = () => {
             .filter(Boolean);
     };
 
+    const selectedTags = parseTags(tagsInput);
+
+    useEffect(() => {
+        const fetchTagOptions = async () => {
+            try {
+                const response = await axios.get('/api/tags/options');
+                setTagOptions(response.data.tags || []);
+            } catch (err) {
+                setTagOptions([]);
+            }
+        };
+        fetchTagOptions();
+    }, [axios]);
+
     const fetchResults = async (nextOffset = 0, sortOverride = null) => {
         setLoading(true);
         setError('');
@@ -45,7 +61,6 @@ const Search = () => {
             const effectiveSort = sortOverride || sortDirection;
             const params = {
                 ...(q && { q }),
-                ...(uuid && { uuid }),
                 ...(ip && { ip }),
                 ...(startDate && { start: buildDateTime(startDate, startTime) }),
                 ...(endDate && { end: buildDateTime(endDate, endTime) }),
@@ -129,6 +144,23 @@ const Search = () => {
         setTagsInput(next.join(', '));
     };
 
+    const removeTagToken = (token) => {
+        const next = tagsInput
+            .split(',')
+            .map(t => t.trim())
+            .filter(Boolean)
+            .filter(t => t !== token);
+        setTagsInput(next.join(', '));
+    };
+
+    const handleAddTagSelection = () => {
+        if (!tagKey) return;
+        const token = tagValue ? `${tagKey}:${tagValue}` : tagKey;
+        addTagToken(token);
+        setTagKey('');
+        setTagValue('');
+    };
+
     const openContent = (hit) => {
         const src = hit?._source || {};
         setActiveContent({
@@ -162,108 +194,141 @@ const Search = () => {
         <div className="search-container">
             <div className="search-header">
                 <h1>Keylog Search (Beta)</h1>
-                <p className="search-subtitle">Search contents, filter by UUID, IP, tags, and time range.</p>
+                <p className="search-subtitle">Search contents, filter by IP, tags, and time range.</p>
             </div>
 
             <form className="search-form" onSubmit={handleSearch}>
-                <div className="search-row">
-                    <label htmlFor="q">Text</label>
-                    <input
-                        id="q"
-                        type="text"
-                        value={q}
-                        onChange={e => setQ(e.target.value)}
-                        placeholder="Search contents"
-                    />
+                <div className="search-panel search-panel-left">
+                    <div className="search-row">
+                        <label htmlFor="q">Text</label>
+                        <input
+                            id="q"
+                            type="text"
+                            value={q}
+                            onChange={e => setQ(e.target.value)}
+                            placeholder="Search contents"
+                        />
+                    </div>
+                    <div className="search-row">
+                        <label htmlFor="ip">IP</label>
+                        <input
+                            id="ip"
+                            type="text"
+                            value={ip}
+                            onChange={e => setIp(e.target.value)}
+                            placeholder="Agent IP"
+                        />
+                    </div>
+                    <div className="search-row">
+                        <label htmlFor="startDate">Start Date</label>
+                        <input
+                            id="startDate"
+                            type="date"
+                            value={startDate}
+                            onChange={e => setStartDate(e.target.value)}
+                        />
+                    </div>
+                    <div className="search-row">
+                        <label htmlFor="startTime">Start Time</label>
+                        <input
+                            id="startTime"
+                            type="time"
+                            value={startTime}
+                            onChange={e => setStartTime(e.target.value)}
+                        />
+                    </div>
+                    <div className="search-row">
+                        <label htmlFor="endDate">End Date</label>
+                        <input
+                            id="endDate"
+                            type="date"
+                            value={endDate}
+                            onChange={e => setEndDate(e.target.value)}
+                        />
+                    </div>
+                    <div className="search-row">
+                        <label htmlFor="endTime">End Time</label>
+                        <input
+                            id="endTime"
+                            type="time"
+                            value={endTime}
+                            onChange={e => setEndTime(e.target.value)}
+                        />
+                    </div>
+                    <div className="search-row">
+                        <label htmlFor="limit">Page Size</label>
+                        <input
+                            id="limit"
+                            type="number"
+                            min="1"
+                            max="500"
+                            value={limit}
+                            onChange={e => setLimit(Number(e.target.value || 50))}
+                        />
+                    </div>
+                    <div className="search-actions">
+                        <button type="submit" disabled={loading}>
+                            {loading ? 'Searching...' : 'Search'}
+                        </button>
+                    </div>
                 </div>
-                <div className="search-row">
-                    <label htmlFor="uuid">UUID</label>
-                    <input
-                        id="uuid"
-                        type="text"
-                        value={uuid}
-                        onChange={e => setUuid(e.target.value)}
-                        placeholder="Agent UUID"
-                    />
-                </div>
-                <div className="search-row">
-                    <label htmlFor="ip">IP</label>
-                    <input
-                        id="ip"
-                        type="text"
-                        value={ip}
-                        onChange={e => setIp(e.target.value)}
-                        placeholder="Agent IP"
-                    />
-                </div>
-                <div className="search-row">
-                    <label htmlFor="tags">Tags</label>
-                    <input
-                        id="tags"
-                        type="text"
-                        value={tagsInput}
-                        onChange={e => setTagsInput(e.target.value)}
-                        placeholder="os_type:windows, hostname: example.com"
-                    />
-                </div>
-                <div className="search-row">
-                    <label htmlFor="tagLogic">Tag Logic</label>
-                    <select id="tagLogic" value={tagLogic} onChange={e => setTagLogic(e.target.value)}>
-                        <option value="and">AND</option>
-                        <option value="or">OR</option>
-                    </select>
-                </div>
-                <div className="search-row">
-                    <label htmlFor="startDate">Start Date</label>
-                    <input
-                        id="startDate"
-                        type="date"
-                        value={startDate}
-                        onChange={e => setStartDate(e.target.value)}
-                    />
-                </div>
-                <div className="search-row">
-                    <label htmlFor="startTime">Start Time</label>
-                    <input
-                        id="startTime"
-                        type="time"
-                        value={startTime}
-                        onChange={e => setStartTime(e.target.value)}
-                    />
-                </div>
-                <div className="search-row">
-                    <label htmlFor="endDate">End Date</label>
-                    <input
-                        id="endDate"
-                        type="date"
-                        value={endDate}
-                        onChange={e => setEndDate(e.target.value)}
-                    />
-                </div>
-                <div className="search-row">
-                    <label htmlFor="endTime">End Time</label>
-                    <input
-                        id="endTime"
-                        type="time"
-                        value={endTime}
-                        onChange={e => setEndTime(e.target.value)}
-                    />
-                </div>
-                <div className="search-row">
-                    <label htmlFor="limit">Page Size</label>
-                    <input
-                        id="limit"
-                        type="number"
-                        min="1"
-                        max="500"
-                        value={limit}
-                        onChange={e => setLimit(Number(e.target.value || 50))}
-                    />
-                </div>
-                <div className="search-actions">
-                    <button type="submit" disabled={loading}>
-                        {loading ? 'Searching...' : 'Search'}
-                    </button>
+                <div className="search-panel search-panel-right">
+                    <div className="search-row">
+                        <label>Tag Quick Add</label>
+                        <div className="tag-quick-row">
+                            <select
+                                id="tagKey"
+                                value={tagKey}
+                                onChange={e => {
+                                    setTagKey(e.target.value);
+                                    setTagValue('');
+                                }}
+                            >
+                                <option value="">Key</option>
+                                {tagOptions.map(opt => (
+                                    <option key={opt.key} value={opt.key}>{opt.key}</option>
+                                ))}
+                            </select>
+                            <select
+                                id="tagValue"
+                                value={tagValue}
+                                onChange={e => setTagValue(e.target.value)}
+                                disabled={!tagKey}
+                            >
+                                <option value="">Value (Any)</option>
+                                {(tagOptions.find(opt => opt.key === tagKey)?.values || []).map(val => (
+                                    <option key={val} value={val}>{val}</option>
+                                ))}
+                            </select>
+                            <button type="button" className="tag-add-button" onClick={handleAddTagSelection}>
+                                Add Tag
+                            </button>
+                            <select id="tagLogic" value={tagLogic} onChange={e => setTagLogic(e.target.value)}>
+                                <option value="and">Tag Logic: AND</option>
+                                <option value="or">Tag Logic: OR</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div className="search-row">
+                        <label>Selected Tags</label>
+                        <div className="tag-selected-row">
+                            {selectedTags.length === 0 ? (
+                                <span className="tag-empty">None</span>
+                            ) : (
+                                selectedTags.map(tag => (
+                                    <button
+                                        key={tag}
+                                        type="button"
+                                        className="tag-pill removable"
+                                        onClick={() => removeTagToken(tag)}
+                                        title="Remove tag"
+                                    >
+                                        {tag} ×
+                                    </button>
+                                ))
+                            )}
+                        </div>
+                    </div>
                 </div>
             </form>
 
@@ -282,7 +347,7 @@ const Search = () => {
                         <table>
                             <thead>
                                 <tr>
-                                    <th className="sortable" onClick={toggleSort}>
+                                    <th className="sortable time-col" onClick={toggleSort}>
                                         Time {sortDirection === 'asc' ? '↑' : '↓'}
                                     </th>
                                     <th>UUID</th>
@@ -303,7 +368,7 @@ const Search = () => {
                                         const src = hit._source || {};
                                         return (
                                             <tr key={hit._id}>
-                                                <td>{formatTimestamp(src.created_at)}</td>
+                                                <td className="time-col">{formatTimestamp(src.created_at)}</td>
                                                 <td>
                                                     <Link className="uuid-link" to={`/agent?agt=${src.uuid}`}>
                                                         {src.uuid}
