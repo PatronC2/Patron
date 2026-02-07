@@ -1,0 +1,107 @@
+.new-user-container {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    max-width: 980px;
+    margin-left: auto;
+    margin-right: auto;
+    color: var(--text-color);
+}
+
+.new-user-panel {
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 12px;
+    display: grid;
+    gap: 14px;
+}
+
+.new-user-grid {
+    background: var(--surface-1);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.new-user-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.new-user-field label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+
+.new-user-container input[type="text"],
+.new-user-container input[type="password"],
+.new-user-container select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    box-sizing: border-box;
+    background-color: var(--surface-2);
+    color: var(--text-color);
+    transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+}
+
+.new-user-container input:focus,
+.new-user-container select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-bg);
+}
+
+.new-user-actions {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.new-user-container button {
+    padding: 0.6rem 1rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 6px;
+    background-color: var(--accent);
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    min-width: 160px;
+}
+
+.new-user-container button:disabled {
+    background-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+}
+
+.new-user-container .notification.success {
+    background-color: var(--success-color);
+}
+
+.new-user-container .notification.error {
+    background-color: var(--error-color);
+}
+
+.new-user-container .notification {
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-align: center;
+    color: var(--text-color);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 700px) {
+    .new-user-actions button {
+        width: 100%;
+    }
+}

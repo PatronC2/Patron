@@ -20,30 +20,58 @@ html {
 }
 
 :root {
-    --background-color: #e2f3f2;
-    --border-color: #ccc;
-    --text-color: #000000;
-    --placeholder-color: #1a1a1a80;
-    --primary-color: #66a4b0;
+    --background-color: #f4f6f8;
+    --border-color: #d0d7de;
+    --text-color: #0f1720;
+    --placeholder-color: #5f6c7a80;
+    --primary-color: #6aa7b5;
     --secondary-color: #9e1717;
-    --status-online: green;
-    --status-offline: red;
-    --success-color: lightgreen;
-    --error-color: red;
-    --header-height: 94px
+    --status-online: #1a7f37;
+    --status-offline: #b42318;
+    --success-color: #1a7f37;
+    --error-color: #b42318;
+    --header-height: 94px;
+
+    --surface-1: #ffffff;
+    --surface-2: #f0f3f6;
+    --surface-3: #e7edf2;
+    --border-subtle: rgba(15, 23, 32, 0.12);
+    --text-muted: #5f6c7a;
+
+    --accent: #1f6feb;
+    --accent-strong: #0f4fa8;
+    --accent-bg: rgba(31, 111, 235, 0.12);
+
+    --chip-bg: rgba(31, 111, 235, 0.12);
+    --chip-border: rgba(31, 111, 235, 0.35);
+    --chip-text: #0f4fa8;
 }
 
 [data-theme='dark'] {
     --background-color: #1a1a1a;
-    --border-color: #ccc;
+    --border-color: #2c2f36;
     --text-color: #ffffff;
     --placeholder-color: #9c9c9c80;
     --primary-color: #003a47;
     --secondary-color: #9e1717;
-    --status-online: green;
-    --status-offline: red;
-    --success-color: #278f2f;
+    --status-online: #2ea043;
+    --status-offline: #c92a2a;
+    --success-color: #2ea043;
     --error-color: #c92a2a;
+
+    --surface-1: #11161d;
+    --surface-2: #171c22;
+    --surface-3: #1f242b;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --text-muted: #9aa4b2;
+
+    --accent: #2f81f7;
+    --accent-strong: #1f6feb;
+    --accent-bg: rgba(88, 166, 255, 0.15);
+
+    --chip-bg: rgba(88, 166, 255, 0.15);
+    --chip-border: rgba(88, 166, 255, 0.35);
+    --chip-text: #58a6ff;
 }
 
 html, body {
@@ -61,9 +89,6 @@ body {
     width: 100%;
     height: 100%;
     background-color: var(--background-color);
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
     overflow-x: hidden;
     overflow-y: auto
 }
@@ -72,14 +97,15 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    width: 100%;
 }
 
 .main-content {
-    padding-top: calc(var(--header-height) + 1rem);
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     padding: 1rem;
+    padding-top: calc(var(--header-height) + 1rem);
     transition: margin-left 0.3s ease-in-out;
 }
 

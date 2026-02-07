@@ -1,12 +1,12 @@
 .payloads-content {
     margin: 0 auto;
-    padding: var(--header-height) 1rem 1rem;
+    padding: calc(var(--header-height)) 1.5rem 2rem;
     color: var(--text-color);
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    max-width: 1200px;
+    align-items: stretch;
+    justify-content: flex-start;
+    max-width: 1400px;
     position: relative;
     transition: margin-left 0.3s ease-in-out;
 }
@@ -17,20 +17,15 @@
     align-items: center;
     justify-content: center;
     margin: 0;
-    padding: 0.5rem 0 0.5rem;
-    background-color: var(--secondary-color);
-    width: 100vw;
-    box-sizing: border-box;
-    position: fixed;
-    top: var(--header-height);
-    left: 0;
-    z-index: 998;
-    transition: margin-left 0.3s ease-in-out;
+    padding: 0;
+    background-color: transparent;
+    width: 100%;
+    gap: 0.5rem;
 }
 
 .payloads-content .header h1 {
     color: var(--text-color);
-    margin: 0 0 1rem;
+    margin: 0 0 0.5rem;
     text-align: center;
     width: 100%;
     box-sizing: border-box;
@@ -46,25 +41,26 @@
 
 .payloads-content .header button {
     padding: 0.5rem 1rem;
-    margin: 0.5rem;
-    font-size: 1rem;
-    border: none;
-    border-radius: 4px;
-    background-color: var(--primary-color);
+    margin: 0.25rem;
+    font-size: 0.95rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: 999px;
+    background-color: var(--surface-2);
     color: var(--text-color);
     cursor: pointer;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .header button.active {
-    background-color: var(--background-color);
-    color: var(--secondary-color);
-    font-weight: bold;
+    background-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    border-color: transparent;
 }
 
 .header button:hover {
-    background-color: var(--background-color);
-    color: var(--secondary-color);
+    background-color: var(--accent-bg);
+    color: var(--text-color);
 }
 
 .payloads-content table {
@@ -73,24 +69,24 @@
     border-collapse: collapse;
     min-width: 1000px;  
     margin: 1rem 0;
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: var(--text-color);
-    border: 1px solid var(--border-color);
-    background-color: var(--background-color);
-    border-radius: 5px;
+    border: 1px solid var(--border-subtle);
+    background-color: var(--surface-1);
+    border-radius: 8px;
     overflow: hidden;
 }
 
 .payloads-content table thead {
-    background-color: var(--primary-color);
+    background-color: var(--surface-3);
     color: var(--text-color);
-    font-weight: bold;
-    border-bottom: 2px solid var(--border-color);
+    font-weight: 600;
+    border-bottom: 2px solid var(--border-subtle);
 }
 
 .payloads-content table th, table td {
     padding: 0.75rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-subtle);
     text-align: left;
     text-overflow: ellipsis;
 }
@@ -102,16 +98,16 @@
 }
 
 .payloads-content table th .header-content {
-    font-weight: bold;
-    font-size: 1.05rem;
+    font-weight: 600;
+    font-size: 0.95rem;
 }  
 
 .payloads-content tbody tr:nth-child(odd) {
-    background-color: rgba(0, 0, 0, 0.08);
+    background-color: var(--surface-2);
 }
 
 .payloads-content tbody tr:nth-child(even) {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--surface-1);
 }
 
 [data-theme='dark'] .payloads-content tbody tr:hover {
@@ -121,17 +117,17 @@
 
 [data-theme='light'] .payloads-content tbody tr:hover {
     background-color: rgba(0, 0, 0, 0.05);
-    color: var(--primary-color);
+    color: var(--text-color);
 }
 
 .payloads-content a {
-    color: var(--text-color);
+    color: var(--accent);
     text-decoration: underline;
     transition: color 0.3s ease;
 }
 
 .payloads-content a:hover {
-    color: var(--secondary-color);
+    color: var(--accent-strong);
 }
 
 .payloads-content p {
@@ -142,13 +138,13 @@
 }
 
 .payloads-content .payloads-container {
-    margin: calc(var(--header-height) + 3rem) auto 0;
-    padding: 1rem;
+    margin: 1rem auto 0;
+    padding: 0;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    max-width: 1200px;
+    align-items: stretch;
+    justify-content: flex-start;
+    max-width: 100%;
     position: relative;
 }
 
@@ -162,16 +158,16 @@
     padding: 0.25rem 0.75rem;
     white-space: nowrap;
     font-size: 0.9rem;
-    background-color: var(--primary-color);
-    color: var(--text-color);
+    background-color: var(--accent);
+    color: #fff;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
 }
 
 .payloads-content .delete-button:hover {
-    color: var(--secondary-color);
-    background-color: var(--text-color);
+    color: #fff;
+    background-color: var(--accent-strong);
 }
 
 .payloads-content .notification {
@@ -183,11 +179,11 @@
 }
 
 .payloads-content .notification.success {
-    background-color: lightgreen;
+    background-color: var(--success-color);
 }
 
 .payloads-content .notification.error {
-    background-color: red;
+    background-color: var(--error-color);
 }
 
 .payloads-content th .header-content,

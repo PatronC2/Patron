@@ -12,8 +12,9 @@ ENV HTTPS_PROXY=${HTTPS_PROXY}
 ENV NO_PROXY=${NO_PROXY}
 
 WORKDIR /app
-COPY . ./
+COPY go.mod go.sum ./
 RUN go mod download
+COPY . ./
 RUN go build -o app ./server/teamserver.go
 
 FROM alpine:latest

@@ -227,6 +227,19 @@ func InitDatabase() {
 	}
 	logger.Logf(logger.Info, "tags table initialized")
 
+	CheckpointSQL := `
+	CREATE TABLE IF NOT EXISTS opensearch_checkpoints (
+		name TEXT PRIMARY KEY,
+		last_keylog_id BIGINT NOT NULL DEFAULT 0,
+		updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+	);
+	`
+	_, err = db.Exec(CheckpointSQL)
+	if err != nil {
+		logger.Logf(logger.Error, "Failed to create opensearch_checkpoints table: %v", err)
+	}
+	logger.Logf(logger.Info, "opensearch_checkpoints table initialized")
+
 	RedirectorsSQL := `
 	CREATE TABLE IF NOT EXISTS redirectors (
 		redirector_id TEXT PRIMARY KEY,

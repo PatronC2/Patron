@@ -78,33 +78,35 @@ const NewUserForm = ({ fetchData, setActiveTab }) => {
 
     return (
         <div className="new-user-container">
-            <form onSubmit={handleSubmit}>
-                <div>
-                    <label htmlFor="username">New username:</label>
-                    <input
-                        type="text"
-                        id="username"
-                        name="username"
-                        value={formData.username}
-                        onChange={handleChange}
-                    />
+            <form onSubmit={handleSubmit} className="new-user-panel">
+                <div className="new-user-grid">
+                    <div className="new-user-field">
+                        <label htmlFor="username">New username</label>
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            value={formData.username}
+                            onChange={handleChange}
+                        />
+                    </div>
+                    <div className="new-user-field">
+                        <label htmlFor="role">User role</label>
+                        <select
+                            id="role"
+                            name="role"
+                            value={formData.role}
+                            onChange={handleChange}
+                        >
+                            <option value="readOnly">Read-Only</option>
+                            <option value="operator">Operator</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
                 </div>
-                <div>
-                    <label htmlFor="role">User role:</label>
-                    <select
-                        id="role"
-                        name="role"
-                        value={formData.role}
-                        onChange={handleChange}
-                    >
-                        <option value="readOnly">Read-Only</option>
-                        <option value="operator">Operator</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-                <div className="input-container">
-                    <div className="label-input-container">
-                        <label htmlFor="password">Password:</label>
+                <div className="new-user-grid">
+                    <div className="new-user-field">
+                        <label htmlFor="password">Password</label>
                         <input
                             type="password"
                             id="password"
@@ -113,8 +115,8 @@ const NewUserForm = ({ fetchData, setActiveTab }) => {
                             onChange={handleChange}
                         />
                     </div>
-                    <div className="label-input-container">
-                        <label htmlFor="confirmPassword">Confirm Password:</label>
+                    <div className="new-user-field">
+                        <label htmlFor="confirmPassword">Confirm Password</label>
                         <input
                             type="password"
                             id="confirmPassword"
@@ -124,7 +126,9 @@ const NewUserForm = ({ fetchData, setActiveTab }) => {
                         />
                     </div>
                 </div>
-                <button type="submit">Create User</button>
+                <div className="new-user-actions">
+                    <button type="submit">Create User</button>
+                </div>
                 {notification && (
                     <div className={`notification ${notificationType}`}>
                         {notification}

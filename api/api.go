@@ -98,6 +98,7 @@ func main() {
 	r.GET("/api/agent/:agt", api.Auth(readRoles), api.GetOneAgentByUUID)
 	r.GET("/api/commands/:agt", api.Auth(readRoles), api.GetAgentCommandsByUUID)
 	r.GET("/api/keylog/:agt", api.Auth(readRoles), api.GetKeylogHandler)
+	r.GET("/api/opensearch/keylogs", api.Auth(readRoles), api.SearchKeylogsHandler)
 	r.GET("/api/payloads", api.Auth(readRoles), api.GetPayloadsHandler)
 	r.GET("/api/payloadconfs", api.Auth(readRoles), api.GetConfigurationsHandler)
 	r.GET("/api/notes/:agt", api.Auth(readRoles), api.GetNoteHandler)

@@ -287,6 +287,10 @@ encpubkey=$(base64 -w 0 certs/server.pem)
 JWT_KEY=$(openssl rand -base64 32)
 REPO_DIR=$(pwd)
 
+# Users have no real purpose in accessing opensearch directly
+opensearch_pw=$(LC_ALL=C tr -dc 'A-Za-z0-9_+-' </dev/urandom | head -c 20 || true)
+
+
 cat <<EOF > .env
 WEBSERVER_PORT=$webserverport
 TCP_LISTENER_IP=$tcplistenerip
@@ -316,6 +320,7 @@ HTTP_PROXY=$http_proxy
 HTTPS_PROXY=$https_proxy
 NO_PROXY=$no_proxy
 PROMETHEUS_ENABLED=$prometheus_enabled
+OPENSEARCH_PASSWORD=$opensearch_pw
 EOF
 
 export $(grep -v '^#' .env | xargs)

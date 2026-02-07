@@ -16,6 +16,7 @@ type Payload struct {
 type BuildConfig struct {
 	Type         string   `json:"type"`
 	Description  string   `json:"description"`
+	OS           string   `json:"os"`
 	CodePath     string   `json:"code_path"`
 	Flags        string   `json:"flags"`
 	Environment  string   `json:"environment"`

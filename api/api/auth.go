@@ -14,6 +14,10 @@ import (
 )
 
 var jwtKey []byte
+var (
+	ErrTokenExpired           = errors.New("token expired")
+	ErrInsufficientPrivileges = errors.New("insufficient privileges")
+)
 
 func InitAuth() {
 	jwtKeyStr := os.Getenv("JWT_KEY")
@@ -30,7 +34,11 @@ func Auth(validRoles []string) gin.HandlerFunc {
 		}
 		err := ValidateToken(tokenString, validRoles)
 		if err != nil {
-			context.JSON(401, gin.H{"error": err.Error()})
+			if errors.Is(err, ErrInsufficientPrivileges) {
+				context.JSON(403, gin.H{"error": err.Error()})
+			} else {
+				context.JSON(401, gin.H{"error": err.Error()})
+			}
 			context.Abort()
 			return
 		}
@@ -86,13 +94,13 @@ func ValidateToken(signedToken string, validRoles []string) (err error) {
 	}
 
 	if claims.ExpiresAt < time.Now().Local().Unix() {
-		err = errors.New("token expired")
+		err = ErrTokenExpired
 		return
 	}
 
 	if !contains(validRoles, claims.Role) {
 		logger.Logf(logger.Info, "Insufficient Prvileges")
-		err = errors.New("insufficient privileges")
+		err = ErrInsufficientPrivileges
 		return
 	}
 	return
@@ -151,5 +159,5 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	c.JSON(http.StatusOK, gin.H{"token": token, "role": user.Role})
 }

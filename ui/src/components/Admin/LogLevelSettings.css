@@ -1,0 +1,136 @@
+.log-settings {
+    color: var(--text-color);
+    max-width: 1100px;
+    margin: 1.5rem auto;
+    display: grid;
+    gap: 1.5rem;
+}
+
+.log-settings-panel {
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+    box-sizing: border-box;
+}
+
+.log-card {
+    background: var(--surface-1);
+    border-radius: 14px;
+    border: 1px solid var(--border-subtle);
+    padding: 1.5rem;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.log-card-header h3 {
+    margin: 0 0 0.35rem;
+}
+
+.log-card-header p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    word-break: break-word;
+}
+
+.log-card-body {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+    align-items: start;
+    min-width: 0;
+}
+
+.log-control {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.log-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.log-inputs {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(90px, 120px);
+    gap: 0.75rem;
+}
+
+.log-card select,
+.log-card input {
+    padding: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+    background-color: var(--surface-2);
+    color: var(--text-color);
+    font-size: 1rem;
+    width: 100%;
+    transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+    min-width: 0;
+}
+
+.log-card select:focus,
+.log-card input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-bg);
+}
+
+.log-action {
+    background-color: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    min-width: 180px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    white-space: normal;
+    text-align: center;
+    justify-self: start;
+}
+
+.log-action:hover {
+    background-color: var(--accent-strong);
+    color: #fff;
+}
+
+.notification {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-align: center;
+    color: var(--text-color);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.notification.success {
+    background-color: var(--success-color);
+}
+
+.notification.error {
+    background-color: var(--error-color);
+}
+
+@media (max-width: 700px) {
+    .log-settings-panel {
+        grid-template-columns: 1fr;
+    }
+
+    .log-action {
+        width: 100%;
+        justify-self: stretch;
+    }
+}

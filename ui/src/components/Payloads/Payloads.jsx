@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAxios } from '../../context/AxiosProvider';
-import NewPayloadForm from './NewPayloadForm';
+import PayloadWizard from './PayloadWizard';
 import { useTable } from 'react-table';
 import { ResizableBox } from 'react-resizable';
 import 'react-resizable/css/styles.css';
@@ -12,7 +12,7 @@ const Payloads = () => {
     const axios = useAxios();
     const [data, setData] = useState([]);
     const [error, setError] = useState(null);
-    const [activeTab, setActiveTab] = useState('current_payloads');
+    const [showWizard, setShowWizard] = useState(false);
     const [notification, setNotification] = useState('');
     const [notificationType, setNotificationType] = useState('');
 
@@ -139,45 +139,47 @@ const Payloads = () => {
             <div className="header">
                 <h1>Payloads</h1>
                 <div className="header-buttons">
-                    <button className={activeTab === 'current_payloads' ? 'active' : ''} onClick={() => setActiveTab('current_payloads')}>Existing Payloads</button>
-                    <button className={activeTab === 'new' ? 'active' : ''} onClick={() => setActiveTab('new')}>Create New Payload</button>
+                    <button className="active" onClick={() => setShowWizard(true)}>Create New Payload</button>
                 </div>
             </div>
 
-            {activeTab === 'current_payloads' ? (
-                <div className="payloads-container">
-                    {data.length > 0 ? (
-                        <div className="table-wrapper">
-                            <table {...getTableProps()}>
-                                <thead>
-                                    {headerGroups.map(headerGroup => (
-                                        <tr {...headerGroup.getHeaderGroupProps()}>
-                                            {headerGroup.headers.map(renderResizableHeader)}
+            <div className="payloads-container">
+                {data.length > 0 ? (
+                    <div className="table-wrapper">
+                        <table {...getTableProps()}>
+                            <thead>
+                                {headerGroups.map(headerGroup => (
+                                    <tr {...headerGroup.getHeaderGroupProps()}>
+                                        {headerGroup.headers.map(renderResizableHeader)}
+                                    </tr>
+                                ))}
+                            </thead>
+                            <tbody {...getTableBodyProps()}>
+                                {rows.map(row => {
+                                    prepareRow(row);
+                                    return (
+                                        <tr {...row.getRowProps()}>
+                                            {row.cells.map(cell => (
+                                                <td {...cell.getCellProps()}>
+                                                    <div className="cell-content">{cell.render('Cell')}</div>
+                                                </td>
+                                            ))}
                                         </tr>
-                                    ))}
-                                </thead>
-                                <tbody {...getTableBodyProps()}>
-                                    {rows.map(row => {
-                                        prepareRow(row);
-                                        return (
-                                            <tr {...row.getRowProps()}>
-                                                {row.cells.map(cell => (
-                                                    <td {...cell.getCellProps()}>
-                                                        <div className="cell-content">{cell.render('Cell')}</div>
-                                                    </td>
-                                                ))}
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    ) : (
-                        <p>No Payloads</p>
-                    )}
-                </div>
-            ) : (
-                <NewPayloadForm fetchData={fetchData} setActiveTab={setActiveTab} />
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <p>No Payloads</p>
+                )}
+            </div>
+
+            {showWizard && (
+                <PayloadWizard
+                    fetchData={fetchData}
+                    onClose={() => setShowWizard(false)}
+                />
             )}
 
             {notification && (

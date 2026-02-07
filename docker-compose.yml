@@ -47,6 +47,8 @@ services:
       QUIC_LISTENER_PORT: ${QUIC_LISTENER_PORT}
       DOCKER_HTTPS_PROXY: ${HTTPS_PROXY}
       PROMETHEUS_ENABLED: ${PROMETHEUS_ENABLED}
+      OPENSEARCH_USERNAME: admin
+      OPENSEARCH_PASSWORD: ${OPENSEARCH_PASSWORD}
     restart: always
     volumes:
       - ./logs:/app/logs
@@ -103,6 +105,7 @@ services:
       - REACT_SERVER=patron_c2_frontend:${PORT}
       - REACT_APP_NGINX_PORT=${REACT_APP_NGINX_PORT}
       - API_SERVER=patron_c2_api:${WEBSERVER_PORT}
+      - OPENSEARCH_DASHBOARDS_SERVER=dashboards
     networks:
       - internal_c2_network
     ports:
@@ -111,6 +114,41 @@ services:
       patron_c2_frontend:
         condition: service_healthy
 
+  opensearch:
+    image: opensearchproject/opensearch:2.14.0
+    environment:
+      - discovery.type=single-node
+      - plugins.security.ssl.http.enabled=false
+      - OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_PASSWORD}
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    networks:
+      - internal_c2_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -u admin:${OPENSEARCH_PASSWORD} http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  indexer:
+    image: patronc2/indexer
+    networks:
+      - internal_c2_network
+    depends_on:
+      patron_c2_api:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+    environment:
+      DB_HOST: patron_c2_postgres
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+      OPENSEARCH_USERNAME: admin
+      OPENSEARCH_PASSWORD: ${OPENSEARCH_PASSWORD}
+    
   patron_c2_bot:
     image: patronc2/bot
     environment:
@@ -139,3 +177,4 @@ networks:
 
 volumes:
   agent_files:
+  opensearch_data:

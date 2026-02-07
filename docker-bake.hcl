@@ -147,6 +147,21 @@ target "api-base" {
   ]
 }
 
+target "indexer-base" {
+  dockerfile = "Dockerfile.indexer"
+  context = "."
+  args = {
+    HTTP_PROXY = "${HTTP_PROXY}"
+    HTTPS_PROXY = "${HTTPS_PROXY}"
+    NO_PROXY = "${NO_PROXY}"
+    GOVERSION = "${GOVERSION}"
+  }
+  tags = [
+    "${REGISTRY}/indexer:${TAG}",
+    "${REGISTRY}/indexer:${LATEST_TAG}"
+  ]
+}
+
 target "bot-base" {
   dockerfile = "./bot/Dockerfile.bot"
   context = "."
@@ -176,6 +191,11 @@ target "postgres-local" {
 
 target "api-local" {
   inherits = ["api-base"]
+  output = ["type=docker"]
+}
+
+target "indexer-local" {
+  inherits = ["indexer-base"]
   output = ["type=docker"]
 }
 
@@ -214,6 +234,11 @@ target "api-release" {
   output = ["type=registry"]
 }
 
+target "indexer-release" {
+  inherits = ["indexer-base"]
+  output = ["type=registry"]
+}
+
 target "ui-release" {
   inherits = ["ui-base"]
   output = ["type=registry"]
@@ -235,11 +260,11 @@ target "bot-release" {
 }
 
 group "local" {
-    targets = ["nginx-local", "postgres-local", "api-local", "ui-local", "server-local", "redirector-local", "bot-local"]
+    targets = ["nginx-local", "postgres-local", "api-local", "ui-local", "server-local", "redirector-local", "indexer-local", "bot-local"]
 }
 
 group "release" {
-    targets = ["nginx-release", "postgres-release", "api-release", "ui-release", "server-release", "redirector-release", "bot-release"]
+    targets = ["nginx-release", "postgres-release", "api-release", "ui-release", "server-release", "redirector-release", "indexer-release", "bot-release"]
 }
 
 group "default" {
