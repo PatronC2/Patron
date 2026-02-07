@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import qs from 'qs';
 import { useAxios } from '../../context/AxiosProvider';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AuthContext from '../../context/AuthProvider';
 import AgentFilters from './AgentFilters';
 import './Home.css';
@@ -10,6 +10,8 @@ const Home = ({ isMenuOpen }) => {
     const axios = useAxios();
     const { auth } = useContext(AuthContext);
     const navigate = useNavigate();
+    const location = useLocation();
+    const didInitFromQuery = useRef(false);
 
     const [error, setError] = useState(null);
     const [agents, setAgents] = useState([]);
@@ -78,6 +80,35 @@ const Home = ({ isMenuOpen }) => {
     }, []);
 
     useEffect(() => {
+        if (didInitFromQuery.current) return;
+        const params = qs.parse(location.search, { ignoreQueryPrefix: true });
+        if (params.hostname) setHostnameFilter(params.hostname);
+        if (params.ip) setIpFilter(params.ip);
+        if (params.status) setStatusFilter(params.status);
+        if (params.logic) setLogic(params.logic);
+        if (params.sort) {
+            const [field, direction] = String(params.sort).split(':');
+            if (field) setSortField(field);
+            if (direction) setSortDirection(direction);
+        }
+        if (params.offset) {
+            const parsedOffset = parseInt(params.offset, 10);
+            if (!Number.isNaN(parsedOffset)) setOffset(parsedOffset);
+        }
+        const tagParams = params.tag
+            ? (Array.isArray(params.tag) ? params.tag : [params.tag])
+            : [];
+        if (tagParams.length > 0) {
+            const nextConditions = tagParams.map((t) => {
+                const [key, ...rest] = String(t).split(':');
+                return { key, value: rest.join(':') };
+            });
+            setTagConditions(nextConditions);
+        }
+        didInitFromQuery.current = true;
+    }, [location.search]);
+
+    useEffect(() => {
         const id = setInterval(() => setNow(Date.now()), 1000);
         return () => clearInterval(id);
     }, []);
@@ -97,6 +128,22 @@ const Home = ({ isMenuOpen }) => {
     useEffect(() => {
         fetchAgents();
     }, [offset, hostnameFilter, ipFilter, statusFilter, tagConditions, logic, sortField, sortDirection]);
+
+    useEffect(() => {
+        if (!didInitFromQuery.current) return;
+        const params = {
+            ...(hostnameFilter && { hostname: hostnameFilter }),
+            ...(ipFilter && { ip: ipFilter }),
+            ...(statusFilter && { status: statusFilter }),
+            ...(logic && { logic }),
+            ...(offset > 0 && { offset }),
+            sort: `${sortField}:${sortDirection}`
+        };
+        const tags = tagConditions.filter(tc => tc.key && tc.value).map(tc => `${tc.key}:${tc.value}`);
+        if (tags.length > 0) params.tag = tags;
+        const query = qs.stringify(params, { arrayFormat: 'repeat' });
+        navigate({ pathname: '/home', search: query ? `?${query}` : '' }, { replace: true });
+    }, [hostnameFilter, ipFilter, statusFilter, tagConditions, logic, sortField, sortDirection, offset, navigate]);
 
     const handleSort = (field) => {
         if (sortField === field) {

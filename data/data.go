@@ -76,6 +76,7 @@ func InitDatabase() {
 			5
 			+ COALESCE(NULLIF(a.callback_freq,'Unknown'),'0')::int
 			* (COALESCE(NULLIF(a.callback_jitter,'Unknown'),'0')::numeric / 100.0)
+			+ 30
 		)
 		) THEN 'Offline'
 		ELSE 'Online'
