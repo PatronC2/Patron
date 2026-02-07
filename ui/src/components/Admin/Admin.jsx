@@ -2,11 +2,11 @@ import React, { useEffect, useState, useContext } from 'react';
 import { useAxios } from '../../context/AxiosProvider';
 import AuthContext from '../../context/AuthProvider';
 import NewUserForm from './NewUser';
-import ChangePasswordForm from './ModifyUser';
+import AdminUserWizard from './AdminUserWizard';
 import LogLevelSettings from './LogLevelSettings';
-import './Users.css';
+import './Admin.css';
 
-const Users = () => {
+const Admin = () => {
     const axios = useAxios();
     const { auth } = useContext(AuthContext);
     const [data, setData] = useState([]);
@@ -15,6 +15,7 @@ const Users = () => {
     const [notification, setNotification] = useState('');
     const [notificationType, setNotificationType] = useState('');
     const [selectedUser, setSelectedUser] = useState(null);
+    const [showUserWizard, setShowUserWizard] = useState(false);
 
     useEffect(() => {
         document.body.classList.add('users-page');
@@ -72,7 +73,7 @@ const Users = () => {
 
     const handleUserClick = (user) => {
         setSelectedUser(user);
-        setActiveTab('edit_user');
+        setShowUserWizard(true);
     };
 
     const handleDeleteUser = async (userId) => {
@@ -164,11 +165,6 @@ const Users = () => {
                 )
             ) : activeTab === 'new_user' ? (
                 <NewUserForm fetchData={fetchData} setActiveTab={setActiveTab} />
-            ) : activeTab === 'edit_user' && selectedUser ? (
-                <div>
-                    <h2>Edit User: {selectedUser.Username}</h2>
-                    <ChangePasswordForm username={selectedUser.Username} setActiveTab={setActiveTab} />
-                </div>
             ) : activeTab === 'server_settings' ? (
                 <LogLevelSettings appName="server" />
             ) : activeTab === 'api_settings' ? (
@@ -181,9 +177,15 @@ const Users = () => {
                     {notification}
                 </div>
             )}
+            {showUserWizard && selectedUser && (
+                <AdminUserWizard
+                    username={selectedUser.Username}
+                    onClose={() => setShowUserWizard(false)}
+                />
+            )}
         </div>
     );    
 
 };
 
-export default Users;
+export default Admin;

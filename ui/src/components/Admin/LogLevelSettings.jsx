@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useAxios } from '../../context/AxiosProvider';
 import AuthContext from '../../context/AuthProvider';
+import './LogLevelSettings.css';
 
 const LogLevelSettings = ({ appName }) => {
 	const axios = useAxios();
@@ -84,34 +85,52 @@ const LogLevelSettings = ({ appName }) => {
 
 	return (
 		<div className="log-settings">
-			<div className="log-section">
-				<h3>Log Level</h3>
-				<select value={logLevel} onChange={(e) => setLogLevel(e.target.value)}>
-					<option value="debug">Debug</option>
-					<option value="info">Info</option>
-					<option value="warning">Warning</option>
-					<option value="error">Error</option>
-				</select>
-				<button onClick={handleLevelUpdate}>Update Log Level</button>
-			</div>
+			<div className="log-settings-panel">
+				<div className="log-card">
+					<div className="log-card-header">
+						<h3>Log Level</h3>
+						<p>Control how verbose the server logs are.</p>
+					</div>
+					<div className="log-card-body">
+						<div className="log-control">
+							<label className="log-label" htmlFor={`log-level-${appName}`}>Level</label>
+							<select id={`log-level-${appName}`} value={logLevel} onChange={(e) => setLogLevel(e.target.value)}>
+								<option value="debug">Debug</option>
+								<option value="info">Info</option>
+								<option value="warning">Warning</option>
+								<option value="error">Error</option>
+							</select>
+						</div>
+						<button className="log-action" onClick={handleLevelUpdate}>Update Log Level</button>
+					</div>
+				</div>
 
-			<div className="log-section">
-                <h3>Max Log File Size</h3>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <input
-                        type="number"
-                        value={logSize}
-                        onChange={(e) => setLogSize(e.target.value)}
-                        placeholder="Enter size"
-                        style={{ width: '100px' }}
-                    />
-                    <select value={unit} onChange={(e) => setUnit(e.target.value)}>
-                        <option value="MB">MB</option>
-                        <option value="GB">GB</option>
-                    </select>
-                    <button onClick={handleSizeUpdate}>Update Log Size</button>
-                </div>
-            </div>
+				<div className="log-card">
+					<div className="log-card-header">
+						<h3>Max Log File Size</h3>
+						<p>Set the maximum size before log rotation.</p>
+					</div>
+					<div className="log-card-body">
+						<div className="log-control">
+							<label className="log-label" htmlFor={`log-size-${appName}`}>Size</label>
+							<div className="log-inputs">
+								<input
+									id={`log-size-${appName}`}
+									type="number"
+									value={logSize}
+									onChange={(e) => setLogSize(e.target.value)}
+									placeholder="Enter size"
+								/>
+								<select value={unit} onChange={(e) => setUnit(e.target.value)}>
+									<option value="MB">MB</option>
+									<option value="GB">GB</option>
+								</select>
+							</div>
+						</div>
+						<button className="log-action" onClick={handleSizeUpdate}>Update Log Size</button>
+					</div>
+				</div>
+			</div>
 
 			{notification && (
 				<div className={`notification ${notificationType}`}>

@@ -33,7 +33,8 @@ const Login = ({ onSuccessfulLogin }) => {
                 }
             );
             const accessToken = response?.data?.token;
-            setAuth({ user, token: accessToken });
+            const role = response?.data?.role;
+            setAuth({ user, token: accessToken, role });
             setUser('');
             setPwd('');
             onSuccessfulLogin();

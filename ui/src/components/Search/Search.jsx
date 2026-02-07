@@ -193,7 +193,7 @@ const Search = () => {
     return (
         <div className="search-container">
             <div className="search-header">
-                <h1>Keylog Search (Beta)</h1>
+                <h1>Keylog Search</h1>
                 <p className="search-subtitle">Search contents, filter by IP, tags, and time range.</p>
             </div>
 
