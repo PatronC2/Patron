@@ -14,6 +14,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/kardianos/service v1.2.2
 	github.com/lib/pq v1.10.9
+	github.com/opensearch-project/opensearch-go/v2 v2.3.0
 	github.com/prometheus/client_golang v1.22.0
 	github.com/quic-go/quic-go v0.52.0
 	github.com/zsais/go-gin-prometheus v1.0.2
