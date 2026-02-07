@@ -1,0 +1,184 @@
+.wizard-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 3000;
+}
+
+.wizard-card {
+    width: min(980px, 95vw);
+    max-height: 90vh;
+    background: var(--surface-1);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.wizard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.wizard-header h2 {
+    margin: 0 0 6px 0;
+}
+
+.wizard-steps {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.wizard-steps span {
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border-subtle);
+}
+
+.wizard-steps span.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: transparent;
+}
+
+.wizard-close {
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-color);
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.wizard-close:hover {
+    background: var(--surface-2);
+}
+
+.wizard-body {
+    padding: 20px;
+    overflow: auto;
+}
+
+.wizard-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.wizard-footer button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+}
+
+.wizard-footer button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.wizard-step h3 {
+    margin: 0 0 12px;
+}
+
+.wizard-options {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.wizard-option {
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border-subtle);
+    background: var(--surface-2);
+    color: var(--text-color);
+    cursor: pointer;
+}
+
+.wizard-option.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: transparent;
+}
+
+.wizard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.wizard-card-title {
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.wizard-card-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.wizard-type-card {
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle);
+    background: var(--surface-2);
+    color: var(--text-color);
+    text-align: left;
+    cursor: pointer;
+}
+
+.wizard-type-card.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-bg);
+}
+
+.wizard-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.wizard-form label {
+    grid-column: span 2;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.wizard-form input,
+.wizard-form select,
+.wizard-form textarea {
+    grid-column: span 2;
+    padding: 8px 10px;
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--text-color);
+}
+
+.wizard-review {
+    display: grid;
+    gap: 8px;
+    font-size: 14px;
+}
+
+@media (max-width: 900px) {
+    .wizard-form {
+        grid-template-columns: 1fr;
+    }
+}

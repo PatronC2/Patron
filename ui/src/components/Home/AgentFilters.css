@@ -12,6 +12,25 @@
     margin-top: 0;
 }
 
+.filters-side-panel input,
+.filters-side-panel select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    background-color: var(--surface-2);
+    color: var(--text-color);
+    box-sizing: border-box;
+}
+
+.filters-side-panel input:focus,
+.filters-side-panel select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-bg);
+}
+
 
 .filters-side-panel .tag-condition {
     display: flex;
