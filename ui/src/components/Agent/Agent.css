@@ -222,6 +222,32 @@
   overflow-y: auto;
 }
 
+.agent-container .keylogs-filters {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.agent-container .keylogs-filters label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.agent-container .keylogs-filters select {
+    padding: 6px 10px;
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    background: var(--surface-1);
+    color: var(--text-color);
+}
+
+.agent-container .keylogs-meta {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
 .agent-container .keylogs-list ul {
     list-style: none;
     padding: 0;

