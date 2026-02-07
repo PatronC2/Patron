@@ -42,6 +42,7 @@ const Agent = () => {
   const [tags, setTags] = useState([]);
   const [newKey, setNewKey] = useState('');
   const [newValue, setNewValue] = useState('');
+  const [now, setNow] = useState(Date.now());
 
   // States related to Files tab
   const [files, setFiles] = useState([]);
@@ -200,6 +201,11 @@ const Agent = () => {
   }, [location.search, activeTab]);
 
   useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
     const handleScroll = () => {
       if (!commandListRef.current) return;
   
@@ -281,6 +287,14 @@ const Agent = () => {
   if (!data) {
     return <p>No data available</p>;
   }
+
+  const formatCountdown = (nextCallbackUnix) => {
+    if (!nextCallbackUnix) return '—';
+    const delta = Math.floor(nextCallbackUnix - now / 1000);
+    if (Number.isNaN(delta)) return '—';
+    if (delta <= 0) return 'due';
+    return `${delta}s`;
+  };
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
@@ -549,8 +563,8 @@ const Agent = () => {
 
   const renderTagsTab = () => {
     return (
-      <div>
-        <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+      <div className="tags-tab">
+        <div className="tags-list">
           <table>
             <thead>
               <tr>
@@ -573,27 +587,29 @@ const Agent = () => {
           </table>
         </div>
 
-        <h3>Add / Modify Tags</h3>
-        <form onSubmit={handleAddTag}>
-          <div>
-            <label>Key: </label>
-            <input
-              type="text"
-              value={newKey}
-              onChange={(e) => setNewKey(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label>Value: </label>
-            <input
-              type="text"
-              value={newValue}
-              onChange={(e) => setNewValue(e.target.value)}
-            />
-          </div>
-          <button type="submit">Add Tag</button>
-        </form>
+        <div className="tags-form">
+          <h3>Add / Modify Tags</h3>
+          <form onSubmit={handleAddTag}>
+            <div>
+              <label>Key: </label>
+              <input
+                type="text"
+                value={newKey}
+                onChange={(e) => setNewKey(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label>Value: </label>
+              <input
+                type="text"
+                value={newValue}
+                onChange={(e) => setNewValue(e.target.value)}
+              />
+            </div>
+            <button type="submit">Add Tag</button>
+          </form>
+        </div>
       </div>
     );
   };
@@ -606,6 +622,8 @@ const Agent = () => {
             </div>
             <div className="agent-status">
                 <div>Status: {data.status}</div>
+                <div>Agent IP: {data.agentip || '—'}</div>
+                <div>Next Callback: {formatCountdown(data.nextcallback_unix)}</div>
                 <div>OS: {data.osbuild} {data.arch}</div>
                 <div>CPUs: {data.cpus} Memory: {data.memory}GB</div>
             </div>

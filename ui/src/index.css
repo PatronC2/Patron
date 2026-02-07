@@ -101,11 +101,11 @@ body {
 }
 
 .main-content {
-    padding-top: calc(var(--header-height) + 1rem);
     display: flex;
     flex-direction: column;
     align-items: stretch;
     padding: 1rem;
+    padding-top: calc(var(--header-height) + 1rem);
     transition: margin-left 0.3s ease-in-out;
 }
 
