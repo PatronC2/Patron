@@ -74,12 +74,21 @@ const Home = ({ isMenuOpen }) => {
     useEffect(() => {
         fetchTagOptions();
         fetchMetrics();
+        fetchAgents();
     }, []);
 
     useEffect(() => {
         const id = setInterval(() => setNow(Date.now()), 1000);
         return () => clearInterval(id);
     }, []);
+
+    useEffect(() => {
+        const id = setInterval(() => {
+            fetchMetrics();
+            fetchAgents();
+        }, 10000);
+        return () => clearInterval(id);
+    }, [offset, hostnameFilter, ipFilter, statusFilter, tagConditions, logic, sortField, sortDirection]);
 
     useEffect(() => {
         setOffset(0);
