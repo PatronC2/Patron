@@ -230,6 +230,8 @@
     border-radius: 6px;
     cursor: pointer;
     font-size: 12px;
+    min-width: 64px;
+    white-space: nowrap;
 }
 
 .contents-button:hover {
@@ -275,6 +277,20 @@
 }
 
 .uuid-link:visited {
+    color: var(--text-muted);
+}
+
+.agent-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.agent-link:hover {
+    text-decoration: underline;
+}
+
+.agent-link:visited {
     color: var(--text-muted);
 }
 

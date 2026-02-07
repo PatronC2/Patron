@@ -350,7 +350,7 @@ const Search = () => {
                                     <th className="sortable time-col" onClick={toggleSort}>
                                         Time {sortDirection === 'asc' ? '↑' : '↓'}
                                     </th>
-                                    <th>UUID</th>
+                                    <th>Agent</th>
                                     <th>IP</th>
                                     <th>Contents</th>
                                     <th>Tags</th>
@@ -370,8 +370,8 @@ const Search = () => {
                                             <tr key={hit._id}>
                                                 <td className="time-col">{formatTimestamp(src.created_at)}</td>
                                                 <td>
-                                                    <Link className="uuid-link" to={`/agent?agt=${src.uuid}`}>
-                                                        {src.uuid}
+                                                    <Link className="agent-link" to={`/agent?agt=${src.uuid}`}>
+                                                        Open
                                                     </Link>
                                                 </td>
                                                 <td>{src.ip}</td>
