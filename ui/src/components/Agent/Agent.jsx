@@ -11,6 +11,7 @@ const Agent = () => {
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const initialLoadRef = useRef(true);
   const [activeTab, setActiveTab] = useState('commands');
   
   // States related to commands tab
@@ -65,8 +66,9 @@ const Agent = () => {
       return;
     }
 
+    const wasInitialLoad = initialLoadRef.current;
     try {
-      if (!data) {
+      if (wasInitialLoad) {
         setLoading(true);
       }
       const queryParam = getQueryParam('agt');
@@ -135,8 +137,9 @@ const Agent = () => {
     } catch (err) {
       setError(err.message);
     } finally {
-      if (!data) {
+      if (wasInitialLoad) {
         setLoading(false);
+        initialLoadRef.current = false;
       }
     }
   };
@@ -229,6 +232,11 @@ const Agent = () => {
 
     return () => clearInterval(interval);
   }, [location.search, activeTab]);
+
+  useEffect(() => {
+    initialLoadRef.current = true;
+    setLoading(true);
+  }, [location.search]);
 
   useEffect(() => {
     if (activeTab !== 'keys') return;
