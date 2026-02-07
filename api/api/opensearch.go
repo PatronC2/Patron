@@ -73,6 +73,7 @@ func SearchKeylogsHandler(c *gin.Context) {
 
 	limit := parseQueryInt(c, "limit", 50, 1, 500)
 	offset := parseQueryInt(c, "offset", 0, 0, 1000000)
+	sortField, sortDir := parseSort(c.DefaultQuery("sort", "created_at:desc"))
 
 	query := buildKeylogQuery(q, uuid, ip, start, end, c.QueryArray("tag"), tagLogic, true)
 
@@ -81,7 +82,7 @@ func SearchKeylogsHandler(c *gin.Context) {
 		"size":  limit,
 		"query": query,
 		"sort": []map[string]interface{}{
-			{"created_at": map[string]interface{}{"order": "desc"}},
+			{sortField: map[string]interface{}{"order": sortDir}},
 		},
 	}
 
@@ -109,7 +110,7 @@ func SearchKeylogsHandler(c *gin.Context) {
 				"size":  limit,
 				"query": fallbackQuery,
 				"sort": []map[string]interface{}{
-					{"created_at": map[string]interface{}{"order": "desc"}},
+					{sortField: map[string]interface{}{"order": sortDir}},
 				},
 			}); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to encode search body"})
@@ -316,4 +317,24 @@ func parseQueryInt(c *gin.Context, key string, def, min, max int) int {
 		return max
 	}
 	return val
+}
+
+func parseSort(raw string) (string, string) {
+	field := "created_at"
+	dir := "desc"
+	if raw == "" {
+		return field, dir
+	}
+	parts := strings.Split(raw, ":")
+	if len(parts) >= 1 && parts[0] != "" {
+		if parts[0] == "created_at" {
+			field = parts[0]
+		}
+	}
+	if len(parts) >= 2 {
+		if parts[1] == "asc" || parts[1] == "desc" {
+			dir = parts[1]
+		}
+	}
+	return field, dir
 }

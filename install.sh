@@ -288,7 +288,7 @@ JWT_KEY=$(openssl rand -base64 32)
 REPO_DIR=$(pwd)
 
 # Users have no real purpose in accessing opensearch directly
-opensearch_pw="$(tr -dc 'A-Za-z0-9\-_+' < /dev/urandom | head -c 20)""
+opensearch_pw=$(LC_ALL=C tr -dc 'A-Za-z0-9_+-' </dev/urandom | head -c 20 || true)
 
 
 cat <<EOF > .env

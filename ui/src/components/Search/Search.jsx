@@ -12,14 +12,17 @@ const Search = () => {
     const [ip, setIp] = useState('');
     const [tagsInput, setTagsInput] = useState('');
     const [tagLogic, setTagLogic] = useState('and');
-    const [start, setStart] = useState('');
-    const [end, setEnd] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [startTime, setStartTime] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [endTime, setEndTime] = useState('');
     const [limit, setLimit] = useState(50);
     const [offset, setOffset] = useState(0);
     const [total, setTotal] = useState(null);
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [sortDirection, setSortDirection] = useState('desc');
     const [activeContent, setActiveContent] = useState(null);
 
     const parseTags = (input) => {
@@ -29,19 +32,26 @@ const Search = () => {
             .filter(Boolean);
     };
 
-    const fetchResults = async (nextOffset = 0) => {
+    const fetchResults = async (nextOffset = 0, sortOverride = null) => {
         setLoading(true);
         setError('');
         try {
             const tags = parseTags(tagsInput);
+            const buildDateTime = (date, time) => {
+                if (!date) return '';
+                const t = time ? time : '00:00';
+                return `${date}T${t}`;
+            };
+            const effectiveSort = sortOverride || sortDirection;
             const params = {
                 ...(q && { q }),
                 ...(uuid && { uuid }),
                 ...(ip && { ip }),
-                ...(start && { start }),
-                ...(end && { end }),
+                ...(startDate && { start: buildDateTime(startDate, startTime) }),
+                ...(endDate && { end: buildDateTime(endDate, endTime) }),
                 ...(tags.length > 0 && { tag: tags }),
                 tag_logic: tagLogic,
+                sort: `created_at:${effectiveSort}`,
                 limit,
                 offset: nextOffset
             };
@@ -100,6 +110,12 @@ const Search = () => {
                 </button>
             );
         });
+    };
+
+    const toggleSort = () => {
+        const next = sortDirection === 'asc' ? 'desc' : 'asc';
+        setSortDirection(next);
+        fetchResults(0, next);
     };
 
     const addTagToken = (token) => {
@@ -198,21 +214,39 @@ const Search = () => {
                     </select>
                 </div>
                 <div className="search-row">
-                    <label htmlFor="start">Start</label>
+                    <label htmlFor="startDate">Start Date</label>
                     <input
-                        id="start"
-                        type="datetime-local"
-                        value={start}
-                        onChange={e => setStart(e.target.value)}
+                        id="startDate"
+                        type="date"
+                        value={startDate}
+                        onChange={e => setStartDate(e.target.value)}
                     />
                 </div>
                 <div className="search-row">
-                    <label htmlFor="end">End</label>
+                    <label htmlFor="startTime">Start Time</label>
                     <input
-                        id="end"
-                        type="datetime-local"
-                        value={end}
-                        onChange={e => setEnd(e.target.value)}
+                        id="startTime"
+                        type="time"
+                        value={startTime}
+                        onChange={e => setStartTime(e.target.value)}
+                    />
+                </div>
+                <div className="search-row">
+                    <label htmlFor="endDate">End Date</label>
+                    <input
+                        id="endDate"
+                        type="date"
+                        value={endDate}
+                        onChange={e => setEndDate(e.target.value)}
+                    />
+                </div>
+                <div className="search-row">
+                    <label htmlFor="endTime">End Time</label>
+                    <input
+                        id="endTime"
+                        type="time"
+                        value={endTime}
+                        onChange={e => setEndTime(e.target.value)}
                     />
                 </div>
                 <div className="search-row">
@@ -248,7 +282,9 @@ const Search = () => {
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Time</th>
+                                    <th className="sortable" onClick={toggleSort}>
+                                        Time {sortDirection === 'asc' ? '↑' : '↓'}
+                                    </th>
                                     <th>UUID</th>
                                     <th>IP</th>
                                     <th>Contents</th>
