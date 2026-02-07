@@ -131,6 +131,30 @@
     word-break: break-word;
 }
 
+.contents-preview {
+    max-height: 3.6em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.contents-button {
+    margin-top: 6px;
+    background: #0b3a66;
+    border: 1px solid rgba(88, 166, 255, 0.35);
+    color: #cfe3ff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.contents-button:hover {
+    background: #0f4a86;
+}
+
 .tags-cell {
     display: flex;
     flex-wrap: wrap;
@@ -144,6 +168,16 @@
     padding: 2px 6px;
     border-radius: 999px;
     font-size: 12px;
+    cursor: pointer;
+}
+
+.tag-pill:hover {
+    background: rgba(88, 166, 255, 0.25);
+}
+
+.tag-pill:focus-visible {
+    outline: 2px solid rgba(88, 166, 255, 0.6);
+    outline-offset: 2px;
 }
 
 .uuid-link {
@@ -153,6 +187,75 @@
 
 .uuid-link:hover {
     text-decoration: underline;
+}
+
+.content-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 2000;
+}
+
+.content-modal-card {
+    width: min(900px, 95vw);
+    max-height: 85vh;
+    background: #11161d;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.content-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.content-modal-title {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.content-modal-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: #9aa4b2;
+    font-size: 12px;
+    margin-top: 6px;
+}
+
+.content-modal-close {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e6edf3;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.content-modal-close:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.content-modal-body {
+    padding: 16px;
+    margin: 0;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 16px;
+    color: #e6edf3;
 }
 
 .pagination-controls {

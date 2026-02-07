@@ -63,6 +63,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err := ensureKeylogsIndex(context.Background(), client, cfg.IndexName); err != nil {
+		logger.Logf(logger.Error, "Failed to ensure OpenSearch index: %v", err)
+		os.Exit(1)
+	}
+
 	lastID, err := data.GetIndexerCheckpoint(cfg.CheckpointName)
 	if err != nil {
 		logger.Logf(logger.Error, "Failed to read checkpoint: %v", err)
@@ -154,6 +159,58 @@ func bulkIndex(ctx context.Context, client *opensearch.Client, index string, doc
 	}
 	if errCount > 0 {
 		return fmt.Errorf("bulk indexing reported %d item errors", errCount)
+	}
+	return nil
+}
+
+func ensureKeylogsIndex(ctx context.Context, client *opensearch.Client, index string) error {
+	existsResp, err := client.Indices.Exists([]string{index})
+	if err != nil {
+		return err
+	}
+	if existsResp != nil && existsResp.StatusCode == 200 {
+		_ = existsResp.Body.Close()
+		return nil
+	}
+	if existsResp != nil {
+		_ = existsResp.Body.Close()
+	}
+
+	body := `{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0
+  },
+  "mappings": {
+    "properties": {
+      "keylog_id": { "type": "long" },
+      "contents": { "type": "text" },
+      "created_at": { "type": "date" },
+      "uuid": { "type": "keyword" },
+      "ip": { "type": "ip" },
+      "tags": {
+        "type": "nested",
+        "properties": {
+          "key": { "type": "keyword" },
+          "value": { "type": "keyword" }
+        }
+      }
+    }
+  }
+}`
+
+	resp, err := client.Indices.Create(
+		index,
+		client.Indices.Create.WithContext(ctx),
+		client.Indices.Create.WithBody(strings.NewReader(body)),
+	)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 300 {
+		b, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("index create http %d: %s", resp.StatusCode, string(b))
 	}
 	return nil
 }

@@ -14,6 +14,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	opensearch "github.com/opensearch-project/opensearch-go/v2"
+	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
 )
 
 var (
@@ -73,7 +74,7 @@ func SearchKeylogsHandler(c *gin.Context) {
 	limit := parseQueryInt(c, "limit", 50, 1, 500)
 	offset := parseQueryInt(c, "offset", 0, 0, 1000000)
 
-	query := buildKeylogQuery(q, uuid, ip, start, end, c.QueryArray("tag"), tagLogic)
+	query := buildKeylogQuery(q, uuid, ip, start, end, c.QueryArray("tag"), tagLogic, true)
 
 	body := map[string]interface{}{
 		"from":  offset,
@@ -93,27 +94,38 @@ func SearchKeylogsHandler(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
-	resp, err := client.Search(
-		client.Search.WithContext(ctx),
-		client.Search.WithIndex(index),
-		client.Search.WithBody(&buf),
-		client.Search.WithTrackTotalHits(true),
-	)
+	resp, raw, err := executeSearch(ctx, client, index, &buf)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "OpenSearch query failed"})
 		return
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode >= 300 {
-		body, _ := io.ReadAll(resp.Body)
-		c.JSON(resp.StatusCode, gin.H{"error": "OpenSearch error", "details": string(body)})
-		return
+		if body, ok := raw["raw_body"].(string); ok && strings.Contains(body, "nested object under path [tags]") {
+			fallbackQuery := buildKeylogQuery(q, uuid, ip, start, end, c.QueryArray("tag"), tagLogic, false)
+			buf.Reset()
+			if err := json.NewEncoder(&buf).Encode(map[string]interface{}{
+				"from":  offset,
+				"size":  limit,
+				"query": fallbackQuery,
+				"sort": []map[string]interface{}{
+					{"created_at": map[string]interface{}{"order": "desc"}},
+				},
+			}); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to encode search body"})
+				return
+			}
+
+			resp, raw, err = executeSearch(ctx, client, index, &buf)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "OpenSearch query failed"})
+				return
+			}
+		}
 	}
 
-	var raw map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode OpenSearch response"})
+	if resp.StatusCode >= 300 {
+		c.JSON(resp.StatusCode, gin.H{"error": "OpenSearch error", "details": raw["raw_body"]})
 		return
 	}
 
@@ -129,7 +141,7 @@ func SearchKeylogsHandler(c *gin.Context) {
 	})
 }
 
-func buildKeylogQuery(q, uuid, ip, start, end string, tags []string, tagLogic string) map[string]interface{} {
+func buildKeylogQuery(q, uuid, ip, start, end string, tags []string, tagLogic string, useNestedTags bool) map[string]interface{} {
 	must := make([]interface{}, 0)
 	filter := make([]interface{}, 0)
 
@@ -176,28 +188,45 @@ func buildKeylogQuery(q, uuid, ip, start, end string, tags []string, tagLogic st
 			}
 
 			var tagQuery map[string]interface{}
-			if hasValue && value != "" {
-				tagQuery = map[string]interface{}{
-					"nested": map[string]interface{}{
-						"path": "tags",
-						"query": map[string]interface{}{
-							"bool": map[string]interface{}{
-								"must": []interface{}{
-									map[string]interface{}{"term": map[string]interface{}{"tags.key": key}},
-									map[string]interface{}{"term": map[string]interface{}{"tags.value": value}},
+			if useNestedTags {
+				if hasValue && value != "" {
+					tagQuery = map[string]interface{}{
+						"nested": map[string]interface{}{
+							"path": "tags",
+							"query": map[string]interface{}{
+								"bool": map[string]interface{}{
+									"must": []interface{}{
+										map[string]interface{}{"term": map[string]interface{}{"tags.key": key}},
+										map[string]interface{}{"term": map[string]interface{}{"tags.value": value}},
+									},
 								},
 							},
 						},
-					},
+					}
+				} else {
+					tagQuery = map[string]interface{}{
+						"nested": map[string]interface{}{
+							"path": "tags",
+							"query": map[string]interface{}{
+								"term": map[string]interface{}{"tags.key": key},
+							},
+						},
+					}
 				}
 			} else {
-				tagQuery = map[string]interface{}{
-					"nested": map[string]interface{}{
-						"path": "tags",
-						"query": map[string]interface{}{
-							"term": map[string]interface{}{"tags.key": key},
+				if hasValue && value != "" {
+					tagQuery = map[string]interface{}{
+						"bool": map[string]interface{}{
+							"must": []interface{}{
+								map[string]interface{}{"term": map[string]interface{}{"tags.key": key}},
+								map[string]interface{}{"term": map[string]interface{}{"tags.value": value}},
+							},
 						},
-					},
+					}
+				} else {
+					tagQuery = map[string]interface{}{
+						"term": map[string]interface{}{"tags.key": key},
+					}
 				}
 			}
 			tagQueries = append(tagQueries, tagQuery)
@@ -232,6 +261,27 @@ func buildKeylogQuery(q, uuid, ip, start, end string, tags []string, tagLogic st
 		boolQuery["filter"] = filter
 	}
 	return map[string]interface{}{"bool": boolQuery}
+}
+
+func executeSearch(ctx context.Context, client *opensearch.Client, index string, body io.Reader) (*opensearchapi.Response, map[string]interface{}, error) {
+	resp, err := client.Search(
+		client.Search.WithContext(ctx),
+		client.Search.WithIndex(index),
+		client.Search.WithBody(body),
+		client.Search.WithTrackTotalHits(true),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer resp.Body.Close()
+
+	rawBody, _ := io.ReadAll(resp.Body)
+	raw := map[string]interface{}{}
+	if len(rawBody) > 0 {
+		_ = json.Unmarshal(rawBody, &raw)
+	}
+	raw["raw_body"] = string(rawBody)
+	return resp, raw, nil
 }
 
 func splitCommaEnv(key string) []string {

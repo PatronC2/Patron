@@ -131,20 +131,6 @@ services:
       timeout: 5s
       retries: 12
 
-  dashboards:
-    image: opensearchproject/opensearch-dashboards:2.14.0
-    environment:
-      - OPENSEARCH_HOSTS=http://opensearch:9200
-      - SERVER_BASEPATH=/osd
-      - SERVER_REWRITEBASEPATH=true
-      - OPENSEARCH_USERNAME=admin
-      - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD}
-    networks:
-      - internal_c2_network
-    depends_on:
-      opensearch:
-        condition: service_healthy
-
   indexer:
     image: patronc2/indexer
     networks:
