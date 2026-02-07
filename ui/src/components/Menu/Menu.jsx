@@ -46,6 +46,9 @@ const SideMenu = ({ setIsLoggedIn, isOpen, setIsOpen }) => {
                             <Link to="/redirectors">Redirectors</Link>
                         </li>
                         <li>
+                            <Link to="/search">Search</Link>
+                        </li>
+                        <li>
                             <Link to="/profile">Profile</Link>
                         </li>
                         <li>
