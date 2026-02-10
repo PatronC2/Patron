@@ -119,7 +119,7 @@ const Search = () => {
                     type="button"
                     className="tag-pill"
                     onClick={() => addTagToken(token)}
-                    title="Add tag to search"
+                    title={`${token} (click to add)`}
                 >
                     {t.key}{value}
                 </button>
@@ -321,7 +321,7 @@ const Search = () => {
                                         type="button"
                                         className="tag-pill removable"
                                         onClick={() => removeTagToken(tag)}
-                                        title="Remove tag"
+                                        title={`${tag} (click to remove)`}
                                     >
                                         {tag} ×
                                     </button>
