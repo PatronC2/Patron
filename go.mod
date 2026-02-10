@@ -7,6 +7,7 @@ toolchain go1.25.6
 require (
 	github.com/Microsoft/go-winio v0.6.2
 	github.com/PatronC2/linux-keylogger-1 v1.1.0
+	github.com/Showmax/go-fqdn v1.0.0
 	github.com/TheTitanrain/w32 v0.0.0-20200114052255-2654d97dbd3d
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
 	github.com/bwmarrin/discordgo v0.28.1
