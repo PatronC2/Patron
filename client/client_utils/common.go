@@ -23,10 +23,10 @@ import (
 	"github.com/armon/go-socks5"
 	"github.com/google/uuid"
 	"github.com/quic-go/quic-go"
+	"github.com/shirou/gopsutil/v4/host"
+	"github.com/shirou/gopsutil/v4/mem"
 
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
-	"github.com/PatronC2/Patron/client/linux_utils"
-	"github.com/PatronC2/Patron/client/windows_utils"
 	"github.com/PatronC2/Patron/lib/common"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
@@ -315,25 +315,46 @@ func GetOSInfo() (string, string, string, string, string) {
 	osArch := runtime.GOARCH
 	cpus := strconv.Itoa(runtime.NumCPU())
 
-	var memory string
-	if osType == "windows" {
-		output := RunShellCommand("wmic os get TotalVisibleMemorySize /Value")
-		memory = windows_utils.ParseWindowsMemory(output)
-	} else {
-		output := RunShellCommand("cat /proc/meminfo")
-		memory = linux_utils.ParseLinuxMemory(output)
+	memory, err := getMemoryGB()
+	if err != nil {
+		memory = "Unknown"
 	}
 
-	var osVersion string
-	if osType == "windows" {
-		output := RunShellCommand("systeminfo")
-		osVersion = windows_utils.ParseWindowsSystemInfo(output)
-	} else {
-		output := RunShellCommand("uname -sr")
-		osVersion = strings.TrimSpace(output)
+	osVersion, err := getOSVersion()
+	if err != nil {
+		osVersion = "Unknown OS Version"
 	}
 
 	return osType, osArch, osVersion, cpus, memory
+}
+
+func getMemoryGB() (string, error) {
+	vm, err := mem.VirtualMemory()
+	if err != nil {
+		return "", err
+	}
+	gb := float64(vm.Total) / 1024 / 1024 / 1024
+	return fmt.Sprintf("%.1f", gb), nil
+}
+
+func getOSVersion() (string, error) {
+	info, err := host.Info()
+	if err != nil {
+		return "", err
+	}
+	platform := strings.TrimSpace(info.Platform)
+	version := strings.TrimSpace(info.PlatformVersion)
+	kernel := strings.TrimSpace(info.KernelVersion)
+	switch {
+	case platform != "" && version != "" && kernel != "":
+		return fmt.Sprintf("%s %s (%s)", platform, version, kernel), nil
+	case platform != "" && version != "":
+		return fmt.Sprintf("%s %s", platform, version), nil
+	case kernel != "":
+		return kernel, nil
+	default:
+		return "Unknown OS Version", nil
+	}
 }
 
 func GetActiveProxy() *ProxyServer {
