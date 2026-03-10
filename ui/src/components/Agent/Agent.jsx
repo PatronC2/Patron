@@ -74,7 +74,7 @@ const Agent = () => {
       const queryParam = getQueryParam('agt');
       const agentResponse = await axios.get(`/api/agent/${queryParam}`);
       const commandsResponse = await axios.get(`/api/commands/${queryParam}`);
-      const filesResponse = await axios.get(`/api/files/list/${queryParam}`);
+      const filesResponse = await axios.get(`/api/agents/files/list/${queryParam}`);
       const notesResponse = await axios.get(`/api/notes/${queryParam}`);
       const tagsResponse = await axios.get(`/api/tags/${queryParam}`);
       const tagsData = tagsResponse.data.tags;
@@ -208,7 +208,7 @@ const Agent = () => {
       formData.append('uuid', getQueryParam('agt'));
       formData.append('transfertype', transfertype);
   
-      await axios.post('/api/files/upload', formData, {
+      await axios.post('/api/agents/files/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
   

@@ -15,6 +15,7 @@ import Redirectors from './Redirectors/Redirectors';
 import Profile from './Profile/Profile';
 import Admin from './Admin/Admin';
 import Agent from './Agent/Agent';
+import Files from './Files/Files';
 import Search from './Search/Search';
 import { AuthProvider } from '../context/AuthProvider';
 import AuthContext from '../context/AuthProvider';
@@ -143,6 +144,16 @@ const MainContent = ({ isLoggedIn, onSuccessfulLogin, isMenuOpen }) => {
           element={
             isLoggedIn ? (
               <Agent isMenuOpen={isMenuOpen} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/files"
+          element={
+            isLoggedIn ? (
+              <Files isMenuOpen={isMenuOpen} />
             ) : (
               <Navigate to="/login" />
             )

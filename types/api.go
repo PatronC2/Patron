@@ -107,3 +107,13 @@ type Listener struct {
 	ListenPort        int
 	TransportProtocol string
 }
+
+type File struct {
+	FileID    int       `json:"file_id" binding:"required"`
+	AgentId   string    `json:"uuid"`
+	Type      string    `json:"type"`
+	Path      string    `json:"path"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}

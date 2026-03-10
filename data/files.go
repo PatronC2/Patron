@@ -1,3 +1,4 @@
+// Database functions for interacting with files per agent and all files in the database.
 package data
 
 import (
@@ -6,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/lib/logger"
@@ -123,7 +125,7 @@ func UpdateFileTransfer(file *patronobuf.FileToServer) error {
 
 		query := `
 			UPDATE files
-			SET status = $1
+			SET status = $1, updated_at = now()
 			WHERE file_id = $2 AND uuid = $3 AND type = $4;
 		`
 		if _, err := db.Exec(query, file.GetStatus(), fileID, file.GetUuid(), file.GetTransfertype()); err != nil {
@@ -138,6 +140,7 @@ func UpdateFileTransfer(file *patronobuf.FileToServer) error {
 	return nil
 }
 
+// Used by the API to list files for a specific agent
 func ListFilesForUUID(uuid string) ([]types.FileToServer, error) {
 	query := `
 		SELECT file_id, path, status
@@ -244,4 +247,117 @@ func UploadFile(path string, uuid string, transfertype string, content []byte) e
 
 	logger.Logf(logger.Info, "Queued file transfer file_id=%d type=%s uuid=%s path=%s", fileID, transfertype, uuid, path)
 	return nil
+}
+
+// Lists all files in the db
+func ListFiles(tagFilters []string, logic string, limit, offset int) ([]types.File, int, int, error) {
+	baseQuery := `
+		SELECT file_id, uuid, type, path, status, created_at, updated_at
+		FROM files f
+	`
+
+	var (
+		args       []interface{}
+		conditions []string
+	)
+
+	type kv struct{ k, v string }
+	pairs := make([]kv, 0, len(tagFilters))
+	for _, tf := range tagFilters {
+		parts := strings.SplitN(tf, ":", 2)
+		if len(parts) != 2 {
+			continue
+		}
+
+		k := strings.TrimSpace(parts[0])
+		v := strings.TrimSpace(parts[1])
+		if k == "" || v == "" {
+			continue
+		}
+
+		pairs = append(pairs, kv{k: k, v: v})
+	}
+
+	if len(pairs) > 0 {
+		if strings.ToLower(logic) == "and" {
+			for _, p := range pairs {
+				args = append(args, p.k, p.v)
+				kIdx := len(args) - 1
+				vIdx := len(args)
+				conditions = append(conditions, fmt.Sprintf(`
+					EXISTS (
+						SELECT 1 FROM agent_tags t
+						WHERE t.uuid = f.uuid
+						  AND t.key = $%d
+						  AND t.value = $%d
+					)`, kIdx, vIdx))
+			}
+		} else {
+			orParts := make([]string, 0, len(pairs))
+			for _, p := range pairs {
+				args = append(args, p.k, p.v)
+				kIdx := len(args) - 1
+				vIdx := len(args)
+				orParts = append(orParts, fmt.Sprintf("(t.key = $%d AND t.value = $%d)", kIdx, vIdx))
+			}
+			conditions = append(conditions, `
+				EXISTS (
+					SELECT 1 FROM agent_tags t
+					WHERE t.uuid = f.uuid
+					  AND (`+strings.Join(orParts, " OR ")+`)
+				)`)
+		}
+	}
+
+	query := baseQuery
+	if len(conditions) > 0 {
+		query += " WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	countQuery := "SELECT COUNT(*) FROM (" + query + ") AS sub"
+
+	var totalCount int
+	if err := db.QueryRow(countQuery, args...).Scan(&totalCount); err != nil {
+		logger.Logf(logger.Error, "Error counting files: %v", err)
+		return nil, 0, 0, err
+	}
+
+	args = append(args, limit, offset)
+	limitIdx := len(args) - 1
+	offsetIdx := len(args)
+	query += fmt.Sprintf(`
+		ORDER BY f.file_id DESC
+		LIMIT $%d OFFSET $%d;
+	`, limitIdx, offsetIdx)
+
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		logger.Logf(logger.Error, "Error listing files: %v", err)
+		return nil, 0, 0, err
+	}
+	defer rows.Close()
+
+	files := make([]types.File, 0, limit)
+	for rows.Next() {
+		var f types.File
+		if err := rows.Scan(
+			&f.FileID,
+			&f.AgentId,
+			&f.Type,
+			&f.Path,
+			&f.Status,
+			&f.CreatedAt,
+			&f.UpdatedAt,
+		); err != nil {
+			logger.Logf(logger.Error, "Error scanning files: %v", err)
+			return nil, 0, 0, err
+		}
+		files = append(files, f)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, 0, err
+	}
+
+	nextOffset := offset + len(files)
+	return files, totalCount, nextOffset, nil
 }
