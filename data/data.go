@@ -119,11 +119,13 @@ func InitDatabase() {
 
 	FilesSQL := `
 	CREATE TABLE IF NOT EXISTS "files" (
-		file_id          SERIAL PRIMARY KEY,
-		uuid             TEXT NOT NULL REFERENCES agents(uuid),
-		type             TEXT NOT NULL,          -- "Upload" or "Download"
-		path             TEXT NOT NULL,          -- agent-side path (what agent reads/writes)
-		status           TEXT NOT NULL DEFAULT 'Pending'
+		file_id			SERIAL PRIMARY KEY,
+		uuid            TEXT NOT NULL REFERENCES agents(uuid),
+		type            TEXT NOT NULL,          -- "Upload" or "Download"
+		path            TEXT NOT NULL,          -- agent-side path (what agent reads/writes)
+		status          TEXT NOT NULL DEFAULT 'Pending',
+		created_at		TIMESTAMPTZ NOT NULL DEFAULT now(),
+		updated_at		TIMESTAMPTZ NOT NULL DEFAULT now()
 	);
 	`
 	_, err = db.Exec(FilesSQL)

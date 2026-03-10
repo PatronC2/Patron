@@ -87,11 +87,10 @@ func main() {
 	r.PUT("/api/tag", api.Auth(writeRoles), api.PutTagsHandler)
 	r.DELETE("/api/tag/:tagid", api.Auth(writeRoles), api.DeleteTagHandler)
 	r.POST("/api/redirector", api.Auth(writeRoles), api.CreateRedirectorHandler)
-	r.POST("/api/files/upload", api.Auth(writeRoles), api.UploadFileHandler)
+	r.POST("/api/agents/files/upload", api.Auth(writeRoles), api.UploadFileHandler)
 	r.DELETE("/api/payloads/:payloadid", api.Auth(writeRoles), api.DeletePayloadHandler)
 
 	// GET requests to non-admin areas use Auth(readRoles)
-	r.GET("/api/agents", api.Auth(readRoles), api.GetAgentsHandler)
 	r.GET("/api/agents/search", api.Auth(readRoles), api.FilterAgentsHandler)
 	r.GET("/api/agentsmetrics", api.Auth(readRoles), api.GetAgentsMetricsHandler)
 	r.GET("/api/groupagents/:ip", api.Auth(readRoles), api.GetGroupAgentsByIP)
@@ -105,8 +104,9 @@ func main() {
 	r.GET("/api/tags/:agt", api.Auth(readRoles), api.GetTagsHandler)
 	r.GET("/api/tags/options", api.Auth(readRoles), api.GetTagKeyValuesHandler)
 	r.GET("/api/redirectors", api.Auth(readRoles), api.GetRedirectorsHandler)
-	r.GET("/api/files/list/:agt", api.Auth(readRoles), api.ListFilesForUUIDHandler)
+	r.GET("/api/agents/files/list/:agt", api.Auth(readRoles), api.ListFilesForUUIDHandler)
 	r.GET("/api/files/download/:fileid", api.Auth(readRoles), api.DownloadFileHandler)
+	r.GET("/api/files/list", api.Auth(readRoles), api.ListFilesHandler)
 
 	// Functions which can only modify / view their own user
 	r.PUT("/api/profile/password", api.Auth(readRoles), api.UpdatePasswordHandler)
