@@ -340,7 +340,7 @@ echo "✅ Created frontend-config.json"
 
 echo "Installing Patron CLI"
 PLATFORM="linux"
-TAG="latest"
+TAG="v2.0.0"
 INSTALL_PATH="/usr/bin"
 IMAGE="patronc2/cli:$PLATFORM-$TAG"
 BINARY_NAME="patron"
@@ -357,7 +357,7 @@ chmod +x "$INSTALL_PATH/$BINARY_NAME"
 echo "✅ Installed $BINARY_NAME to $INSTALL_PATH"
 
 echo "Pulling redirector image"
-TAG="latest"
+TAG="v2.0.0"
 IMAGE="patronc2/redirector:$TAG"
 docker pull $IMAGE
 echo "✅ Fetched redirector image"
