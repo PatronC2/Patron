@@ -95,7 +95,7 @@ services:
       - internal_c2_network
 
   patron_c2_nginx:
-    image: patronc2/nginx
+    image: patronc2/nginx:v2.0.0
     restart: always
     volumes:
       - ./nginx/conf.d/default.conf.template:/etc/nginx/templates/default.conf.template
