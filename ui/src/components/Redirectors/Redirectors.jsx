@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useContext } from 'react';
 import { useAxios } from '../../context/AxiosProvider';
 import AuthContext from '../../context/AuthProvider';
-import NewRedirectorForm from './NewRedirectorForm';
+import RedirectorWizard from './RedirectorWizard';
 import { useTable } from 'react-table';
 import { ResizableBox } from 'react-resizable';
 import 'react-resizable/css/styles.css';
@@ -12,7 +12,7 @@ const Redirectors = () => {
     const { auth } = useContext(AuthContext);
     const [data, setData] = useState([]);
     const [error, setError] = useState(null);
-    const [activeTab, setActiveTab] = useState('current_redirectors');
+    const [showWizard, setShowWizard] = useState(false);
     const [statusFilter, setStatusFilter] = useState('Online');
 
     useEffect(() => {
@@ -49,7 +49,9 @@ const Redirectors = () => {
         { Header: 'Description', accessor: 'description', minWidth: 150 },
         { Header: 'Forward IP', accessor: 'forwardip', minWidth: 130 },
         { Header: 'Forward Port', accessor: 'forwardport', minWidth: 100 },
+        { Header: 'Listener IP', accessor: 'listenip', minWidth: 140 },
         { Header: 'Listener Port', accessor: 'listenport', minWidth: 100 },
+        { Header: 'Protocol', accessor: 'transportprotocol', minWidth: 100 },
         { Header: 'Status', accessor: 'status', minWidth: 100 },
     ], []);
 
@@ -88,81 +90,76 @@ const Redirectors = () => {
             <div className="header">
                 <h1>Redirectors</h1>
                 <div className="header-buttons">
-                    <button
-                        className={activeTab === 'current_redirectors' ? 'active' : ''}
-                        onClick={() => setActiveTab('current_redirectors')}
-                    >
-                        Existing Redirectors
-                    </button>
-                    <button
-                        className={activeTab === 'new' ? 'active' : ''}
-                        onClick={() => setActiveTab('new')}
-                    >
+                    <button className="active" onClick={() => setShowWizard(true)}>
                         Create New Redirector
                     </button>
                 </div>
             </div>
 
-            {activeTab === 'current_redirectors' ? (
-                <div className="redirectors-container">
-                    <div className="status-boxes">
-                        <div className="status-box online">
-                            <p>Online</p>
-                            <h2>{data.filter(d => d.status === 'Online').length}</h2>
-                        </div>
-                        <div className="status-box offline">
-                            <p>Offline</p>
-                            <h2>{data.filter(d => d.status === 'Offline').length}</h2>
-                        </div>
+            <div className="redirectors-container">
+                <div className="status-boxes">
+                    <div className="status-box online">
+                        <p>Online</p>
+                        <h2>{data.filter(d => d.status === 'Online').length}</h2>
                     </div>
-
-                    <div className="filters-container">
-                        <div className="filters">
-                            <select
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                            >
-                                <option value="All">All</option>
-                                <option value="Online">Online</option>
-                                <option value="Offline">Offline</option>
-                            </select>
-                        </div>
+                    <div className="status-box offline">
+                        <p>Offline</p>
+                        <h2>{data.filter(d => d.status === 'Offline').length}</h2>
                     </div>
-
-                    {filteredData.length > 0 ? (
-                        <div className="table-wrapper">
-                            <table {...getTableProps()}>
-                                <thead>
-                                    {headerGroups.map(headerGroup => (
-                                        <tr {...headerGroup.getHeaderGroupProps()}>
-                                            {headerGroup.headers.map(renderResizableHeader)}
-                                        </tr>
-                                    ))}
-                                </thead>
-                                <tbody {...getTableBodyProps()}>
-                                    {rows.map(row => {
-                                        prepareRow(row);
-                                        return (
-                                            <tr {...row.getRowProps()}>
-                                                {row.cells.map(cell => (
-                                                    <td {...cell.getCellProps()}>
-                                                        <div className="cell-content">
-                                                            {cell.render('Cell')}
-                                                        </div>
-                                                    </td>
-                                                ))}
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    ) : (
-                        <p>No Redirectors</p>
-                    )}
                 </div>
-            ) : (
-                <NewRedirectorForm fetchData={fetchData} setActiveTab={setActiveTab} />
+
+                <div className="filters-container">
+                    <div className="filters">
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                        >
+                            <option value="All">All</option>
+                            <option value="Online">Online</option>
+                            <option value="Offline">Offline</option>
+                        </select>
+                    </div>
+                </div>
+
+                {filteredData.length > 0 ? (
+                    <div className="table-wrapper">
+                        <table {...getTableProps()}>
+                            <thead>
+                                {headerGroups.map(headerGroup => (
+                                    <tr {...headerGroup.getHeaderGroupProps()}>
+                                        {headerGroup.headers.map(renderResizableHeader)}
+                                    </tr>
+                                ))}
+                            </thead>
+                            <tbody {...getTableBodyProps()}>
+                                {rows.map(row => {
+                                    prepareRow(row);
+                                    return (
+                                        <tr {...row.getRowProps()}>
+                                            {row.cells.map(cell => (
+                                                <td {...cell.getCellProps()}>
+                                                    <div className="cell-content">
+                                                        {cell.render('Cell')}
+                                                    </div>
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <p>No Redirectors</p>
+                )}
+            </div>
+
+            {showWizard && (
+                <RedirectorWizard
+                    redirectors={data}
+                    fetchData={fetchData}
+                    onClose={() => setShowWizard(false)}
+                />
             )}
         </div>
     );

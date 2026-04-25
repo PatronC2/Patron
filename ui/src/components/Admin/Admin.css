@@ -1,0 +1,137 @@
+.admin-content {
+    margin: 0 auto;
+    padding: calc(var(--header-height) + 0.5rem) 1.5rem 2rem;
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    max-width: 1400px;
+    position: relative;
+    transition: margin-left 0.3s ease-in-out;
+    position: relative;
+    overflow-y: auto;
+}
+
+.admin-content .header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    background-color: transparent;
+    width: 100%;
+}
+
+.admin-content .header h1 {
+    color: var(--text-color);
+    margin: 0 0 0.5rem;
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.admin-content .header-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.admin-content .header-buttons button {
+    flex: 0 1 auto;
+    max-width: none;
+    padding: 0.5rem 1rem;
+    font-size: 0.95rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: 999px;
+    cursor: pointer;
+    background-color: var(--surface-2);
+    color: var(--text-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.admin-content .header-buttons button.active {
+    background-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    border-color: transparent;
+}
+
+.admin-content .header-buttons button:hover {
+    background-color: var(--accent-bg);
+    color: var(--text-color);
+}
+
+.admin-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.95rem;
+    color: var(--text-color);
+    border: 1px solid var(--border-subtle);
+    background-color: var(--surface-1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.admin-content table thead {
+    background-color: var(--surface-3);
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.admin-content table th, table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-subtle);
+    text-align: left;
+}
+
+.admin-content table td button {
+    margin-left: 0.25rem;
+    margin-right: 0.25rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+}
+
+.admin-content tbody tr:nth-child(odd) {
+    background-color: var(--surface-2);
+}
+
+.admin-content tbody tr:nth-child(even) {
+    background-color: var(--surface-1);
+}
+
+[data-theme='dark'] .admin-content tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-color);
+}
+
+[data-theme='light'] .admin-content tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--text-color);
+}
+
+.admin-content a {
+    color: var(--accent);
+    text-decoration: underline;
+    transition: color 0.3s ease;
+}
+
+.admin-content a:hover {
+    color: var(--accent-strong);
+}
+
+.admin-content p {
+    text-align: center;
+    margin: 1rem 0;
+    font-size: 1.2rem;
+    color: var(--text-color);
+}

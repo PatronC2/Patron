@@ -1,4 +1,6 @@
-FROM golang:1.24.3 AS build
+ARG GOVERSION=SET_ME
+
+FROM golang:${GOVERSION} AS build
 
 ARG WEBSERVER_PORT
 
@@ -10,8 +12,9 @@ ENV HTTPS_PROXY=${HTTPS_PROXY}
 ENV NO_PROXY=${NO_PROXY}
 
 WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
 COPY . ./
-RUN go mod tidy
 RUN go build -o app ./api/api.go
 
 FROM alpine:latest
@@ -19,9 +22,11 @@ FROM alpine:latest
 ARG HTTP_PROXY
 ARG HTTPS_PROXY
 ARG NO_PROXY
+ARG GOVERSION=SET_ME
 ENV HTTP_PROXY=${HTTP_PROXY}
 ENV HTTPS_PROXY=${HTTPS_PROXY}
 ENV NO_PROXY=${NO_PROXY}
+ENV GOVERSION=${GOVERSION}
 
 #this seems dumb, but the libc from the build stage is not the same as the alpine libc
 #create a symlink to where it expects it since they are compatible. https://stackoverflow.com/a/35613430/3105368

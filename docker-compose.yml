@@ -1,29 +1,33 @@
 services:
   patron_c2_server:
-    image: patronc2/server:v1.3.6
+    image: patronc2/server:v2.0.0
     environment:
       DB_HOST: patron_c2_postgres
       DB_PORT: ${DB_PORT}
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
       DB_NAME: ${DB_NAME}
-      C2SERVER_IP: patron_c2_server
-      C2SERVER_PORT: ${C2SERVER_PORT}
+      TCP_LISTENER_IP: patron_c2_server
+      TCP_LISTENER_PORT: ${TCP_LISTENER_PORT}
+      QUIC_LISTENER_IP: patron_c2_server
+      QUIC_LISTENER_PORT: ${QUIC_LISTENER_PORT}
     restart: always
     volumes:
       - ./logs:/app/logs
       - ./certs:/app/certs
       - ./files:/app/files
+      - agent_files:/app/agent_files
     networks:
       - internal_c2_network
     ports:
-      - "${C2SERVER_PORT}:${C2SERVER_PORT}"
+      - "${TCP_LISTENER_PORT}:${TCP_LISTENER_PORT}/tcp"
+      - "${QUIC_LISTENER_PORT}:${QUIC_LISTENER_PORT}/udp"
     depends_on:
-      patron_c2_postgres:
+      patron_c2_api:
         condition: service_healthy
 
   patron_c2_api:
-    image: patronc2/api:v1.3.6
+    image: patronc2/api:v2.0.0
     environment:
       DB_HOST: patron_c2_postgres
       DB_PORT: ${DB_PORT}
@@ -39,7 +43,12 @@ services:
       REDIRECTOR_PORT: ${REDIRECTOR_PORT}
       REACT_APP_NGINX_IP: ${REACT_APP_NGINX_IP}
       REACT_APP_NGINX_PORT: ${REACT_APP_NGINX_PORT}
+      TCP_LISTENER_PORT: ${TCP_LISTENER_PORT}
+      QUIC_LISTENER_PORT: ${QUIC_LISTENER_PORT}
       DOCKER_HTTPS_PROXY: ${HTTPS_PROXY}
+      PROMETHEUS_ENABLED: ${PROMETHEUS_ENABLED}
+      OPENSEARCH_USERNAME: admin
+      OPENSEARCH_PASSWORD: ${OPENSEARCH_PASSWORD}
     restart: always
     volumes:
       - ./logs:/app/logs
@@ -49,6 +58,7 @@ services:
       - ./client/payloads.json:/app/payloads.json
       - ./redirector/resources:/app/resources
       - ./certs:/app/certs
+      - agent_files:/app/agent_files
     networks:
       - internal_c2_network
     depends_on:
@@ -56,7 +66,7 @@ services:
         condition: service_healthy
 
   patron_c2_frontend:
-    image: patronc2/ui:v1.3.6
+    image: patronc2/ui:v2.0.0
     working_dir: /app
     restart: always
     volumes:
@@ -71,7 +81,7 @@ services:
         condition: service_healthy
 
   patron_c2_postgres:
-    image: patronc2/postgres:v1.3.6
+    image: patronc2/postgres:v2.0.0
     restart: always
     environment:
       POSTGRES_USER: ${DB_USER}
@@ -85,7 +95,7 @@ services:
       - internal_c2_network
 
   patron_c2_nginx:
-    image: patronc2/nginx:v1.3.6
+    image: patronc2/nginx:v2.0.0
     restart: always
     volumes:
       - ./nginx/conf.d/default.conf.template:/etc/nginx/templates/default.conf.template
@@ -95,6 +105,7 @@ services:
       - REACT_SERVER=patron_c2_frontend:${PORT}
       - REACT_APP_NGINX_PORT=${REACT_APP_NGINX_PORT}
       - API_SERVER=patron_c2_api:${WEBSERVER_PORT}
+      - OPENSEARCH_DASHBOARDS_SERVER=dashboards
     networks:
       - internal_c2_network
     ports:
@@ -103,10 +114,45 @@ services:
       patron_c2_frontend:
         condition: service_healthy
 
-  patron_c2_bot:
-    image: patronc2/bot:v1.3.6
+  opensearch:
+    image: opensearchproject/opensearch:2.14.0
     environment:
-      - PATRON_IP=${REACT_APP_NGINX_IP}
+      - discovery.type=single-node
+      - plugins.security.ssl.http.enabled=false
+      - OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_PASSWORD}
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    networks:
+      - internal_c2_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -u admin:${OPENSEARCH_PASSWORD} http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  indexer:
+    image: patronc2/indexer:v2.0.0
+    networks:
+      - internal_c2_network
+    depends_on:
+      patron_c2_api:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+    environment:
+      DB_HOST: patron_c2_postgres
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+      OPENSEARCH_USERNAME: admin
+      OPENSEARCH_PASSWORD: ${OPENSEARCH_PASSWORD}
+    
+  patron_c2_bot:
+    image: patronc2/bot:v2.0.0
+    environment:
+      - PATRON_IP=patron_c2_nginx
       - PATRON_PORT=${REACT_APP_NGINX_PORT}
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
       - HTTPS_PROXY=${HTTPS_PROXY}
@@ -128,3 +174,7 @@ networks:
       driver: default
       config:
         - subnet: "${DOCKER_INTERNAL}.0/16"
+
+volumes:
+  agent_files:
+  opensearch_data:

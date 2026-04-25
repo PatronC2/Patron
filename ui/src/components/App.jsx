@@ -13,8 +13,10 @@ import Home from './Home/Home';
 import Payloads from './Payloads/Payloads';
 import Redirectors from './Redirectors/Redirectors';
 import Profile from './Profile/Profile';
-import Users from './Users/Users';
+import Admin from './Admin/Admin';
 import Agent from './Agent/Agent';
+import Files from './Files/Files';
+import Search from './Search/Search';
 import { AuthProvider } from '../context/AuthProvider';
 import AuthContext from '../context/AuthProvider';
 
@@ -71,6 +73,7 @@ function App() {
 const MainContent = ({ isLoggedIn, onSuccessfulLogin, isMenuOpen }) => {
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
+  const { auth } = useContext(AuthContext);
 
   return (
     <>
@@ -127,12 +130,12 @@ const MainContent = ({ isLoggedIn, onSuccessfulLogin, isMenuOpen }) => {
           }
         />
         <Route
-          path="/users"
+          path="/admin"
           element={
-            isLoggedIn ? (
-              <Users isMenuOpen={isMenuOpen} />
+            isLoggedIn && auth?.role === 'admin' ? (
+              <Admin isMenuOpen={isMenuOpen} />
             ) : (
-              <Navigate to="/login" />
+              <Navigate to={isLoggedIn ? "/home" : "/login"} />
             )
           }
         />
@@ -141,6 +144,26 @@ const MainContent = ({ isLoggedIn, onSuccessfulLogin, isMenuOpen }) => {
           element={
             isLoggedIn ? (
               <Agent isMenuOpen={isMenuOpen} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/files"
+          element={
+            isLoggedIn ? (
+              <Files isMenuOpen={isMenuOpen} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/search"
+          element={
+            isLoggedIn ? (
+              <Search isMenuOpen={isMenuOpen} />
             ) : (
               <Navigate to="/login" />
             )

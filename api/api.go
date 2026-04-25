@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,6 +14,7 @@ import (
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/gin-gonic/gin"
+	ginprometheus "github.com/zsais/go-gin-prometheus"
 )
 
 func main() {
@@ -24,13 +27,31 @@ func main() {
 	api.InitAuth()
 
 	data.OpenDatabase()
+	data.InitDatabase()
 	api.CreateAdminUser()
+
+	api.RegisterMetrics()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	api.StartAgentCountUpdater(ctx, 10*time.Second)
+	api.StartRedirectorCountUpdater(ctx, 10*time.Second)
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
 	// Apply CORS middleware
 	r.Use(CORS())
+
+	// Prometheus instrumentation
+	if enabled, _ := strconv.ParseBool(os.Getenv("PROMETHEUS_ENABLED")); enabled {
+		logger.Logf(logger.Info, "Starting metrics server")
+		p := ginprometheus.NewPrometheus("patron_api")
+		p.Use(r)
+	} else {
+		logger.Logf(logger.Warning, "Metrics server is disabled")
+	}
 
 	// Start up config refresher
 	Refresh(appName)
@@ -66,25 +87,26 @@ func main() {
 	r.PUT("/api/tag", api.Auth(writeRoles), api.PutTagsHandler)
 	r.DELETE("/api/tag/:tagid", api.Auth(writeRoles), api.DeleteTagHandler)
 	r.POST("/api/redirector", api.Auth(writeRoles), api.CreateRedirectorHandler)
-	r.POST("/api/files/upload", api.Auth(writeRoles), api.UploadFileHandler)
+	r.POST("/api/agents/files/upload", api.Auth(writeRoles), api.UploadFileHandler)
 	r.DELETE("/api/payloads/:payloadid", api.Auth(writeRoles), api.DeletePayloadHandler)
 
 	// GET requests to non-admin areas use Auth(readRoles)
-	r.GET("/api/agents", api.Auth(readRoles), api.GetAgentsHandler)
 	r.GET("/api/agents/search", api.Auth(readRoles), api.FilterAgentsHandler)
 	r.GET("/api/agentsmetrics", api.Auth(readRoles), api.GetAgentsMetricsHandler)
 	r.GET("/api/groupagents/:ip", api.Auth(readRoles), api.GetGroupAgentsByIP)
 	r.GET("/api/agent/:agt", api.Auth(readRoles), api.GetOneAgentByUUID)
 	r.GET("/api/commands/:agt", api.Auth(readRoles), api.GetAgentCommandsByUUID)
 	r.GET("/api/keylog/:agt", api.Auth(readRoles), api.GetKeylogHandler)
+	r.GET("/api/opensearch/keylogs", api.Auth(readRoles), api.SearchKeylogsHandler)
 	r.GET("/api/payloads", api.Auth(readRoles), api.GetPayloadsHandler)
 	r.GET("/api/payloadconfs", api.Auth(readRoles), api.GetConfigurationsHandler)
 	r.GET("/api/notes/:agt", api.Auth(readRoles), api.GetNoteHandler)
 	r.GET("/api/tags/:agt", api.Auth(readRoles), api.GetTagsHandler)
 	r.GET("/api/tags/options", api.Auth(readRoles), api.GetTagKeyValuesHandler)
 	r.GET("/api/redirectors", api.Auth(readRoles), api.GetRedirectorsHandler)
-	r.GET("/api/files/list/:agt", api.Auth(readRoles), api.ListFilesForUUIDHandler)
+	r.GET("/api/agents/files/list/:agt", api.Auth(readRoles), api.ListFilesForUUIDHandler)
 	r.GET("/api/files/download/:fileid", api.Auth(readRoles), api.DownloadFileHandler)
+	r.GET("/api/files/list", api.Auth(readRoles), api.ListFilesHandler)
 
 	// Functions which can only modify / view their own user
 	r.PUT("/api/profile/password", api.Auth(readRoles), api.UpdatePasswordHandler)

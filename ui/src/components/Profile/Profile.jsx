@@ -2,15 +2,16 @@ import React, { useEffect, useState, useContext } from 'react';
 import { useAxios } from '../../context/AxiosProvider';
 import AuthContext from '../../context/AuthProvider';
 import './Profile.css';
-import PasswordChangeForm from './PasswordChange';
-import ApiKeyForm from './ApiKey';
+import PasswordWizard from './PasswordWizard';
+import ApiKeyWizard from './ApiKeyWizard';
 
 const Profile = () => {
     const axios = useAxios();
     const { auth } = useContext(AuthContext);
     const [user, setUser] = useState(null);
     const [error, setError] = useState(null);
-    const [activeTab, setActiveTab] = useState('user_profile');
+    const [showPasswordWizard, setShowPasswordWizard] = useState(false);
+    const [showApiKeyWizard, setShowApiKeyWizard] = useState(false);
     const [notification, setNotification] = useState('');
     const [notificationType, setNotificationType] = useState('');
 
@@ -68,27 +69,15 @@ const Profile = () => {
             <div className="header">
                 <h1>User Profile</h1>
                 <div className="header-buttons">
-                    <button
-                        className={activeTab === 'user_profile' ? 'active' : ''}
-                        onClick={() => setActiveTab('user_profile')}
-                    >
-                        Existing User
+                    <button className="active" onClick={() => setShowPasswordWizard(true)}>
+                        Change Password
                     </button>
-                    <button
-                        className={activeTab === 'password_change' ? 'active' : ''}
-                        onClick={() => setActiveTab('password_change')}
-                    >
-                        Password Change
-                    </button>
-                    <button
-                        className={activeTab === 'api_key' ? 'active' : ''}
-                        onClick={() => setActiveTab('api_key')}
-                    >
+                    <button className="active" onClick={() => setShowApiKeyWizard(true)}>
                         API Key
                     </button>
                 </div>
             </div>
-            {activeTab === 'user_profile' && user ? (
+            {user ? (
                 <table>
                     <thead>
                         <tr>
@@ -105,10 +94,16 @@ const Profile = () => {
                         </tr>
                     </tbody>
                 </table>
-            ) : activeTab === 'password_change' ? (
-                <PasswordChangeForm />
-            ) : (
-                <ApiKeyForm username={user?.Username || ''} />
+            ) : null}
+
+            {showPasswordWizard && (
+                <PasswordWizard onClose={() => setShowPasswordWizard(false)} />
+            )}
+            {showApiKeyWizard && (
+                <ApiKeyWizard
+                    username={user?.Username || ''}
+                    onClose={() => setShowApiKeyWizard(false)}
+                />
             )}
         </div>
     );

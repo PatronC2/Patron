@@ -2,94 +2,110 @@ package data
 
 import (
 	"database/sql"
-	"log"
 
+	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
 	_ "github.com/lib/pq"
 )
 
-func GetAgentCommands(uuid string) (infoAppend []types.AgentCommands, err error) {
-	var info types.AgentCommands
-	FetchSQL := `
-	SELECT 
-		"UUID", 
-		"CommandType", 
-		"Command", 
-		"CommandUUID", 
-		"Output"
-	FROM "Commands"
-	WHERE "UUID"= $1
-	ORDER BY "CommandID" asc;
+func GetAgentCommands(uuid string) ([]types.AgentCommands, error) {
+	// Returns a list of the commands for a given agent, only used by API
+	const q = `
+		SELECT uuid, command_type, command, command_uuid, output
+		FROM commands
+		WHERE uuid = $1
+		ORDER BY command_id ASC;
 	`
-	row, err := db.Query(FetchSQL, uuid)
+
+	rows, err := db.Query(q, uuid)
 	if err != nil {
-		log.Fatal(err)
+		logger.Logf(logger.Error, "Error getting agent commands for agent %v: %v", uuid, err)
+		return nil, err
 	}
-	defer row.Close()
-	for row.Next() {
-		row.Scan(
-			&info.Uuid,
-			&info.CommandType,
-			&info.Command,
-			&info.CommandUUID,
-			&info.Output,
-		)
-		infoAppend = append(infoAppend, info)
+	defer rows.Close()
+
+	out := make([]types.AgentCommands, 0, 32)
+	for rows.Next() {
+		var row types.AgentCommands
+		if err := rows.Scan(
+			&row.Uuid,
+			&row.CommandType,
+			&row.Command,
+			&row.CommandUUID,
+			&row.Output,
+		); err != nil {
+			logger.Logf(logger.Error, "Error fetching a command for agent %v: %v", uuid, err)
+			return nil, err
+		}
+		out = append(out, row)
 	}
 
-	return infoAppend, err
+	return out, rows.Err()
 }
 
-func FetchNextCommand(uuid string) types.CommandResponse {
-	var info types.CommandResponse
-	query := `
-        SELECT 
-            "Commands"."UUID", 
-            "Commands"."CommandType", 
-            "Commands"."Command", 
-            "Commands"."CommandUUID"
-        FROM "Commands" 
-        INNER JOIN "agents" ON "Commands"."UUID" = agents.uuid 
-        WHERE "Commands"."UUID" = $1 
-        AND "Commands"."Result" = '0' 
-        LIMIT 1;
-    `
+func UpdateAgentCommand(resp *patronobuf.CommandStatusRequest) error {
+	// Updates the command's row once its been executed by the agent
+	const q = `
+		UPDATE commands
+		SET result = $1,
+		    output = $2,
+		    updated_at = now()
+		WHERE command_uuid = $3;
+	`
 
-	row := db.QueryRow(query, uuid)
-	err := row.Scan(
-		&info.AgentID,
-		&info.CommandType,
-		&info.Command,
-		&info.CommandID,
+	res, err := db.Exec(q, resp.GetResult(), resp.GetOutput(), resp.GetCommandid())
+	if err != nil {
+		logger.Logf(logger.Error, "Error updating command uuid %v: %v", resp.GetCommandid(), err)
+		return err
+	}
+
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		logger.Logf(logger.Warning, "No rows affected, expected 1 for commandUUID %v", resp.GetCommandid())
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+func FetchNextCommand(uuid string) (*patronobuf.CommandResponse, error) {
+	// Grabs the next command for the agent to execute
+	const q = `
+		SELECT uuid, command_type, command, command_uuid
+		FROM commands
+		WHERE uuid = $1 AND result = '0'
+		ORDER BY command_id ASC
+		LIMIT 1;
+	`
+
+	var resp patronobuf.CommandResponse
+	err := db.QueryRow(q, uuid).Scan(
+		&resp.Uuid,
+		&resp.Commandtype,
+		&resp.Command,
+		&resp.Commandid,
 	)
 	if err == sql.ErrNoRows {
-		logger.Logf(logger.Info, "No commands available for agent: %s\n", uuid)
-		return info
-	} else if err != nil {
-		logger.Logf(logger.Error, "Error fetching command for agent: %v\n", err)
-		return info
+		logger.Logf(logger.Debug, "No commands to execute for agent %v: %v", uuid, err)
+		return nil, nil
 	}
-
-	logger.Logf(logger.Info, "Fetched command %s for agent %s\n", info.Command, uuid)
-	return info
+	if err != nil {
+		logger.Logf(logger.Error, "Error fetching commands for agent %v: %v", uuid, err)
+		return nil, err
+	}
+	return &resp, nil
 }
 
-func SendAgentCommand(uuid string, result string, CommandType string, Command string, CommandUUID string) {
-	SendAgentCommandSQL := `INSERT INTO "Commands" ("UUID", "Result", "CommandType", "Command", "CommandUUID")
-	VALUES ($1, $2, $3, $4, $5)`
+func SendAgentCommand(uuid, result, commandType, command, commandUUID string) error {
+	// Used by the API for users to send commands to the agents
+	const q = `
+		INSERT INTO commands (uuid, result, command_type, command, command_uuid)
+		VALUES ($1, $2, $3, $4, $5);
+	`
 
-	statement, err := db.Prepare(SendAgentCommandSQL)
+	_, err := db.Exec(q, uuid, result, commandType, command, commandUUID)
 	if err != nil {
-
-		log.Fatalln(err)
-		logger.Logf(logger.Info, "Error in DB\n")
+		logger.Logf(logger.Error, "Error inserting command for agent %v: %v", uuid, err)
 	}
-
-	_, err = statement.Exec(uuid, result, CommandType, Command, CommandUUID)
-	if err != nil {
-
-		log.Fatalln(err)
-	}
-	logger.Logf(logger.Info, "Agent %s Reveived New Command \n", uuid)
+	return err
 }

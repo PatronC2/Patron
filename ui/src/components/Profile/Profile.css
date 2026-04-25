@@ -1,12 +1,12 @@
 .profile-container {
-    margin: calc(var(--header-height) + 3rem) auto 0;
-    padding: var(--header-height) 1rem 1rem;
+    margin: 0 auto;
+    padding: calc(var(--header-height) + 0.5rem) 1.5rem 2rem;
     color: var(--text-color);
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    max-width: 1200px;
+    align-items: stretch;
+    justify-content: flex-start;
+    max-width: 1400px;
     position: relative;
     transition: margin-left 0.3s ease-in-out;
     overflow-y: auto;
@@ -18,20 +18,14 @@
     align-items: center;
     justify-content: center;
     margin: 0;
-    padding: 0.5rem 0 0.5rem;
-    background-color: var(--secondary-color);
-    width: 100vw;
-    box-sizing: border-box;
-    position: fixed;
-    top: var(--header-height);
-    left: 0;
-    z-index: 998;
-    transition: margin-left 0.3s ease-in-out;
+    padding: 0;
+    background-color: transparent;
+    width: 100%;
 }
 
 .profile-container .header h1 {
     color: var(--text-color);
-    margin: 0 0 1rem;
+    margin: 0 0 0.5rem;
     text-align: center;
     width: 100%;
     box-sizing: border-box;
@@ -46,60 +40,61 @@
 }
 
 .profile-container .header-buttons button {
-    flex: 1;
-    max-width: 300px;
+    flex: 0 1 auto;
+    max-width: none;
     padding: 0.5rem 1rem;
-    font-size: 1rem;
-    border: none;
-    border-radius: 4px;
+    font-size: 0.95rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: 999px;
     cursor: pointer;
-    background-color: var(--primary-color);
+    background-color: var(--surface-2);
     color: var(--text-color);
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .profile-container .header-buttons button.active {
-    background-color: var(--background-color);
-    color: var(--secondary-color);
-    font-weight: bold;
+    background-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    border-color: transparent;
 }
 
 .profile-container .header-buttons button:hover {
-    background-color: var(--background-color);
-    color: var(--secondary-color);
+    background-color: var(--accent-bg);
+    color: var(--text-color);
 }
 
 .profile-container table {
     width: 100%;
     border-collapse: collapse;
     margin: 1rem 0;
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: var(--text-color);
-    border: 1px solid var(--border-color);
-    background-color: var(--background-color);
-    border-radius: 5px;
+    border: 1px solid var(--border-subtle);
+    background-color: var(--surface-1);
+    border-radius: 8px;
     overflow: hidden;
 }
 
 .profile-container table thead {
-    background-color: var(--primary-color);
+    background-color: var(--surface-3);
     color: var(--text-color);
-    font-weight: bold;
+    font-weight: 600;
 }
 
 .profile-container table th,
 .profile-container table td {
     padding: 0.75rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-subtle);
     text-align: left;
 }
 
 .profile-container tbody tr:nth-child(odd) {
-    background-color: rgba(0, 0, 0, 0.08);
+    background-color: var(--surface-2);
 }
 
 .profile-container tbody tr:nth-child(even) {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--surface-1);
 }
 
 [data-theme='dark'] .profile-container tbody tr:hover {
@@ -109,7 +104,7 @@
 
 [data-theme='light'] .profile-container tbody tr:hover {
     background-color: rgba(0, 0, 0, 0.05);
-    color: var(--primary-color);
+    color: var(--text-color);
 }
 
 .profile-container p {

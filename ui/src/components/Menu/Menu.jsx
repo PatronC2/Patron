@@ -5,7 +5,7 @@ import AuthContext from '../../context/AuthProvider';
 import './Menu.css';
 
 const SideMenu = ({ setIsLoggedIn, isOpen, setIsOpen }) => {
-  const { logout } = useContext(AuthContext);
+  const { auth, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const toggleMenu = () => {
@@ -46,11 +46,19 @@ const SideMenu = ({ setIsLoggedIn, isOpen, setIsOpen }) => {
                             <Link to="/redirectors">Redirectors</Link>
                         </li>
                         <li>
-                            <Link to="/profile">Profile</Link>
+                            <Link to="/files">Files</Link>
                         </li>
                         <li>
-                            <Link to="/users">Admin</Link>
+                            <Link to="/search">Search</Link>
                         </li>
+                        <li>
+                            <Link to="/profile">Profile</Link>
+                        </li>
+                        {auth?.role === 'admin' && (
+                            <li>
+                                <Link to="/admin">Admin</Link>
+                            </li>
+                        )}
                         <li>
                             <button className="menu-button" onClick={handleLogout}>
                                 Logout

@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import qs from 'qs';
 import { useAxios } from '../../context/AxiosProvider';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AuthContext from '../../context/AuthProvider';
 import AgentFilters from './AgentFilters';
 import './Home.css';
@@ -10,10 +10,13 @@ const Home = ({ isMenuOpen }) => {
     const axios = useAxios();
     const { auth } = useContext(AuthContext);
     const navigate = useNavigate();
+    const location = useLocation();
+    const didInitFromQuery = useRef(false);
 
     const [error, setError] = useState(null);
     const [agents, setAgents] = useState([]);
     const [metrics, setMetrics] = useState({ onlineCount: '0', offlineCount: '0' });
+    const [now, setNow] = useState(Date.now());
 
     const [hostnameFilter, setHostnameFilter] = useState('');
     const [ipFilter, setIpFilter] = useState('');
@@ -73,11 +76,74 @@ const Home = ({ isMenuOpen }) => {
     useEffect(() => {
         fetchTagOptions();
         fetchMetrics();
+        fetchAgents();
     }, []);
 
     useEffect(() => {
+        if (didInitFromQuery.current) return;
+        const params = qs.parse(location.search, { ignoreQueryPrefix: true });
+        if (params.hostname) setHostnameFilter(params.hostname);
+        if (params.ip) setIpFilter(params.ip);
+        if (params.status) setStatusFilter(params.status);
+        if (params.logic) setLogic(params.logic);
+        if (params.sort) {
+            const [field, direction] = String(params.sort).split(':');
+            if (field) setSortField(field);
+            if (direction) setSortDirection(direction);
+        }
+        if (params.offset) {
+            const parsedOffset = parseInt(params.offset, 10);
+            if (!Number.isNaN(parsedOffset)) setOffset(parsedOffset);
+        }
+        const tagParams = params.tag
+            ? (Array.isArray(params.tag) ? params.tag : [params.tag])
+            : [];
+        if (tagParams.length > 0) {
+            const nextConditions = tagParams.map((t) => {
+                const [key, ...rest] = String(t).split(':');
+                return { key, value: rest.join(':') };
+            });
+            setTagConditions(nextConditions);
+        }
+        didInitFromQuery.current = true;
+    }, [location.search]);
+
+    useEffect(() => {
+        const id = setInterval(() => setNow(Date.now()), 1000);
+        return () => clearInterval(id);
+    }, []);
+
+    useEffect(() => {
+        const id = setInterval(() => {
+            fetchMetrics();
+            fetchAgents();
+        }, 10000);
+        return () => clearInterval(id);
+    }, [offset, hostnameFilter, ipFilter, statusFilter, tagConditions, logic, sortField, sortDirection]);
+
+    useEffect(() => {
+        setOffset(0);
+    }, [hostnameFilter, ipFilter, statusFilter, tagConditions, logic, sortField, sortDirection]);
+
+    useEffect(() => {
         fetchAgents();
-    }, [hostnameFilter, ipFilter, statusFilter, tagConditions, logic, offset, sortField, sortDirection]);
+    }, [offset, hostnameFilter, ipFilter, statusFilter, tagConditions, logic, sortField, sortDirection]);
+
+    useEffect(() => {
+        if (!didInitFromQuery.current) return;
+        const params = {
+            ...(hostnameFilter && { hostname: hostnameFilter }),
+            ...(ipFilter && { ip: ipFilter }),
+            ...(statusFilter && { status: statusFilter }),
+            ...(logic && { logic }),
+            ...(offset > 0 && { offset }),
+            sort: `${sortField}:${sortDirection}`
+        };
+        const tags = tagConditions.filter(tc => tc.key && tc.value).map(tc => `${tc.key}:${tc.value}`);
+        if (tags.length > 0) params.tag = tags;
+        const query = qs.stringify(params, { arrayFormat: 'repeat' });
+        navigate({ pathname: '/home', search: query ? `?${query}` : '' }, { replace: true });
+    }, [hostnameFilter, ipFilter, statusFilter, tagConditions, logic, sortField, sortDirection, offset, navigate]);
 
     const handleSort = (field) => {
         if (sortField === field) {
@@ -102,11 +168,19 @@ const Home = ({ isMenuOpen }) => {
         navigate(`/agent?agt=${uuid}`);
     };
 
+    const formatCountdown = (nextCallback) => {
+        if (!nextCallback) return '—';
+        const ts = new Date(nextCallback).getTime();
+        if (Number.isNaN(ts)) return '—';
+        const delta = Math.floor((ts - now) / 1000);
+        if (delta <= 0) return 'due';
+        return `${delta}s`;
+    };
+
     return (
         <div className="home-container horizontal-layout">
             <div className="main-content-column">
                 <div className="header-wrapper">
-                    <h1 className="agents-title">Agents</h1>
                     <div className="status-boxes">
                         <div className="status-box online">
                             <p>Online</p>
@@ -125,9 +199,6 @@ const Home = ({ isMenuOpen }) => {
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th onClick={() => handleSort('uuid')}>
-                                                UUID {sortField === 'uuid' && (sortDirection === 'asc' ? '↑' : '↓')}
-                                            </th>
                                             <th onClick={() => handleSort('agent_user')}>
                                                 User {sortField === 'agent_user' && (sortDirection === 'asc' ? '↑' : '↓')}
                                             </th>
@@ -137,6 +208,7 @@ const Home = ({ isMenuOpen }) => {
                                             <th onClick={() => handleSort('ip')}>
                                                 IP {sortField === 'ip' && (sortDirection === 'asc' ? '↑' : '↓')}
                                             </th>
+                                            <th>Next Callback</th>
                                             <th onClick={() => handleSort('status')}>
                                                 Status {sortField === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
                                             </th>
@@ -145,10 +217,10 @@ const Home = ({ isMenuOpen }) => {
                                     <tbody>
                                         {agents.map(agent => (
                                             <tr key={agent.uuid} onClick={() => handleRowClick(agent.uuid)} className="go-to-agent">
-                                                <td>{agent.uuid.substring(0, 6)}</td>
                                                 <td>{agent.username}</td>
                                                 <td>{agent.hostname}</td>
                                                 <td>{agent.agentip}</td>
+                                                <td>{formatCountdown(agent.nextcallback)}</td>
                                                 <td>{agent.status}</td>
                                             </tr>
                                         ))}

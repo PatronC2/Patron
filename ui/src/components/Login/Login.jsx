@@ -33,7 +33,8 @@ const Login = ({ onSuccessfulLogin }) => {
                 }
             );
             const accessToken = response?.data?.token;
-            setAuth({ user, token: accessToken });
+            const role = response?.data?.role;
+            setAuth({ user, token: accessToken, role });
             setUser('');
             setPwd('');
             onSuccessfulLogin();
@@ -68,8 +69,9 @@ const Login = ({ onSuccessfulLogin }) => {
                     <input
                         type="text"
                         id="username"
+                        name="username"
+                        autoComplete="username"
                         ref={userRef}
-                        autoComplete="off"
                         onChange={(e) => setUser(e.target.value)}
                         value={user}
                         required
@@ -78,6 +80,8 @@ const Login = ({ onSuccessfulLogin }) => {
                     <input
                         type="password"
                         id="password"
+                        name="password"
+                        autoComplete="current-password"
                         onChange={(e) => setPwd(e.target.value)}
                         value={pwd}
                         required

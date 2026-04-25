@@ -1,4 +1,6 @@
-FROM golang:1.24.3 AS bot-builder
+ARG GOVERSION=SET_ME
+
+FROM golang:${GOVERSION} AS bot-builder
 
 ARG HTTP_PROXY
 ARG HTTPS_PROXY

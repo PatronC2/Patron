@@ -19,7 +19,7 @@ A Command and Control Framework made in Go.
 
 # Install
 
-* Run `git clone https://github.com/PatronC2/Patron.git`
+* Run `git clone --recurse-submodules https://github.com/PatronC2/Patron.git`
 * Run `./install.sh -dps <your-ip>` for fresh install
 
 ```
@@ -29,6 +29,7 @@ Options:
   -s    <your_ip_address>   Server Ip address
   -b    Set up the discord bot
   -p    Prompts you to enter passwords
+  -m    Enable Prometheus metrics exporter
   -h    Show this help message
 ```
 
@@ -41,7 +42,7 @@ Options:
   * Get the proxy certificate, i.e. `wget --no-check-certificate -O /tmp/proxy-cert.pem https://proxy-ip/my-cert.pem`
   * `git config --global http.sslCAInfo /tmp/proxy-cert.pem`
 * Clone the repository
-  * `git clone https://github.com/PatronC2/Patron.git`
+  * `git clone --recurse-submodules https://github.com/PatronC2/Patron.git`
 * Run the installer
   * No discord bot
     *  `./install.sh -dps <the-server-ipv4-address>`
