@@ -10,6 +10,7 @@ import (
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
 
@@ -19,21 +20,103 @@ type AgentCounts struct {
 	Offline int
 }
 
-func CreateAgent(req *patronobuf.ConfigurationRequest) error {
+func FindOrCreateAgentFromStartup(req *patronobuf.StartupRequest) (string, error) {
+	existing, err := FindAgentByStartup(req)
+	if err != nil {
+		return "", err
+	}
+	if existing != "" {
+		if err := UpdateAgentFromStartup(existing, req); err != nil {
+			return "", err
+		}
+		return existing, nil
+	}
+
+	newUUID := uuid.New().String()
+	if err := CreateAgentFromStartup(newUUID, req); err != nil {
+		return "", err
+	}
+	return newUUID, nil
+}
+
+func FindAgentByStartup(req *patronobuf.StartupRequest) (string, error) {
+	query := `
+	SELECT uuid
+	FROM agents
+	WHERE file_path = $1
+	  AND agent_user = $2
+	  AND hostname = $3
+	  AND os_type = $4
+	  AND os_arch = $5
+	  AND os_build = $6
+	  AND cpus = $7
+	  AND memory = $8
+	ORDER BY agent_id ASC
+	LIMIT 1`
+
+	var agentUUID string
+	err := db.QueryRow(query,
+		req.GetFilepath(),
+		req.GetUsername(),
+		req.GetHostname(),
+		req.GetOstype(),
+		req.GetArch(),
+		req.GetOsbuild(),
+		req.GetCpus(),
+		req.GetMemory(),
+	).Scan(&agentUUID)
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
+	if err != nil {
+		logger.Logf(logger.Error, "Error finding agent from startup request: %v", err)
+		return "", err
+	}
+	return agentUUID, nil
+}
+
+func UpdateAgentFromStartup(agentUUID string, req *patronobuf.StartupRequest) error {
+	updateSQL := `
+	UPDATE agents
+	SET file_path = $1,
+		ip = $2,
+		agent_user = $3,
+		hostname = $4,
+		os_type = $5,
+		os_build = $6,
+		os_arch = $7,
+		cpus = $8,
+		memory = $9
+	WHERE uuid = $10`
+
+	_, err := db.Exec(updateSQL,
+		req.GetFilepath(),
+		req.GetAgentip(),
+		req.GetUsername(),
+		req.GetHostname(),
+		req.GetOstype(),
+		req.GetOsbuild(),
+		req.GetArch(),
+		req.GetCpus(),
+		req.GetMemory(),
+		agentUUID,
+	)
+	if err != nil {
+		logger.Logf(logger.Error, "Error updating agent startup fields for %s: %v", agentUUID, err)
+		return err
+	}
+	return nil
+}
+
+func CreateAgentFromStartup(agentUUID string, req *patronobuf.StartupRequest) error {
 	CreateAgentSQL := `
 	INSERT INTO agents (
-		uuid, server_ip, server_port, callback_freq, callback_jitter,
-		ip, agent_user, hostname, os_type, os_build, os_arch, cpus, memory, next_callback, transport_protocol
-	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`
-
-	nextCallback := time.Unix(req.GetNextcallbackUnix(), 0)
+		uuid, file_path, ip, agent_user, hostname, os_type, os_build, os_arch, cpus, memory, transport_protocol
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'Unknown')`
 
 	_, err := db.Exec(CreateAgentSQL,
-		req.GetUuid(), req.GetServerip(), req.GetServerport(),
-		req.GetCallbackfrequency(), req.GetCallbackjitter(),
-		req.GetAgentip(), req.GetUsername(), req.GetHostname(),
-		req.GetOstype(), req.GetOsbuild(), req.GetArch(),
-		req.GetCpus(), req.GetMemory(), nextCallback, req.GetTransportprotocol(),
+		agentUUID, req.GetFilepath(), req.GetAgentip(), req.GetUsername(), req.GetHostname(),
+		req.GetOstype(), req.GetOsbuild(), req.GetArch(), req.GetCpus(), req.GetMemory(),
 	)
 
 	if err != nil {
@@ -41,7 +124,6 @@ func CreateAgent(req *patronobuf.ConfigurationRequest) error {
 		return err
 	}
 
-	uuid := req.GetUuid()
 	tags := map[string]string{
 		"os_type":      req.GetOstype(),
 		"os_build":     req.GetOsbuild(),
@@ -51,18 +133,18 @@ func CreateAgent(req *patronobuf.ConfigurationRequest) error {
 	}
 
 	for k, v := range tags {
-		if err := PutAgentTags(uuid, k, v); err != nil {
-			logger.Logf(logger.Error, "Error applying tag %q to agent %v: %v", k, uuid, err)
+		if err := PutAgentTags(agentUUID, k, v); err != nil {
+			logger.Logf(logger.Error, "Error applying tag %q to agent %v: %v", k, agentUUID, err)
 			return err
 		}
 	}
 
-	err = PutAgentNotes(uuid, "")
+	err = PutAgentNotes(agentUUID, "")
 	if err != nil {
-		logger.Logf(logger.Error, "Error initializing notes for %v: %v", uuid, err)
+		logger.Logf(logger.Error, "Error initializing notes for %v: %v", agentUUID, err)
 	}
 
-	logger.Logf(logger.Info, "New agent created in DB: %s", req.GetUuid())
+	logger.Logf(logger.Info, "New agent created in DB: %s", agentUUID)
 	return nil
 }
 
@@ -74,23 +156,15 @@ func FetchOneAgent(uuid string) (*patronobuf.ConfigurationRequest, error) {
 		server_port,
 		callback_freq,
 		callback_jitter,
-		ip,
-		agent_user,
-		hostname,
-		os_type,
-		os_build,
-		os_arch,
-		cpus,
-		memory,
 		next_callback,
 		status,
-		transport_protocol
+		COALESCE(transport_protocol, 'Unknown') AS transport_protocol
 	FROM agents_status
 	WHERE uuid = $1
 	`
 
 	var req patronobuf.ConfigurationRequest
-	var nextCallback time.Time
+	var nextCallback sql.NullTime
 
 	err := db.QueryRow(query, uuid).Scan(
 		&req.Uuid,
@@ -98,14 +172,6 @@ func FetchOneAgent(uuid string) (*patronobuf.ConfigurationRequest, error) {
 		&req.Serverport,
 		&req.Callbackfrequency,
 		&req.Callbackjitter,
-		&req.Agentip,
-		&req.Username,
-		&req.Hostname,
-		&req.Ostype,
-		&req.Osbuild,
-		&req.Arch,
-		&req.Cpus,
-		&req.Memory,
 		&nextCallback,
 		&req.Status,
 		&req.Transportprotocol,
@@ -119,10 +185,72 @@ func FetchOneAgent(uuid string) (*patronobuf.ConfigurationRequest, error) {
 		return nil, err
 	}
 
-	req.NextcallbackUnix = nextCallback.Unix()
+	if nextCallback.Valid {
+		req.NextcallbackUnix = nextCallback.Time.Unix()
+	}
 	logger.Logf(logger.Info, "Fetched agent: %s", req.Uuid)
 
 	return &req, nil
+}
+
+func FetchOneAgentDetails(uuid string) (*types.ConfigurationRequest, error) {
+	query := `
+	SELECT
+		uuid,
+		server_ip,
+		server_port,
+		callback_freq,
+		callback_jitter,
+		ip,
+		agent_user,
+		hostname,
+		os_type,
+		os_arch,
+		os_build,
+		cpus,
+		memory,
+		next_callback,
+		status,
+		COALESCE(transport_protocol, 'Unknown') AS transport_protocol
+	FROM agents_status
+	WHERE uuid = $1
+	`
+
+	var agent types.ConfigurationRequest
+	var nextCallback sql.NullTime
+
+	err := db.QueryRow(query, uuid).Scan(
+		&agent.AgentID,
+		&agent.ServerIP,
+		&agent.ServerPort,
+		&agent.CallbackFrequency,
+		&agent.CallbackJitter,
+		&agent.AgentIP,
+		&agent.Username,
+		&agent.Hostname,
+		&agent.OSType,
+		&agent.OSArch,
+		&agent.OSBuild,
+		&agent.CPUS,
+		&agent.MEMORY,
+		&nextCallback,
+		&agent.Status,
+		&agent.TransportProtocol,
+	)
+	if err == sql.ErrNoRows {
+		logger.Logf(logger.Error, "No agent found with UUID: %s", uuid)
+		return nil, nil
+	}
+	if err != nil {
+		logger.Logf(logger.Error, "Error fetching agent details with UUID: %s - %v", uuid, err)
+		return nil, err
+	}
+
+	if nextCallback.Valid {
+		agent.NextCallback = nextCallback.Time
+	}
+
+	return &agent, nil
 }
 
 func UpdateAgentConfig(UUID, ServerIP, ServerPort, CallbackFrequency, CallbackJitter string, NextCallback time.Time, TransportProtocol string) {
@@ -143,6 +271,34 @@ func UpdateAgentConfig(UUID, ServerIP, ServerPort, CallbackFrequency, CallbackJi
 	logger.Logf(logger.Info, "Agent %s Reveived Config Update  \n", UUID)
 }
 
+func UpdateAgentConfigIfMissing(UUID, ServerIP, ServerPort, CallbackFrequency, CallbackJitter string, TransportProtocol string) {
+	updateSQL := `
+	UPDATE agents
+	SET server_ip = CASE WHEN server_ip IS NULL OR server_ip = '' OR server_ip = 'Unknown' THEN $1 ELSE server_ip END,
+		server_port = CASE WHEN server_port IS NULL OR server_port = '' OR server_port = 'Unknown' THEN $2 ELSE server_port END,
+		callback_freq = CASE WHEN callback_freq IS NULL OR callback_freq = '' OR callback_freq = 'Unknown' THEN $3 ELSE callback_freq END,
+		callback_jitter = CASE WHEN callback_jitter IS NULL OR callback_jitter = '' OR callback_jitter = 'Unknown' THEN $4 ELSE callback_jitter END,
+		transport_protocol = CASE WHEN transport_protocol IS NULL OR transport_protocol = '' OR transport_protocol = 'Unknown' THEN $5 ELSE transport_protocol END
+	WHERE uuid = $6`
+
+	_, err := db.Exec(updateSQL, ServerIP, ServerPort, CallbackFrequency, CallbackJitter, TransportProtocol, UUID)
+	if err != nil {
+		logger.Logf(logger.Error, "Error while seeding missing agent config: %v", err)
+	}
+}
+
+func UpdateAgentNextCallback(UUID string, NextCallback time.Time) {
+	updateSQL := `
+	UPDATE agents
+	SET next_callback = $1
+	WHERE uuid = $2`
+
+	_, err := db.Exec(updateSQL, NextCallback, UUID)
+	if err != nil {
+		logger.Logf(logger.Error, "Error while updating agent next callback: %v", err)
+	}
+}
+
 func UpdateAgentConfigNoNext(UUID, ServerIP, ServerPort, CallbackFrequency, CallbackJitter string, TransportProtocol string) {
 	updateSQL := `
 	UPDATE agents 
@@ -159,10 +315,10 @@ func UpdateAgentConfigNoNext(UUID, ServerIP, ServerPort, CallbackFrequency, Call
 func UpdateAgentCheckIn(req *patronobuf.ConfigurationRequest) error {
 	UpdateSQL := `
         UPDATE agents
-        SET last_callback = NOW(), next_callback = $1
-        WHERE uuid = $2`
+        SET last_callback = NOW()
+        WHERE uuid = $1`
 
-	_, err := db.Exec(UpdateSQL, time.Unix(req.GetNextcallbackUnix(), 0), req.GetUuid())
+	_, err := db.Exec(UpdateSQL, req.GetUuid())
 	if err != nil {
 		logger.Logf(logger.Error, "Error updating agent check-in for UUID %s: %v", req.GetUuid(), err)
 		return err

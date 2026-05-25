@@ -50,6 +50,7 @@ func InitDatabase() {
 	CREATE TABLE IF NOT EXISTS "agents" (
 		agent_id SERIAL PRIMARY KEY,
 		uuid TEXT NOT NULL UNIQUE,
+		file_path TEXT NOT NULL DEFAULT 'Unknown',
 		server_ip TEXT NOT NULL DEFAULT 'Unknown',
 		server_port TEXT NOT NULL DEFAULT 'Unknown',
 		callback_freq TEXT NOT NULL DEFAULT 'Unknown',
@@ -64,7 +65,7 @@ func InitDatabase() {
 		memory TEXT NOT NULL DEFAULT 'Unknown',
 		last_callback TIMESTAMPTZ,
 		next_callback TIMESTAMPTZ,
-		transport_protocol TEXT
+		transport_protocol TEXT NOT NULL DEFAULT 'Unknown'
 	);
 	CREATE OR REPLACE VIEW agents_status AS
 	SELECT

