@@ -116,6 +116,7 @@ services:
 
   opensearch:
     image: opensearchproject/opensearch:2.14.0
+    user: opensearch
     environment:
       - discovery.type=single-node
       - plugins.security.ssl.http.enabled=false

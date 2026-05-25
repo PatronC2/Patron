@@ -337,13 +337,28 @@ const Agent = () => {
     return <p>No data available</p>;
   }
 
-  const formatCountdown = (nextCallbackUnix) => {
-    if (!nextCallbackUnix) return '—';
-    const delta = Math.floor(nextCallbackUnix - now / 1000);
-    if (Number.isNaN(delta)) return '—';
+  const formatCountdown = (nextCallback) => {
+    if (!nextCallback) return '—';
+
+    const timestamp =
+      typeof nextCallback === 'number'
+        ? nextCallback * 1000
+        : new Date(nextCallback).getTime();
+
+    if (Number.isNaN(timestamp)) return '—';
+    const delta = Math.floor((timestamp - now) / 1000);
     if (delta <= 0) return 'due';
     return `${delta}s`;
   };
+
+  const agentUsername = data.username?.trim() || 'unknown';
+  const agentHostname = data.hostname?.trim() || 'unknown';
+  const agentIP = data.agentip?.trim() || '—';
+  const agentOSType = data.ostype?.trim() || 'unknown';
+  const agentOSBuild = data.osbuild?.trim() || 'unknown';
+  const agentArch = data.arch?.trim() || 'unknown';
+  const agentCPUs = data.cpus?.trim() || 'unknown';
+  const agentMemory = data.memory?.trim() || 'unknown';
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
@@ -686,14 +701,14 @@ const Agent = () => {
     <div className="agent-container">
         <div className="agent-header">
             <div className="agent-identity">
-                {data.username?.trim()}@{data.hostname?.trim()}
+                {agentUsername}@{agentHostname}
             </div>
             <div className="agent-status">
                 <div>Status: {data.status}</div>
-                <div>Agent IP: {data.agentip || '—'}</div>
-                <div>Next Callback: {formatCountdown(data.nextcallback_unix)}</div>
-                <div>OS: {data.osbuild} {data.arch}</div>
-                <div>CPUs: {data.cpus} Memory: {data.memory}GB</div>
+                <div>Agent IP: {agentIP}</div>
+                <div>Next Callback: {formatCountdown(data.nextcallback)}</div>
+                <div>OS: {[agentOSType, agentOSBuild, agentArch].filter(Boolean).join(' ') || '—'}</div>
+                <div>CPUs: {agentCPUs} Memory: {agentMemory}</div>
             </div>
         </div>
         <div className="agent-tabs">

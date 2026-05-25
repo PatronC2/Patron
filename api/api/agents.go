@@ -86,7 +86,7 @@ func GetOneAgentByUUID(c *gin.Context) {
 	// Get agents by UUID
 	uuid := c.Param("agt")
 	logger.Logf(logger.Debug, "Trying to find agent %v", uuid)
-	agents, err := data.FetchOneAgent(uuid)
+	agents, err := data.FetchOneAgentDetails(uuid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get agent"})
 		return
