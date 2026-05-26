@@ -28,7 +28,7 @@ func main() {
 	client_utils.Initialize(LoggingEnabled)
 	hostname, username := client_utils.GenerateAgentMetadata()
 	filepath := client_utils.GetExecutablePath()
-	capabilities := client_utils.DefaultCapabilities()
+	capabilities := []string{"sh", "bash", "socks", "files"}
 	logger.Logf(logger.Info, "Collected startup metadata. Hostname: %v. Username: %v", hostname, username)
 	osType, osArch, osVersion, cpus, memory := client_utils.GetOSInfo()
 

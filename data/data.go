@@ -63,6 +63,7 @@ func InitDatabase() {
 		os_build TEXT NOT NULL DEFAULT 'Unkown',
 		cpus TEXT NOT NULL DEFAULT 'Unknown',
 		memory TEXT NOT NULL DEFAULT 'Unknown',
+		capabilities TEXT[] NOT NULL DEFAULT '{}',
 		last_callback TIMESTAMPTZ,
 		next_callback TIMESTAMPTZ,
 		transport_protocol TEXT NOT NULL DEFAULT 'Unknown'
