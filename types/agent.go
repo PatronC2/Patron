@@ -48,6 +48,7 @@ type ConfigurationRequest struct {
 	OSBuild           string    `json:"osbuild"`
 	CPUS              string    `json:"cpus"`
 	MEMORY            string    `json:"memory"`
+	Capabilities      []string  `json:"capabilities"`
 	AgentIP           string    `json:"agentip"`
 	ServerIP          string    `json:"serverip"`
 	ServerPort        string    `json:"serverport"`

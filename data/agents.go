@@ -11,7 +11,7 @@ import (
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/Patron/types"
 	"github.com/google/uuid"
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 )
 
 type AgentCounts struct {
@@ -86,8 +86,9 @@ func UpdateAgentFromStartup(agentUUID string, req *patronobuf.StartupRequest) er
 		os_build = $6,
 		os_arch = $7,
 		cpus = $8,
-		memory = $9
-	WHERE uuid = $10`
+		memory = $9,
+		capabilities = $10
+	WHERE uuid = $11`
 
 	_, err := db.Exec(updateSQL,
 		req.GetFilepath(),
@@ -99,6 +100,7 @@ func UpdateAgentFromStartup(agentUUID string, req *patronobuf.StartupRequest) er
 		req.GetArch(),
 		req.GetCpus(),
 		req.GetMemory(),
+		pq.Array(req.GetCapabilities()),
 		agentUUID,
 	)
 	if err != nil {
@@ -111,12 +113,13 @@ func UpdateAgentFromStartup(agentUUID string, req *patronobuf.StartupRequest) er
 func CreateAgentFromStartup(agentUUID string, req *patronobuf.StartupRequest) error {
 	CreateAgentSQL := `
 	INSERT INTO agents (
-		uuid, file_path, ip, agent_user, hostname, os_type, os_build, os_arch, cpus, memory, transport_protocol
-	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'Unknown')`
+		uuid, file_path, ip, agent_user, hostname, os_type, os_build, os_arch, cpus, memory, capabilities, transport_protocol
+	) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'Unknown')`
 
 	_, err := db.Exec(CreateAgentSQL,
 		agentUUID, req.GetFilepath(), req.GetAgentip(), req.GetUsername(), req.GetHostname(),
 		req.GetOstype(), req.GetOsbuild(), req.GetArch(), req.GetCpus(), req.GetMemory(),
+		pq.Array(req.GetCapabilities()),
 	)
 
 	if err != nil {
@@ -209,6 +212,7 @@ func FetchOneAgentDetails(uuid string) (*types.ConfigurationRequest, error) {
 		os_build,
 		cpus,
 		memory,
+		capabilities,
 		next_callback,
 		status,
 		COALESCE(transport_protocol, 'Unknown') AS transport_protocol
@@ -233,6 +237,7 @@ func FetchOneAgentDetails(uuid string) (*types.ConfigurationRequest, error) {
 		&agent.OSBuild,
 		&agent.CPUS,
 		&agent.MEMORY,
+		pq.Array(&agent.Capabilities),
 		&nextCallback,
 		&agent.Status,
 		&agent.TransportProtocol,

