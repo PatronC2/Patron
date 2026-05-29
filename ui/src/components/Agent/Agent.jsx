@@ -4,9 +4,18 @@ import AuthContext from '../../context/AuthProvider';
 import { useLocation } from 'react-router-dom';
 import './Agent.css';
 
-const getCommandTypeOptions = (agentOSType) => {
+const normalizeCapabilities = (agentCapabilities = []) => (
+  agentCapabilities
+    .filter((capability) => typeof capability === 'string')
+    .map((capability) => capability.toLowerCase())
+);
+
+const getCommandTypeOptions = (agentOSType, agentCapabilities = []) => {
   const osType = agentOSType.toLowerCase();
-  const structuredOptions = [{ value: 'addcomputer', label: 'Add Computer' }];
+  const capabilities = normalizeCapabilities(agentCapabilities);
+  const structuredOptions = capabilities.includes('addcomputer')
+    ? [{ value: 'addcomputer', label: 'Add Computer' }]
+    : [];
   if (osType.includes('windows')) {
     return [
       { value: 'powershell', label: 'PowerShell' },
@@ -345,7 +354,8 @@ const Agent = () => {
     try {
       const queryParam = getQueryParam('agt');
       const osType = data?.ostype?.trim() || tags.find((tag) => tag.key === 'os_type')?.value?.trim() || '';
-      const options = getCommandTypeOptions(osType);
+      const capabilities = Array.isArray(data?.capabilities) ? data.capabilities : [];
+      const options = getCommandTypeOptions(osType, capabilities);
       const commandType = options.some((option) => option.value === newCommandType)
         ? newCommandType
         : options[0]?.value || 'shell';
@@ -452,7 +462,7 @@ const Agent = () => {
   const agentArch = data.arch?.trim() || 'unknown';
   const agentCPUs = data.cpus?.trim() || 'unknown';
   const agentMemory = data.memory?.trim() || 'unknown';
-  const commandTypeOptions = getCommandTypeOptions(agentOSType);
+  const commandTypeOptions = getCommandTypeOptions(agentOSType, agentCapabilities);
   const effectiveCommandType = commandTypeOptions.some((option) => option.value === newCommandType)
     ? newCommandType
     : commandTypeOptions[0]?.value || 'shell';
@@ -605,11 +615,12 @@ const Agent = () => {
           ))}
         </select>
 
-        {renderCommandInput()}
+        {effectiveCommandType !== 'addcomputer' && renderCommandInput()}
         <button onClick={handleSendCommand} className="send-command-button">
           Send
         </button>
       </div>
+      {effectiveCommandType === 'addcomputer' && renderCommandInput()}
     </div>
   );  
   

@@ -262,15 +262,15 @@
 
 .command-input-container {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 10px;
     margin-top: 10px;
 }
   
 .command-type-dropdown {
-    width: 120px;
-    min-width: 120px;
-    max-width: 150px;
+    width: 150px;
+    min-width: 150px;
+    max-width: 180px;
     padding: 8px;
     font-size: 1rem;
     border: 1px solid var(--border-subtle);
@@ -303,13 +303,15 @@
 }
 
 .structured-command-form {
-    flex: 1;
+    width: 100%;
+    min-width: 0;
+    margin-top: 12px;
 }
 
 .command-form-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
 }
 
 .command-form-grid label {
@@ -318,6 +320,11 @@
     gap: 5px;
     font-size: 0.85rem;
     color: var(--text-muted);
+}
+
+.command-form-grid input,
+.command-form-grid select {
+    min-width: 0;
 }
   
 .send-command-button {
@@ -329,6 +336,10 @@
     border-radius: 8px;
     cursor: pointer;
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.command-input-container .send-command-button {
+    margin-left: auto;
 }
   
 .send-command-button:hover {
