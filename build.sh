@@ -6,8 +6,7 @@ trap 'echo "Error occurred on line $LINENO. Exiting."; exit 1' ERR
 # Default values
 build_type="local"
 tag="snapshot"
-build_type="local"
-tag="snapshot"
+build_type_set=false
 PORT="8081"
 WEBSERVER_PORT="8000"
 REACT_APP_NGINX_PORT="8443"
@@ -22,12 +21,13 @@ function show_help {
    echo "Options:"
    echo "  -l                 Use local build (default)"
    echo "  -r                 Use release build"
-   echo "  -t <tag>           Set image tag (required for release)"
+   echo "  -s                 Use snapshot build (pushes via release bake target)"
+   echo "  -t <tag>           Set image tag (required for release; snapshot suffix for snapshot)"
    echo "  --port <port>                     (default: 8081)"
    echo "  --web-port <port>                (default: 8000)"
    echo "  --nginx-port <port>              (default: 8443)"
-   echo "  --tcp-listener-port <port>                 (default: 9000)"
-   echo "  --quic-listener-port <port>                 (default: 9000)"
+   echo "  --tcp-listener-port <port>      (default: 9000)"
+   echo "  --quic-listener-port <port>     (default: 9000)"
    echo "  --redirector-port <port>         (default: 9000)"
    echo "  --db-port <port>                 (default: 5432)"
    echo "  --db-user <user>                 (default: patron)"
@@ -35,19 +35,20 @@ function show_help {
 }
 
 # Use getopt for long options
-TEMP=$(getopt -o lrt:h --long port:,web-port:,nginx-port:,c2-port:,redirector-port:,db-port:,db-user: -n "$0" -- "$@")
+TEMP=$(getopt -o lrst:h --long port:,web-port:,nginx-port:,tcp-listener-port:,quic-listener-port:,redirector-port:,db-port:,db-user: -n "$0" -- "$@")
 eval set -- "$TEMP"
 
 while true; do
    case "$1" in
-      -l ) build_type="local"; shift ;;
-      -r ) build_type="release"; shift ;;
+      -l ) build_type="local"; build_type_set=true; shift ;;
+      -r ) build_type="release"; build_type_set=true; shift ;;
+      -s ) build_type="snapshot"; build_type_set=true; shift ;;
       -t ) tag="$2"; shift 2 ;;
       --port ) PORT="$2"; shift 2 ;;
       --web-port ) WEBSERVER_PORT="$2"; shift 2 ;;
       --nginx-port ) REACT_APP_NGINX_PORT="$2"; shift 2 ;;
       --tcp-listener-port ) TCP_LISTENER_PORT="$2"; shift 2 ;;
-      --quic-listener-port ) TCP_LISTENER_PORT="$2"; shift 2 ;;
+      --quic-listener-port ) QUIC_LISTENER_PORT="$2"; shift 2 ;;
       --redirector-port ) REDIRECTOR_PORT="$2"; shift 2 ;;
       --db-port ) DB_PORT="$2"; shift 2 ;;
       --db-user ) DB_USER="$2"; shift 2 ;;
@@ -57,20 +58,37 @@ while true; do
    esac
 done
 
-# Prompt user for build type and tag
-echo "Do you want to perform a local or release build?"
-select build_type in "local" "release"; do
-    if [[ "$build_type" == "local" || "$build_type" == "release" ]]; then
-        break
-    else
-        echo "Invalid selection."
-    fi
-done
+# Prompt user for build type when one was not supplied
+if [[ "$build_type_set" == false ]]; then
+    echo "Do you want to perform a local, release, or snapshot build?"
+    select build_type in "local" "release" "snapshot"; do
+        if [[ "$build_type" == "local" || "$build_type" == "release" || "$build_type" == "snapshot" ]]; then
+            break
+        else
+            echo "Invalid selection."
+        fi
+    done
+fi
 
 # Prompt for tag override
+latest_tag="latest"
+bake_target="$build_type"
+
 if [[ "$build_type" == "local" ]]; then
     read -p "Enter a tag to use [default: snapshot]: " user_tag
     tag=${user_tag:-snapshot}
+    date_formatted=$(date -I)
+    latest_tag="snapshot-${date_formatted}"
+elif [[ "$build_type" == "snapshot" ]]; then
+    bake_target="release"
+    if [[ "$tag" == "snapshot" ]]; then
+        default_snapshot_version=$(date -u +%Y%m%d%H%M%S)
+        read -p "Enter a snapshot version suffix [default: ${default_snapshot_version}]: " user_tag
+        tag="snapshot-${user_tag:-$default_snapshot_version}"
+    elif [[ "$tag" != snapshot-* ]]; then
+        tag="snapshot-${tag}"
+    fi
+    latest_tag="snapshot"
 else
     while [[ "$tag" == "snapshot" ]]; do
         read -p "Enter a version tag for release (e.g. v1.0.0): " tag
@@ -117,6 +135,7 @@ set_proxy_variables
 # Write environment
 echo "📝 Writing .env for Docker Bake..."
 cat <<EOF > .env
+LATEST_TAG=$latest_tag
 TAG=$tag
 PORT=$PORT
 WEBSERVER_PORT=$WEBSERVER_PORT
@@ -133,5 +152,5 @@ EOF
 
 export $(grep -v '^#' .env | xargs)
 
-echo -e "\n🚀 Running docker buildx bake for: $build_type"
-docker buildx bake $build_type
+echo -e "\n🚀 Running docker buildx bake for: $build_type (target: $bake_target)"
+docker buildx bake $bake_target
