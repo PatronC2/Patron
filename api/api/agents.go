@@ -1,16 +1,25 @@
 package api
 
 import (
+	"encoding/json"
 	"net"
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/lib/logger"
+	"github.com/PatronC2/Patron/types"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
+
+type sendCommandRequest struct {
+	CommandType string          `json:"commandType"`
+	Command     string          `json:"command"`
+	Args        json.RawMessage `json:"args"`
+}
 
 func FilterAgentsHandler(c *gin.Context) {
 	filters := make(map[string]string)
@@ -158,16 +167,91 @@ func SendCommandHandler(c *gin.Context) {
 	agentParam := c.Param("agt")
 	newCmdID := uuid.New().String()
 
-	var body map[string]string
-	if err := c.BindJSON(&body); err != nil {
+	var req sendCommandRequest
+	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
-	command := body["command"]
-	commandType := body["commandType"]
+	commandType := strings.TrimSpace(req.CommandType)
+	command := req.Command
+
+	switch commandType {
+	case "addcomputer":
+		serialized, err := serializeAddComputerCommand(req)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		command = serialized
+	case "shell", "powershell", "cmd", "bash", "sh", "socks":
+		if strings.TrimSpace(command) == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "command is required"})
+			return
+		}
+	case "kill":
+		command = "Kill Agent"
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported command type"})
+		return
+	}
+
 	data.SendAgentCommand(agentParam, "0", commandType, command, newCmdID)
 	c.JSON(http.StatusOK, gin.H{"message": "Success"})
+}
+
+func serializeAddComputerCommand(req sendCommandRequest) (string, error) {
+	var args types.AddComputerCommand
+	var raw []byte
+
+	if len(req.Args) > 0 && string(req.Args) != "null" {
+		raw = req.Args
+	} else {
+		raw = []byte(req.Command)
+	}
+
+	if err := json.Unmarshal(raw, &args); err != nil {
+		return "", err
+	}
+
+	args.Target = strings.TrimSpace(args.Target)
+	args.Method = strings.ToUpper(strings.TrimSpace(args.Method))
+	args.Action = strings.ToLower(strings.TrimSpace(args.Action))
+	args.ComputerName = strings.TrimSpace(args.ComputerName)
+	args.ComputerGroup = strings.TrimSpace(args.ComputerGroup)
+	args.BaseDN = strings.TrimSpace(args.BaseDN)
+	args.DomainNetBIOS = strings.TrimSpace(args.DomainNetBIOS)
+
+	if args.Target == "" {
+		return "", jsonError("target is required")
+	}
+	if args.Method == "" {
+		args.Method = "SAMR"
+	}
+	if args.Method != "SAMR" && args.Method != "LDAP" && args.Method != "LDAPS" {
+		return "", jsonError("method must be SAMR, LDAP, or LDAPS")
+	}
+	if args.Action == "" {
+		args.Action = "add"
+	}
+	if args.Action != "add" && args.Action != "set-password" && args.Action != "delete" {
+		return "", jsonError("action must be add, set-password, or delete")
+	}
+	if args.Action != "add" && args.ComputerName == "" {
+		return "", jsonError("computer_name is required for set-password and delete")
+	}
+
+	serialized, err := json.Marshal(args)
+	if err != nil {
+		return "", err
+	}
+	return string(serialized), nil
+}
+
+type jsonError string
+
+func (e jsonError) Error() string {
+	return string(e)
 }
 
 func KillAgentHandler(c *gin.Context) {

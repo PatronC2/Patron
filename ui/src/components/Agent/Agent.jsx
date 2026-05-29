@@ -6,11 +6,13 @@ import './Agent.css';
 
 const getCommandTypeOptions = (agentOSType) => {
   const osType = agentOSType.toLowerCase();
+  const structuredOptions = [{ value: 'addcomputer', label: 'Add Computer' }];
   if (osType.includes('windows')) {
     return [
       { value: 'powershell', label: 'PowerShell' },
       { value: 'cmd', label: 'cmd' },
       { value: 'socks', label: 'Socks' },
+      ...structuredOptions,
     ];
   }
   if (osType.includes('linux')) {
@@ -18,12 +20,41 @@ const getCommandTypeOptions = (agentOSType) => {
       { value: 'bash', label: 'bash' },
       { value: 'sh', label: 'sh' },
       { value: 'socks', label: 'Socks' },
+      ...structuredOptions,
     ];
   }
   return [
     { value: 'shell', label: 'Shell' },
     { value: 'socks', label: 'Socks' },
+    ...structuredOptions,
   ];
+};
+
+const ADD_COMPUTER_DEFAULTS = {
+  target: '',
+  method: 'SAMR',
+  action: 'add',
+  computer_name: '',
+  computer_pass: '',
+  base_dn: '',
+  computer_group: '',
+  domain_netbios: '',
+};
+
+const formatCommandForDisplay = (cmd) => {
+  if (cmd.commandtype !== 'addcomputer') {
+    return cmd.command;
+  }
+
+  try {
+    const args = JSON.parse(cmd.command);
+    const action = args.action || 'add';
+    const method = args.method || 'SAMR';
+    const name = args.computer_name || '(random name)';
+    return `addcomputer ${action} ${name} via ${method}`;
+  } catch {
+    return cmd.command;
+  }
 };
 
 const Agent = () => {
@@ -46,6 +77,7 @@ const Agent = () => {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const prevCommandsRef = useRef([]);
   const [newCommandType, setCommandType] = useState('shell');
+  const [addComputerForm, setAddComputerForm] = useState(ADD_COMPUTER_DEFAULTS);
 
   // States related to Configuration tab
   const [callbackIP, setCallbackIP] = useState('');
@@ -312,19 +344,46 @@ const Agent = () => {
   const handleSendCommand = async () => {
     try {
       const queryParam = getQueryParam('agt');
-      if (newCommand.trim() === '') {
-        setError('Command cannot be empty');
-        return;
-      }
-  
       const osType = data?.ostype?.trim() || tags.find((tag) => tag.key === 'os_type')?.value?.trim() || '';
       const options = getCommandTypeOptions(osType);
       const commandType = options.some((option) => option.value === newCommandType)
         ? newCommandType
         : options[0]?.value || 'shell';
-      const commandBody = { commandType, command: newCommand };
+      let commandBody;
+
+      if (commandType === 'addcomputer') {
+        if (addComputerForm.target.trim() === '') {
+          setError('Target is required');
+          return;
+        }
+        if (addComputerForm.action !== 'add' && addComputerForm.computer_name.trim() === '') {
+          setError('Computer name is required for this action');
+          return;
+        }
+
+        commandBody = {
+          commandType,
+          args: {
+            ...addComputerForm,
+            target: addComputerForm.target.trim(),
+            computer_name: addComputerForm.computer_name.trim(),
+            base_dn: addComputerForm.base_dn.trim(),
+            computer_group: addComputerForm.computer_group.trim(),
+            domain_netbios: addComputerForm.domain_netbios.trim(),
+          },
+        };
+      } else {
+        if (newCommand.trim() === '') {
+          setError('Command cannot be empty');
+          return;
+        }
+
+        commandBody = { commandType, command: newCommand };
+      }
+
       await axios.post(`/api/command/${queryParam}`, commandBody);
       setNewCommand('');
+      setAddComputerForm(ADD_COMPUTER_DEFAULTS);
       fetchData();
     } catch (err) {
       setError('Failed to send command');
@@ -405,6 +464,115 @@ const Agent = () => {
     }
   };
 
+  const updateAddComputerField = (field, value) => {
+    setAddComputerForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const renderCommandInput = () => {
+    if (effectiveCommandType === 'addcomputer') {
+      return (
+        <div className="structured-command-form">
+          <div className="command-form-grid">
+            <label>
+              Target
+              <input
+                type="text"
+                value={addComputerForm.target}
+                onChange={(e) => updateAddComputerField('target', e.target.value)}
+                placeholder="DOMAIN/user:pass@dc01.domain.local"
+              />
+            </label>
+            <label>
+              Action
+              <select
+                value={addComputerForm.action}
+                onChange={(e) => updateAddComputerField('action', e.target.value)}
+              >
+                <option value="add">Add</option>
+                <option value="set-password">Set password</option>
+                <option value="delete">Delete</option>
+              </select>
+            </label>
+            <label>
+              Method
+              <select
+                value={addComputerForm.method}
+                onChange={(e) => updateAddComputerField('method', e.target.value)}
+              >
+                <option value="SAMR">SAMR</option>
+                <option value="LDAPS">LDAPS</option>
+                <option value="LDAP">LDAP</option>
+              </select>
+            </label>
+            <label>
+              Computer name
+              <input
+                type="text"
+                value={addComputerForm.computer_name}
+                onChange={(e) => updateAddComputerField('computer_name', e.target.value)}
+                placeholder={addComputerForm.action === 'add' ? 'Optional random name' : 'DESKTOP-TEST01'}
+              />
+            </label>
+            {addComputerForm.action !== 'delete' && (
+              <label>
+                Computer password
+                <input
+                  type="text"
+                  value={addComputerForm.computer_pass}
+                  onChange={(e) => updateAddComputerField('computer_pass', e.target.value)}
+                  placeholder="Optional random password"
+                />
+              </label>
+            )}
+            <label>
+              Domain NetBIOS
+              <input
+                type="text"
+                value={addComputerForm.domain_netbios}
+                onChange={(e) => updateAddComputerField('domain_netbios', e.target.value)}
+                placeholder="Optional"
+              />
+            </label>
+            <label>
+              Base DN
+              <input
+                type="text"
+                value={addComputerForm.base_dn}
+                onChange={(e) => updateAddComputerField('base_dn', e.target.value)}
+                placeholder="DC=corp,DC=local"
+              />
+            </label>
+            <label>
+              Computer container
+              <input
+                type="text"
+                value={addComputerForm.computer_group}
+                onChange={(e) => updateAddComputerField('computer_group', e.target.value)}
+                placeholder="CN=Computers"
+              />
+            </label>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <input
+        type="text"
+        className="command-input"
+        placeholder={
+          effectiveCommandType === 'socks' ? 'Enter port|disable' : `Enter ${effectiveCommandType} command`
+        }
+        value={newCommand}
+        onChange={(e) => setNewCommand(e.target.value)}
+        onKeyDown={handleKeyPress}
+      />
+    );
+  };
+
   const renderCommandsTab = () => (
     <div className="commands-list" ref={commandListRef}>
       {commands.length === 0 ? (
@@ -414,7 +582,7 @@ const Agent = () => {
           {commands.map((cmd) => (
             <li key={cmd.commanduuid}>
               <div>
-                <strong>Command:</strong> {cmd.command}
+                <strong>Command:</strong> {formatCommandForDisplay(cmd)}
               </div>
               <div>
                 <strong>Output:</strong>
@@ -436,17 +604,8 @@ const Agent = () => {
             </option>
           ))}
         </select>
-  
-        <input
-          type="text"
-          className="command-input"
-          placeholder={
-            effectiveCommandType === 'socks' ? 'Enter port|disable' : `Enter ${effectiveCommandType} command`
-          }
-          value={newCommand}
-          onChange={(e) => setNewCommand(e.target.value)}
-          onKeyDown={handleKeyPress}
-        />
+
+        {renderCommandInput()}
         <button onClick={handleSendCommand} className="send-command-button">
           Send
         </button>

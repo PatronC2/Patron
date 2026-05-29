@@ -262,7 +262,7 @@
 
 .command-input-container {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
     margin-top: 10px;
 }
@@ -300,6 +300,24 @@
     outline: none;
     border-color: var(--accent);
     box-shadow: 0 0 0 2px var(--accent-bg);
+}
+
+.structured-command-form {
+    flex: 1;
+}
+
+.command-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+}
+
+.command-form-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
 }
   
 .send-command-button {
