@@ -51,7 +51,7 @@ variable "NO_PROXY" {
 }
 
 variable "GOVERSION" {
-  default = "1.25.6"
+  default = "1.27.1"
 }
 
 target "ui-base" {

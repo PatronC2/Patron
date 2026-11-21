@@ -136,7 +136,7 @@ func startQUICListener(address string, baseTLSConfig *tls.Config) {
 			logger.Logf(logger.Warning, "Failed to accept QUIC connection: %v", err)
 			continue
 		}
-		go func(conn quic.Connection) {
+		go func(conn *quic.Conn) {
 			for {
 				stream, err := conn.AcceptStream(context.Background())
 				if err != nil {
@@ -259,7 +259,7 @@ func connectToMainServerTCP() (*tls.Conn, error) {
 	return tls.Dial("tcp", mainServerIP+":"+mainServerPort, tlsConfig)
 }
 
-func connectToMainServerQUIC() (quic.Stream, error) {
+func connectToMainServerQUIC() (*quic.Stream, error) {
 	tlsConf := &tls.Config{
 		InsecureSkipVerify: true,
 		NextProtos:         []string{"quic-patron"},
