@@ -168,8 +168,8 @@ func RunTypedCommand(commandType string, command string) string {
 }
 
 type quicBeacon struct {
-	quic.Stream
-	conn quic.Connection
+	*quic.Stream
+	conn *quic.Conn
 }
 
 func (b *quicBeacon) LocalAddr() net.Addr {

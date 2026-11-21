@@ -42,7 +42,7 @@ func (s *Server) Start() error {
 	}
 }
 
-func (s *Server) handleSession(sess quic.Connection) {
+func (s *Server) handleSession(sess *quic.Conn) {
 	for {
 		stream, err := sess.AcceptStream(context.Background())
 		if err != nil {
@@ -53,7 +53,7 @@ func (s *Server) handleSession(sess quic.Connection) {
 	}
 }
 
-func (s *Server) handleStream(stream quic.Stream) {
+func (s *Server) handleStream(stream *quic.Stream) {
 	defer stream.Close()
 
 	for {
