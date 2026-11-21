@@ -1,70 +1,78 @@
-# Getting Started with Create React App
+# Patron UI
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+React 18 application built with Vite. Use Node 26 (`nvm use` in this directory)
+and npm. Node 24 is also supported and remains the Docker build runtime.
+The UI uses React Router 7 in declarative mode; the Go API and runtime
+authentication behavior are unchanged.
 
-## Available Scripts
+## Development
 
-In the project directory, you can run:
+From `ui/`:
 
-### `npm start`
+```sh
+npm ci
+npm start
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+`npm run dev` is an alias for `npm start`. Both use http://localhost:3000 and
+fail if that port is occupied. Vite provides Fast Refresh.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+The development server serves the repository-root `frontend-config.json` at
+`/config.json`, rereading it on every request. Create that file with the installer
+or supply the existing deployment settings. The browser needs these keys:
 
-### `npm test`
+```json
+{
+  "REACT_APP_NGINX_IP": "localhost",
+  "REACT_APP_NGINX_PORT": "8443",
+  "REACT_APP_C2SERVER_PORT": "8443"
+}
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Use the actual API hostname and ports for your environment. API requests go
+directly to that HTTPS endpoint, so its certificate and CORS settings must permit
+the development origin. Missing or invalid configuration returns an explicit HTTP
+500 JSON error. After changing configuration, reload the browser; no rebuild is
+needed. Configuration is public browser data and must not contain secrets.
 
-### `npm run build`
+## Checks
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```sh
+npm run lint
+npm run test:run
+npm run build
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+`npm test` starts Vitest in watch mode. Tests use jsdom and React Testing Library;
+API requests and navigation are mocked. ESLint reports existing unused-code,
+Hooks, and Fast Refresh findings as warnings; other correctness errors fail.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Production
 
-### `npm run eject`
+`npm run build` emits `build/`, with generated assets under `static/`. The existing
+UI Dockerfile installs with `npm ci`, builds with Node 24, and copies this output
+to Nginx. Docker Compose mounts `frontend-config.json` read-only at
+`/usr/share/nginx/html/config.json`; configuration is never bundled. Nginx keeps
+SPA route fallback and returns 404 for missing `/static/` assets.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+From the repository root:
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```sh
+docker build -f Dockerfile.ui -t patron-ui:vite .
+docker run --rm -p 8081:8081 \
+  --mount type=bind,src="$(pwd)/frontend-config.json",dst=/usr/share/nginx/html/config.json,readonly \
+  patron-ui:vite
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+`npm run preview` serves generated files for local inspection only. It does not
+serve the repository runtime configuration; use the container workflow above to
+check a complete deployment. The development middleware never runs in production.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Check login, authenticated navigation, logout, a refreshed nested route, fonts,
+icons, and the browser console against a running API. Check `/config.json` returns
+JSON and `/static/missing.js` returns 404 in the container. To roll back, redeploy
+the previous UI image; no backend or data migration is required.
 
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Vite's default modern-browser target replaces CRA's Browserslist range. No legacy
+browser plugin is included. Builds and linting are separate commands; production
+builds do not implicitly run ESLint or tests.

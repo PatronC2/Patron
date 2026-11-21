@@ -1,4 +1,4 @@
-FROM node:24-alpine AS builder
+FROM node:26-alpine AS builder
 
 ARG HTTP_PROXY
 ARG HTTPS_PROXY
@@ -10,7 +10,7 @@ ENV NO_PROXY=${NO_PROXY}
 WORKDIR /app
 
 COPY ./ui/package*.json /app/
-RUN npm install
+RUN npm ci
 
 COPY ./ui /app/
 RUN npm run build
