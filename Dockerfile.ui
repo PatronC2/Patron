@@ -10,7 +10,7 @@ ENV NO_PROXY=${NO_PROXY}
 WORKDIR /app
 
 COPY ./ui/package*.json /app/
-RUN npm install
+RUN npm ci
 
 COPY ./ui /app/
 RUN npm run build
