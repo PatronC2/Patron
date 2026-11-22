@@ -447,11 +447,13 @@ func InitializeBOFTables() {
 		id          TEXT PRIMARY KEY,
 		bof_uuid    TEXT NOT NULL REFERENCES bofs(uuid) ON DELETE CASCADE,
 		agent_uuid  TEXT NOT NULL,
+		platform    TEXT CHECK (platform IN ('windows', 'linux')),
 		status      TEXT NOT NULL CHECK (status IN ('pending', 'executing', 'completed', 'failed')),
 		output      TEXT,
 		error       TEXT,
 		created_at  TIMESTAMPTZ DEFAULT NOW(),
-		completed_at TIMESTAMPTZ
+		completed_at TIMESTAMPTZ,
+		deleted_at  TIMESTAMPTZ
 	);
 	`
 	_, err = db.Exec(tasksSQL)

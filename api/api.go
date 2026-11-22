@@ -90,7 +90,7 @@ func main() {
 	r.POST("/api/agents/files/upload", api.Auth(writeRoles), api.UploadFileHandler)
 	r.DELETE("/api/payloads/:payloadid", api.Auth(writeRoles), api.DeletePayloadHandler)
 	r.POST("/api/bofs", api.UploadBOFHandler)
-	r.GET("/api/bofs", api.ListBOFsHandler)
+	r.GET("/api/bofs", api.ListAllBOFsHandler)
 	r.DELETE("/api/bofs/:bofid", api.DeleteBOFHandler)
 	r.POST("/api/bofs/task", api.CreateTaskHandler)
 	r.GET("/api/bofs/tasks/:agentUuid", api.GetAgentTasksHandler)

