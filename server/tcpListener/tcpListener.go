@@ -91,6 +91,7 @@ func NewServer() *Server {
 			patronobuf.RequestType_KEYS:           &handlers.KeysHandler{},
 			patronobuf.RequestType_FILE:           &handlers.FileRequestHandler{},
 			patronobuf.RequestType_FILE_TO_SERVER: &handlers.FileToServerHandler{},
+			patronobuf.RequestType_BOF_EXECUTE:    &handlers.BOFExecutorHandler{},
 		},
 	}
 }

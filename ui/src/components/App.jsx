@@ -11,6 +11,7 @@ import Header from './Header/Header';
 import Login from './Login/Login';
 import Home from './Home/Home';
 import Payloads from './Payloads/Payloads';
+import BOFs from './BOFs/BOFs';
 import Redirectors from './Redirectors/Redirectors';
 import Profile from './Profile/Profile';
 import Admin from './Admin/Admin';
@@ -104,6 +105,16 @@ const MainContent = ({ isLoggedIn, onSuccessfulLogin, isMenuOpen }) => {
           element={
             isLoggedIn ? (
               <Payloads isMenuOpen={isMenuOpen} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/bofs"
+          element={
+            isLoggedIn ? (
+              <BOFs isMenuOpen={isMenuOpen} />
             ) : (
               <Navigate to="/login" />
             )

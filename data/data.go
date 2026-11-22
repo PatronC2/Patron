@@ -46,6 +46,8 @@ func OpenDatabase() {
 
 func InitDatabase() {
 
+	InitializeBOFDir()
+	InitializeBOFTables()
 	AgentSQL := `
 	CREATE TABLE IF NOT EXISTS "agents" (
 		agent_id SERIAL PRIMARY KEY,
@@ -420,4 +422,41 @@ func InitDatabase() {
 	}
 	logger.Logf(logger.Info, "configs table initialized\n")
 
+}
+
+// InitializeBOFTables creates the BOFs and tasks tables in the database
+func InitializeBOFTables() {
+	bofsSQL := `
+	CREATE TABLE IF NOT EXISTS bofs (
+		file_id      BIGSERIAL PRIMARY KEY,
+		uuid         TEXT NOT NULL UNIQUE,
+		platform     TEXT NOT NULL CHECK (platform IN ('windows', 'linux')),
+		function_name TEXT NOT NULL,
+		description  TEXT,
+		uploaded_at  TIMESTAMPTZ DEFAULT NOW()
+	);
+	`
+	_, err := db.Exec(bofsSQL)
+	if err != nil {
+		logger.Logf(logger.Error, "Failed to create bofs table: %v", err)
+	}
+	logger.Logf(logger.Info, "bofs table initialized")
+
+	tasksSQL := `
+	CREATE TABLE IF NOT EXISTS tasks (
+		id          TEXT PRIMARY KEY,
+		bof_uuid    TEXT NOT NULL REFERENCES bofs(uuid) ON DELETE CASCADE,
+		agent_uuid  TEXT NOT NULL,
+		status      TEXT NOT NULL CHECK (status IN ('pending', 'executing', 'completed', 'failed')),
+		output      TEXT,
+		error       TEXT,
+		created_at  TIMESTAMPTZ DEFAULT NOW(),
+		completed_at TIMESTAMPTZ
+	);
+	`
+	_, err = db.Exec(tasksSQL)
+	if err != nil {
+		logger.Logf(logger.Error, "Failed to create tasks table: %v", err)
+	}
+	logger.Logf(logger.Info, "tasks table initialized")
 }

